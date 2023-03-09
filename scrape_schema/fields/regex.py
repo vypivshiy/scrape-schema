@@ -17,7 +17,10 @@ class ReMatch(BaseField):
                  factory: Optional[Callable[[str], Any]] = None,
                  ):
         super().__init__(default=default, factory=factory, filter_=filter_)
-        self.pattern = re.compile(pattern, flags=flags) if isinstance(pattern, str) else pattern
+        if flags:
+            self.pattern = re.compile(pattern, flags=flags) if isinstance(pattern, str) else pattern
+        else:
+            self.pattern = re.compile(pattern) if isinstance(pattern, str) else pattern
         self.group = group
         self.callback = callback
 
@@ -29,7 +32,7 @@ class ReMatch(BaseField):
         value = list(filter(self._filter, [value]))[0]
         value = self.callback(value)
         if self.factory:
-            value = self.factory(value)
+            value = self._factory(value)
         elif type_ := self._get_type(instance, name):
             value = type_(value)
         self._raise_validator(instance, name, value)
