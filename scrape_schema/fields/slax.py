@@ -5,20 +5,12 @@ from selectolax.parser import Node
 
 from .. import BaseSchema
 from ..base import BaseField
+from ..tools.slax import get_text
 
 __all__ = [
     "SLaxSelect",
     "SLaxSelectList"
 ]
-
-
-def default_callback(deep: bool = True,
-                     separator: str = "",
-                     strip: bool = False) -> Callable[[Node], str]:
-    def wrapper(element: Node):
-        return element.text(deep=deep, separator=separator, strip=strip)
-
-    return wrapper
 
 
 class SLaxSelect(BaseField):
@@ -28,7 +20,7 @@ class SLaxSelect(BaseField):
                  query: str,
                  strict: bool = False,
                  *,
-                 callback: Callable[[Node], Any] = default_callback(),
+                 callback: Callable[[Node], Any] = get_text(),
                  default: Optional[Any] = None,
                  validator: Optional[Callable[[Any], bool]] = None,
                  filter_: Optional[Callable[[Node], bool]] = None,
@@ -60,7 +52,7 @@ class SLaxSelectList(SLaxSelect):
                  query: str,
                  strict: bool = False,
                  *,
-                 callback: Callable[[Node], Any] = default_callback(),
+                 callback: Callable[[Node], Any] = get_text(),
                  default: Optional[Any] = None,
                  validator: Optional[Callable[[Any], bool]] = None,
                  filter_: Optional[Callable[[Node], bool]] = None,
