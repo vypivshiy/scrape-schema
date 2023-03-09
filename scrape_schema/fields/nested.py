@@ -26,7 +26,7 @@ class Nested(BaseField):
         if not isinstance(new_markup, str):
             new_markup = str(new_markup)
         if schema := self.schema(new_markup):
-            return self.factory(schema) if self.factory else schema
+            return self._factory(schema)
         else:
             return self.default
 
@@ -46,6 +46,4 @@ class NestedList(Nested):
     def parse(self, instance: BaseSchema, name: str, markup) -> list[BaseSchema]:
         new_markups = self.crop_rule(markup)
         schemas: list[BaseSchema] = [self.schema(n_mk) for n_mk in new_markups]
-        if not all(schemas):
-            return self.default
-        return self.factory(schemas) if self.factory else schemas
+        return self._factory(schemas) if all(schemas) else self.default
