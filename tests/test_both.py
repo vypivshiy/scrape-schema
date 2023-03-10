@@ -13,11 +13,6 @@ from scrape_schema.tools.slax import crop_by_slax, crop_by_slax_all
 
 from fixtures import HTML
 
-import logging
-
-logger = logging.getLogger("scrape_schema")
-logger.setLevel(logging.DEBUG)
-
 
 class MixSchemaConfig(BaseSchema):
     __MARKUP_PARSERS__ = {HTMLParser: {}, BeautifulSoup: {"features": "html.parser"}}
