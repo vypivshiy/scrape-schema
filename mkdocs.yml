@@ -1,0 +1,8 @@
+site_name: Scrape Schema
+site_description: A lightweight library for converting any text (xml, html, plain text, stdout, etc) to python datatypes
+strict: true
+nav:
+  - Home: index.md
+  - Examples: examples.md
+  - BaseSchema: base_schema.md
+  - Fields: fields.md
