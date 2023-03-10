@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from scrape_schema import BaseSchema
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.fields import ParsedField
 from scrape_schema.tools.soup import crop_by_tag_all, get_tag
 
 
@@ -35,8 +34,8 @@ class QuotePage(BaseSchema):
     __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
     title: str = SoupSelect('head > title')
     # wrote just example, recommended write properties or methods in this class
-    title_len: int = ParsedField("title", factory=len)
-    title_upper: str = ParsedField("title", factory=lambda t: t.upper())
+    title_len: int = SoupFind("<title>", factory=len)
+    title_upper: str = SoupFind("<title>", factory=lambda t: t.upper())
 
     quotes: list[Quote] = NestedList(Quote, crop_rule=crop_by_tag_all({"name": "div", "class_": "quote"},
                                                                       features="html.parser"))
