@@ -16,6 +16,17 @@ class ReMatch(BaseField):
                  filter_: Optional[Callable[[str], bool]] = None,
                  factory: Optional[Callable[[str], Any]] = None,
                  ):
+        """ReMatch field. Match the **first** occurrence and transforms according to the given parameters
+
+        :param pattern: str regex or compiled Pattern
+        :param group:  group. Default 1
+        :param flags: pattern flags. Default None
+        :param default: default value, if regex not found a match. Default None
+        :param callback: a callback function rule. Default doing nothing
+        :param filter_: a filter function rule. Default doing nothing
+        :param factory: a factory function rule. Default doing nothing. If this param added,
+        it ignored typing
+        """
         super().__init__(default=default, factory=factory, filter_=filter_)
         if flags:
             self.pattern = re.compile(pattern, flags=flags) if isinstance(pattern, str) else pattern
@@ -49,6 +60,17 @@ class ReMatchList(ReMatch):
                  default: Optional[Any] = None,
                  factory: Optional[Callable[[list[str]], Any]] = None,
                  ):
+        """A ReMatchList field. Match the **all** occurrence and transforms according to the given parameters
+
+        :param pattern: str regex or compiled Pattern
+        :param group:  group. Default 1
+        :param flags: pattern flags. Default None
+        :param default: default value, if regex not found a match. Default None
+        :param callback: a callback function rule. Default doing nothing
+        :param filter_: a filter function rule. Default doing nothing
+        :param factory: a factory function rule. Default doing nothing. If this param added,
+        it ignored typing
+        """
         super().__init__(pattern, group, flags, default=default, factory=factory, filter_=filter_)
         self.callback = callback
 

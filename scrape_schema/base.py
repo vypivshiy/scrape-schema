@@ -152,6 +152,33 @@ class BaseField(ABCField):
 
 
 class BaseSchema(ABCSchema):
+    """The base class of field processing.
+
+
+    Attributes:
+        __MARKUP_PARSERS__: dict[Type, dict[str, Any]] - dict of a markup parsers classes. Default empty dict
+        key - Type (not initialized class) parser. - value - dict of kwargs params
+
+        Example: __MARKUP_PARSERS__ = {BeautifulSoap: {"features": "lxml"}}
+
+
+        __AUTO_TYPING__: bool - usage typing from annotations. Default True
+
+
+        __VALIDATE__: bool - usage validator rules in fields. Default False
+
+
+        __MAX_FAILS_COUNTER__: int - Limit of unsuccessfully parsed fields (checks against the default value) . Default -1
+
+        If the value is negative - this feature is disabled.
+
+        If it is 0 - at the first error it causes an error
+
+        If equal to 1 - with two errors causes an error
+
+        If equal to N - at N errors causes an error
+
+    """
     __MARKUP_PARSERS__: dict[Type[Any], dict[str, Any]] = {}
     __AUTO_TYPING__: bool = True
     __VALIDATE__: bool = False
@@ -173,6 +200,10 @@ class BaseSchema(ABCSchema):
         }
 
     def __init__(self, markup: str):
+        """
+
+        :param markup: any string text
+        """
         logger.info("%s start parse", self.__class__.__name__)
         _init_markups = {
             cls_type: cls_type(markup, **params)
@@ -232,6 +263,7 @@ class BaseSchema(ABCSchema):
         return value
 
     def dict(self) -> dict[str, Any]:
+        """convert schema object to python dict"""
         return {
             k: self._to_dict(v)
             for k, v in self.__dict__.items()

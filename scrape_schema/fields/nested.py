@@ -16,7 +16,15 @@ class Nested(BaseField):
                  crop_rule: Callable[[str], str] = ...,
                  factory: Optional[Callable[[BaseSchema], Any]] = None
                  ):
+        """A "glue" for BaseSchema objects. return one parsed BaseSchema object
+
+        :param schema: BaseSchema type
+        :param default: default value if parse is failed. Default NOne
+        :param crop_rule: crop rule
+        :param factory: factory function
+        """
         super().__init__(factory=factory, default=default)
+
         self.schema = schema
         self.crop_rule = crop_rule
         self.factory = factory
@@ -39,6 +47,13 @@ class NestedList(Nested):
                  crop_rule: Callable[[str], Iterable[str]] = ...,
                  factory: Optional[Callable[[list[BaseSchema]], Any]] = None
                  ):
+        """A "glue" for BaseSchema objects. return list of parsed BaseSchema objects
+
+        :param schema: BaseSchema type
+        :param default: default value if parse is failed. Default NOne
+        :param crop_rule: crop rule
+        :param factory: factory function
+        """
         super().__init__(schema=schema, default=default)
         self.factory = factory
         self.crop_rule = crop_rule

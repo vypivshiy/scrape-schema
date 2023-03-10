@@ -14,6 +14,7 @@ __all__ = [
 
 
 class SLaxSelect(BaseField):
+    """selectolax.parser.HTMLParser (Modest) field"""
     __MARKUP_PARSER__ = HTMLParser
 
     def __init__(self,
@@ -26,6 +27,16 @@ class SLaxSelect(BaseField):
                  filter_: Optional[Callable[[Node], bool]] = None,
                  factory: Optional[Callable[[str], Any]] = None,
                  ):
+        """Get first value by css selector
+
+        :param query: css selector
+        :param strict: Set to True if you want to check if there is strictly only one match in the document
+        :param callback: a callback function, default get_text
+        :param default: default value if Node not founded. Default None
+        :param validator: a validator function. default None
+        :param filter_: a filter function. default None
+        :param factory: a factory function. default None. If this param added, it ignored typing
+        """
         super().__init__(default=default, validator=validator,
                          filter_=filter_, factory=factory)
         self.query = query
@@ -54,6 +65,16 @@ class SLaxSelectList(SLaxSelect):
                  validator: Optional[Callable[[Any], bool]] = None,
                  filter_: Optional[Callable[[Node], bool]] = None,
                  factory: Optional[Callable[[list[str]], Any]] = None):
+        """Get first value by css selector
+
+        :param query: css selector
+        :param strict: Set to True if you want to check if there is strictly only one match in the document
+        :param callback: a callback function, default get_text
+        :param default: default value if Node not founded. Default None
+        :param validator: a validator function. default None
+        :param filter_: a filter function. default None
+        :param factory: a factory function. default None. If this param added, it ignored typing
+        """
         super().__init__(query, strict, callback=callback, default=default, validator=validator, filter_=filter_,
                          factory=factory)
 
