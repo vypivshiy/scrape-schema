@@ -3,7 +3,7 @@ import warnings
 from abc import ABC, abstractmethod
 import copy
 from types import NoneType, GenericAlias, UnionType
-from typing import Type, Any, Optional, Callable, get_type_hints, get_args
+from typing import Type, Any, Optional, Callable, get_type_hints, get_args, Iterable, Sequence
 import logging
 
 from .exceptions import ParseFailAttemptsError, ValidationError
@@ -46,16 +46,22 @@ class ABCField(ABC):
     def _factory(self, value):
         ...
 
+    @abstractmethod
+    def _callback(self, value):
+        ...
+
 
 class BaseField(ABCField):
     __MARKUP_PARSER__: Optional[Type | Callable[[str, ...], Any]] = None
 
     def __init__(self, *,
                  default: Optional[Any] = None,
+                 callback: Optional[Callable[[Any], ...]] = None,
                  validator: Optional[Callable[[Any], bool]] = None,
                  filter_: Optional[Callable[[Any], bool]] = None,
                  factory: Optional[Callable[[Any], Any]] = None,
                  **kwargs):
+        self.callback = callback
         self.default = default
         self.validator = validator
         self.filter_ = filter_
@@ -68,17 +74,25 @@ class BaseField(ABCField):
     def _validate(self, value) -> bool:
         if self.validator:
             logger.debug("Validate `%s` by %s[%s]", value, self.validator.__name__, type(self.validator).__name__)
-        return bool(not self.validator or self.validator(value))
+            return self.validator(value)
+        return True
 
     def _filter(self, value) -> bool:
         if self.filter_:
             logger.debug("Filter `%s` by %s[%s]", value, self.filter_.__name__, type(self.filter_).__name__)
-        return bool(not self.filter_ or self.filter_(value))
+            return self.filter_(value)
+        return True
+
+    def _filter_process(self, values):
+        if isinstance(values, Sequence) and not isinstance(values, str):
+            return list(filter(self._filter, values))
+        return values
 
     def _factory(self, value):
         if self.factory:
             logger.debug("Factory `%s` by %s[%s]", value, self.factory.__name__, type(self.factory).__name__)
-        return self.factory(value) if self.factory else value
+            return self.factory(value)
+        return value
 
     def _raise_validator(self, instance: BaseSchema, name: str, value) -> None:
         if instance.__VALIDATE__ and not self._validate(value):
@@ -87,35 +101,42 @@ class BaseField(ABCField):
                 f"Validate {instance.__class__.__name__}.{name} failing. "
                 f"Value passed: `{value}`")
 
+    def _typing(self, instance: BaseSchema, name: str, value):
+        if instance.__AUTO_TYPING__ and not self.factory and (types_ := self._get_type(instance, name)):
+            # NoneType
+            if value in (None, [], {}, "", 0):
+                return None if type(None) in types_ else types_[0](value)
+            elif isinstance(value, Iterable) and not isinstance(value, str):
+                # get first type TODO write more smart algoritm
+                type_ = types_[0]
+                value = [type_(val) for val in value]
+            else:
+                value = types_[0](value)
+        return value
+
+    def _callback(self, value):
+        if isinstance(value, Sequence) and not isinstance(value, str):
+            value = [self.callback(val) for val in value]
+        else:
+            value = self.callback(value)
+        return value
+
     @staticmethod
-    def _get_type(instance: BaseSchema, name: str) -> Optional[Type]:
-        if type_ := get_type_hints(instance).get(name):
-            logger.debug("Get first type: %s", type_.__name__)
-            if isinstance(type_, NoneType):
-                return None
-            elif isinstance(type_, (GenericAlias, UnionType)):
-                # get first type like list[str]
-                type_ = get_args(type_)[0]
-                logger.debug("Extract type: %s", type_.__name__)
-            elif (optional_type := get_args(type_)) and optional_type:
-                # handle Optional[...] type
-                type_ = optional_type[0]
-                logger.debug("Extract OPTIONAL type: %s", type_.__name__)
-            # ignore if type is dict or list
-            try:
-                return None if issubclass(type_, (dict, list)) else type_
-            except TypeError:
-                logger.warning("Failing get type: %s.%s: %s",
-                               instance.__class__.__name__,
-                               name,
-                               type_.__name__)
-                warnings.warn(
-                    f"Failing extract `{type_}` from {instance.__class__.__name__}.{name}, "
-                    f"return None",
-                    stacklevel=2, category=RuntimeWarning
-                )
-                return None
-        return None
+    def _get_type(instance: BaseSchema, name: str) -> Optional[tuple[Type, ...]]:
+        if not (types_ := get_type_hints(instance).get(name)):
+            return None
+        logger.debug("Get first type: %s", types_.__name__)
+        if isinstance(types_, NoneType):
+            return None
+        elif isinstance(types_, (GenericAlias, UnionType)):
+            types_ = get_args(types_)
+            logger.debug("Extract types: %s", [t.__name__ for t in types_])
+        elif (optional_types := get_args(types_)) and optional_types:
+            types_ = optional_types
+            logger.debug("Extract OPTIONAL type: %s", [t.__name__ for t in types_])
+        if not isinstance(types_, tuple):
+            types_ = (types_, )
+        return types_
 
     def __call__(self, instance: BaseSchema, name: str, markup):
         logger.debug("Parse `%s.%s`: markup[%s]",

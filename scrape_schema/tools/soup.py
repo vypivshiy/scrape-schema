@@ -1,6 +1,6 @@
 """build-in callbacks for soup"""
 
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import Any, Callable, Optional
 
 
 from bs4 import BeautifulSoup, Tag
@@ -18,15 +18,19 @@ __all__ = [
 
 def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag], Any]:
     def wrapper(tag: Tag):
-        return tag.get_text(separator=separator, strip=strip)
+        if isinstance(tag, Tag):
+            return tag.get_text(separator=separator, strip=strip)
+        return tag
     return wrapper
 
 
 def get_tag(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
     def wrapper(tag: Tag):
-        if default == Ellipsis:
-            return tag.get(tag_name)
-        return tag.get(tag_name, default=default)
+        if isinstance(tag, Tag):
+            if default == Ellipsis:
+                return tag.get(tag_name)
+            return tag.get(tag_name, default=default)
+        return tag
     return wrapper
 
 

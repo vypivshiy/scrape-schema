@@ -29,12 +29,11 @@ class ReMatch(BaseField):
             value = match.group(self.group)
         else:
             value = self.default
-        value = list(filter(self._filter, [value]))[0]
-        value = self.callback(value)
-        if self.factory:
-            value = self._factory(value)
-        elif type_ := self._get_type(instance, name):
-            value = type_(value)
+
+        value = self._filter_process(value)
+        value = self._callback(value)
+        value = self._typing(instance, name, value)
+        value = self._factory(value)
         self._raise_validator(instance, name, value)
         return value
 
@@ -45,7 +44,7 @@ class ReMatchList(ReMatch):
                  group: int | str | tuple[str | int, ...] = 1,
                  flags: Optional[int | re.RegexFlag] = None,
                  *,
-                 callback: Callable[[list[str]], Any] = nothing_callback,
+                 callback: Callable[[str], Any] = nothing_callback,
                  filter_: Optional[Callable[[list[str]], bool]] = None,
                  default: Optional[Any] = None,
                  factory: Optional[Callable[[list[str]], Any]] = None,
@@ -54,15 +53,13 @@ class ReMatchList(ReMatch):
         self.callback = callback
 
     def parse(self, instance: BaseSchema, name: str, markup: str):
-        if match := list(self.pattern.finditer(markup)):
-            values = [m.group(self.group) for m in match]
+        if matches := self.pattern.finditer(markup):
+            values = [m.group(self.group) for m in matches]
         else:
             values = self.default
-        values = list(filter(self._filter, values))
-        values = self.callback(values)
-        if self.factory:
-            values = self.factory(values)
-        elif type_ := self._get_type(instance, name):
-            values = [type_(value) for value in values]
+        values = self._filter_process(values)
+        values = self._callback(values)
+        values = self._typing(instance, name, values)
+        values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values

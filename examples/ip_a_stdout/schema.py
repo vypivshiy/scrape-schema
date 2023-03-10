@@ -1,6 +1,9 @@
 from scrape_schema import BaseSchema
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 
+import logging
+logger = logging.getLogger("scrape_schema")
+
 
 class Device(BaseSchema):
     num: int = ReMatch(r"^(\d+):")

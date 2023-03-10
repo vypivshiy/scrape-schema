@@ -1,4 +1,4 @@
-from typing import Optional, Any, Callable, TYPE_CHECKING
+from typing import Optional, Any, Callable, TYPE_CHECKING, Iterable, Sequence
 import re
 
 from bs4 import BeautifulSoup, Tag, ResultSet
@@ -45,17 +45,12 @@ class SoupFind(BaseField):
         return {"name": tag_name, "attrs": attrs}
 
     def parse(self, instance: BaseSchema, name: str, markup):
-        value = markup.find(**self.element)
-        if not value:
-            self._raise_validator(instance, name, self.default)
-            return self.default
-        value = list(filter(self._filter, [value]))[0]
-        value = self.callback(value)
+        value = markup.find(**self.element) or self.default
 
-        if self.factory:
-            value = self._factory(value)
-        elif type_ := self._get_type(instance, name):
-            value = type_(value)
+        value = self._filter_process(value)
+        value = self.callback(value)
+        value = self._typing(instance, name, value)
+        value = self._factory(value)
         self._raise_validator(instance, name, value)
         return value
 
@@ -75,17 +70,13 @@ class SoupFindList(SoupFind):
         self.callback = callback
 
     def parse(self, instance: BaseSchema, name: str, markup: BeautifulSoup) -> ResultSet:
-        values = markup.find_all(**self.element)
-        if not values:
-            self._raise_validator(instance, name, self.default)
-            return self.default
+        values = markup.find_all(**self.element) or self.default
 
-        values = list(filter(self._filter, values))
-        values = list(map(self.callback, values))
-        if self.factory:
-            values = self._factory(values)
-        elif type_ := self._get_type(instance, name):
-            values = [type_(val) for val in values]
+        values = self._filter_process(values)
+        if values != self.default:
+            values = list(map(self.callback, values))
+        values = self._typing(instance, name, values)
+        values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values
 
@@ -110,34 +101,24 @@ class SoupSelect(BaseField):
         self.namespaces = namespaces
 
     def parse(self, instance: BaseSchema, name: str, markup: BeautifulSoup):
-        value = markup.select_one(self.selector, namespaces=self.namespaces)
-        if not value:
-            self._raise_validator(instance, name, self.default)
-            return self.default
-        value = list(filter(self._filter, [value]))[0]
-        value = self.callback(value)
+        value = markup.select_one(self.selector, namespaces=self.namespaces) or self.default
 
-        if self.factory:
-            value = self._factory(value)
-        elif type_ := self._get_type(instance, name):
-            value = type_(value)
+        value = self._filter_process(value)
+        value = self.callback(value)
+        value = self._typing(instance, name, value)
+        value = self._factory(value)
         self._raise_validator(instance, name, value)
         return value
 
 
 class SoupSelectList(SoupSelect):
     def parse(self, instance: BaseSchema, name: str, markup):
-        values = markup.select(self.selector, namespaces=self.namespaces)
-        if not values:
-            self._raise_validator(instance, name, self.default)
-            return self.default
-
-        values = list(filter(self._filter, values))
-        values = list(map(self.callback, values))
-        if self.factory:
-            values = self._factory(values)
-        elif type_ := self._get_type(instance, name):
-            values = [type_(val) for val in values]
+        values = markup.select(self.selector, namespaces=self.namespaces) or self.default
+        values = self._filter_process(values)
+        if values != self.default:
+            values = list(map(self.callback, values))
+        values = self._typing(instance, name, values)
+        values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values
 

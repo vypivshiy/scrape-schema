@@ -7,7 +7,6 @@ import subprocess
 from schema import Device
 
 
-
 if sys.platform == "linux":
     STDOUT = subprocess.Popen(["ip", "a"], stdout=subprocess.PIPE, text=True).stdout.read()
 else:

@@ -35,14 +35,11 @@ class SLaxSelect(BaseField):
     def parse(self, instance: BaseSchema, name: str, markup: HTMLParser):
         value = markup.css_first(self.query, strict=self.strict)
         if not value:
-            self._raise_validator(instance, name, self.default)
-            return self.default
-        value = list(filter(self._filter, [value]))[0]
+            value = self.default
+        value = self._filter_process(value)
         value = self.callback(value)
-        if self.factory:
-            value = self.factory(value)
-        elif type_ := self._get_type(instance, name):
-            value = type_(value)
+        value = self._typing(instance, name, value)
+        value = self._factory(value)
         self._raise_validator(instance, name, self.default)
         return value
 
@@ -63,13 +60,12 @@ class SLaxSelectList(SLaxSelect):
     def parse(self, instance: BaseSchema, name: str, markup: HTMLParser):
         values = markup.css(self.query)
         if not values:
-            self._raise_validator(instance, name, self.default)
-            return self.default
-        values = list(filter(self._filter, values))
-        values = list(map(self.callback, values))
-        if self.factory:
-            values = self.factory(values)
-        elif type_ := self._get_type(instance, name):
-            values = [type_(val) for val in values]
+            values = self.default
+
+        values = self._filter_process(values)
+        if values != self.default:
+            values = list(map(self.callback, values))
+        values = self._typing(instance, name, values)
+        values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values
