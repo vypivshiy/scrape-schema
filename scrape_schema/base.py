@@ -3,8 +3,17 @@ import warnings
 from abc import ABC, abstractmethod
 import copy
 from types import NoneType, GenericAlias, UnionType
-from typing import Type, Any, Optional, Callable, get_type_hints, get_args, Iterable, Sequence, TypeVar, no_type_check, \
-    cast
+from typing import (
+    Type,
+    Any,
+    Optional,
+    Callable,
+    get_type_hints,
+    get_args,
+    Iterable,
+    Sequence,
+    TypeVar,
+)
 
 import logging
 
@@ -13,7 +22,7 @@ from .exceptions import ParseFailAttemptsError, ValidationError
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.WARNING)
 _handler = logging.StreamHandler()
-_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
+_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 _handler.setFormatter(_formatter)
 logger.addHandler(_handler)
 
@@ -43,7 +52,6 @@ class ABCField(ABC):
 
 
 class ABCSchema(ABC):
-
     @classmethod
     @abstractmethod
     def parse(cls, markup):
@@ -58,13 +66,16 @@ class ABCSchema(ABC):
 class BaseField(ABCField):
     __MARKUP_PARSER__: Optional[Type[Any]] = None
 
-    def __init__(self, *,
-                 default: Optional[Any] = None,
-                 callback: Optional[Callable[..., T]] = None,
-                 validator: Optional[Callable[..., bool]] = None,
-                 filter_: Optional[Callable[..., bool]] = None,
-                 factory: Optional[Callable[..., T]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        *,
+        default: Optional[Any] = None,
+        callback: Optional[Callable[..., T]] = None,
+        validator: Optional[Callable[..., bool]] = None,
+        filter_: Optional[Callable[..., bool]] = None,
+        factory: Optional[Callable[..., T]] = None,
+        **kwargs,
+    ):
         self.callback = callback
         self.default = default
         self.validator = validator
@@ -77,13 +88,23 @@ class BaseField(ABCField):
 
     def _validate(self, value) -> bool:
         if self.validator:
-            logger.debug("Validate `%s` by %s[%s]", value, self.validator.__name__, type(self.validator).__name__)
+            logger.debug(
+                "Validate `%s` by %s[%s]",
+                value,
+                self.validator.__name__,
+                type(self.validator).__name__,
+            )
             return self.validator(value)
         return True
 
     def _filter(self, value) -> bool:
         if self.filter_:
-            logger.debug("Filter `%s` by %s[%s]", value, self.filter_.__name__, type(self.filter_).__name__)
+            logger.debug(
+                "Filter `%s` by %s[%s]",
+                value,
+                self.filter_.__name__,
+                type(self.filter_).__name__,
+            )
             return self.filter_(value)
         return True
 
@@ -94,19 +115,34 @@ class BaseField(ABCField):
 
     def _factory(self, value):
         if self.factory:
-            logger.debug("Factory `%s` by %s[%s]", value, self.factory.__name__, type(self.factory).__name__)
+            logger.debug(
+                "Factory `%s` by %s[%s]",
+                value,
+                self.factory.__name__,
+                type(self.factory).__name__,
+            )
             return self.factory(value)
         return value
 
     def _raise_validator(self, instance: BaseSchema, name: str, value) -> None:
         if instance.__VALIDATE__ and not self._validate(value):
-            logger.error("Opps! Failing validate %s.%s=%s", instance.__class__.__name__, name, value)
+            logger.error(
+                "Opps! Failing validate %s.%s=%s",
+                instance.__class__.__name__,
+                name,
+                value,
+            )
             raise ValidationError(
                 f"Validate {instance.__class__.__name__}.{name} failing. "
-                f"Value passed: `{value}`")
+                f"Value passed: `{value}`"
+            )
 
     def _typing(self, instance: BaseSchema, name: str, value):
-        if instance.__AUTO_TYPING__ and not self.factory and (types_ := self._get_type(instance, name)):
+        if (
+            instance.__AUTO_TYPING__
+            and not self.factory
+            and (types_ := self._get_type(instance, name))
+        ):
             # NoneType
             if value in (None, [], {}, "", 0):
                 return None if type(None) in types_ else types_[0](value)
@@ -139,16 +175,24 @@ class BaseField(ABCField):
             types_ = optional_types
             logger.debug("Extract OPTIONAL type: %s", [t.__name__ for t in types_])
         if not isinstance(types_, tuple):
-            types_ = (types_, )
+            types_ = (types_,)
         return types_
 
     def __call__(self, instance: BaseSchema, name: str, markup):
-        logger.debug("Parse `%s.%s`: markup[%s]",
-                     instance.__class__.__name__,
-                     name,
-                     markup.__class__.__name__)
+        logger.debug(
+            "Parse `%s.%s`: markup[%s]",
+            instance.__class__.__name__,
+            name,
+            markup.__class__.__name__,
+        )
         value = self.parse(instance, name, markup)
-        logger.debug("`%s.%s: %s = %s`", instance.__class__.__name__, name, type(value).__name__, str(value))
+        logger.debug(
+            "`%s.%s: %s = %s`",
+            instance.__class__.__name__,
+            name,
+            type(value).__name__,
+            str(value),
+        )
         return value
 
     def __deepcopy__(self, _):
@@ -160,7 +204,8 @@ class BaseSchema(ABCSchema):
 
 
     Attributes:
-        __MARKUP_PARSERS__: dict[Type, dict[str, Any]] - dict of a markup parsers classes. Default empty dict
+        __MARKUP_PARSERS__: dict[Type, dict[str, Any]]
+        - dict of a markup parsers classes. Default empty dict
         key - Type (not initialized class) parser. - value - dict of kwargs params
 
         Example: __MARKUP_PARSERS__ = {BeautifulSoap: {"features": "lxml"}}
@@ -172,7 +217,8 @@ class BaseSchema(ABCSchema):
         __VALIDATE__: bool - usage validator rules in fields. Default False
 
 
-        __MAX_FAILS_COUNTER__: int - Limit of unsuccessfully parsed fields (checks against the default value) . Default -1
+        __MAX_FAILS_COUNTER__: int - Limit of unsuccessfully parsed fields
+        (checks against the default value) . Default -1
 
         If the value is negative - this feature is disabled.
 
@@ -183,6 +229,7 @@ class BaseSchema(ABCSchema):
         If equal to N - at N errors causes an error
 
     """
+
     __MARKUP_PARSERS__: dict[Type[Any], dict[str, Any]] = {}
     __AUTO_TYPING__: bool = True
     __VALIDATE__: bool = False
@@ -199,7 +246,8 @@ class BaseSchema(ABCSchema):
     @classmethod
     def _get_fields(cls) -> dict[str, BaseField]:
         return {
-            name: field for name, field in cls.__dict__.items()
+            name: field
+            for name, field in cls.__dict__.items()
             if not cls._is_dunder(name) and cls._is_field(field)
         }
 
@@ -223,24 +271,46 @@ class BaseSchema(ABCSchema):
                 value = field(self, name, parser)
             else:
                 try:
-                    raise TypeError(f"{field.__MARKUP_PARSER__.__name__} not found in "
-                                    f"{self.__class__.__name__}.__MARKUP_PARSERS__.")
+                    raise TypeError(
+                        f"{field.__MARKUP_PARSER__.__name__} not found in "
+                        f"{self.__class__.__name__}.__MARKUP_PARSERS__."
+                    )
                 except TypeError as e:
                     logger.exception(e)
                     raise e
-            logger.info("%s.%s[%s] = %s", self.__class__.__name__, name, field.__class__.__name__, value)
+            logger.info(
+                "%s.%s[%s] = %s",
+                self.__class__.__name__,
+                name,
+                field.__class__.__name__,
+                value,
+            )
             # calc failed parsed rows
-            if self.__MAX_FAILS_COUNTER__ >= 0 and hasattr(field, "default") and value == field.default:
+            if (
+                self.__MAX_FAILS_COUNTER__ >= 0
+                and hasattr(field, "default")
+                and value == field.default
+            ):
                 _fails += 1
-                logger.warning("[%i] Failed parse `%s.%s` by `%s`, set `%s`",
-                               _fails, self.__class__.__name__, name, field.__class__.__name__, value)
-                warnings.warn(f"[{_fails}] Failed parse `{self.__class__.__name__}.{name}` "
-                              f"by {field.__class__.__name__} field, set `{value}`.",
-                              stacklevel=2,
-                              category=RuntimeWarning)
+                logger.warning(
+                    "[%i] Failed parse `%s.%s` by `%s`, set `%s`",
+                    _fails,
+                    self.__class__.__name__,
+                    name,
+                    field.__class__.__name__,
+                    value,
+                )
+                warnings.warn(
+                    f"[{_fails}] Failed parse `{self.__class__.__name__}.{name}` "
+                    f"by {field.__class__.__name__} field, set `{value}`.",
+                    stacklevel=2,
+                    category=RuntimeWarning,
+                )
                 if _fails > self.__MAX_FAILS_COUNTER__:
-                    raise ParseFailAttemptsError(f"{_fails} of {len(self.__fields__.keys())} "
-                                                 "field failed parse.")
+                    raise ParseFailAttemptsError(
+                        f"{_fails} of {len(self.__fields__.keys())} "
+                        "field failed parse."
+                    )
             setattr(self, name, value)
         logger.info("%s done! Fields fails: %i", self.__class__.__name__, _fails)
 
@@ -280,13 +350,13 @@ class BaseSchema(ABCSchema):
     def __repr__(self):
         rpr = f"{self.__class__.__name__}("
         rpr += (
-                ", ".join(
-                    [
-                        f"{k}<{type(v).__name__}>={v}"
-                        for k, v in self.__dict__.items()
-                        if not self._is_dunder(k)
-                    ]
-                )
-                + ")"
+            ", ".join(
+                [
+                    f"{k}<{type(v).__name__}>={v}"
+                    for k, v in self.__dict__.items()
+                    if not self._is_dunder(k)
+                ]
+            )
+            + ")"
         )
         return rpr

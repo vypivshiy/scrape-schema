@@ -15,7 +15,7 @@ __all__ = [
     "crop_by_tag_all",
     "crop_by_selector",
     "crop_by_selector_all",
-    "element_to_dict"
+    "element_to_dict",
 ]
 
 
@@ -67,8 +67,9 @@ def get_tag(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
     return wrapper
 
 
-def crop_by_tag_all(element: str | dict[str, Any],
-                    features: str = "html.parser", **soup_config) -> Callable[[str], list[str]]:
+def crop_by_tag_all(
+    element: str | dict[str, Any], features: str = "html.parser", **soup_config
+) -> Callable[[str], list[str]]:
     """crop markup document to string chunks by soup element
 
     :param element: html element or any dict of kwargs for soup.find_all method
@@ -85,7 +86,9 @@ def crop_by_tag_all(element: str | dict[str, Any],
     return wrapper
 
 
-def crop_by_tag(element: str | dict[str, Any], features: str = "html.parser", **soup_config) -> Callable[[str], str]:
+def crop_by_tag(
+    element: str | dict[str, Any], features: str = "html.parser", **soup_config
+) -> Callable[[str], str]:
     """crop markup document to string chunk by soup element
 
     :param element: html element or any dict of kwargs for soup.find method
@@ -102,15 +105,18 @@ def crop_by_tag(element: str | dict[str, Any], features: str = "html.parser", **
     return wrapper
 
 
-def crop_by_selector(selector: str,
-                     namespaces: Optional[dict[str, Any]] = None,
-                     features: str = "html.parser",
-                     **soup_config) -> Callable[[str], str]:
+def crop_by_selector(
+    selector: str,
+    namespaces: Optional[dict[str, Any]] = None,
+    features: str = "html.parser",
+    **soup_config,
+) -> Callable[[str], str]:
     """crop markup document to string chunk by soup selector
 
     :param selector: css selector for soup.select_one method
-    :param namespaces: A dictionary mapping namespace prefixes used in the CSS selector to namespace URIs.
-    By default, Beautiful Soup will use the prefixes it encountered while parsing the document.
+    :param namespaces: A dictionary mapping namespace prefixes used
+    in the CSS selector to namespace URIs. By default,
+    Beautiful Soup will use the prefixes it encountered while parsing the document.
     :param features: BeautifulSoup parser. default `html.parser`
     :param soup_config: any BeautifulSoup kwargs config
     """
@@ -122,15 +128,18 @@ def crop_by_selector(selector: str,
     return wrapper
 
 
-def crop_by_selector_all(selector: str,
-                         namespaces: Optional[dict[str, Any]] = None,
-                         features: str = "html.parser",
-                         **soup_config) -> Callable[[str], list[str]]:
+def crop_by_selector_all(
+    selector: str,
+    namespaces: Optional[dict[str, Any]] = None,
+    features: str = "html.parser",
+    **soup_config,
+) -> Callable[[str], list[str]]:
     """crop markup document to string chunks by soup selector
 
     :param selector: css selector for soup.select method
-    :param namespaces: A dictionary mapping namespace prefixes used in the CSS selector to namespace URIs.
-    By default, Beautiful Soup will use the prefixes it encountered while parsing the document.
+    :param namespaces: A dictionary mapping namespace prefixes used
+    in the CSS selector to namespace URIs. By default,
+    Beautiful Soup will use the prefixes it encountered while parsing the document.
     :param features: BeautifulSoup parser. default `html.parser`
     :param soup_config: any BeautifulSoup kwargs config
     """

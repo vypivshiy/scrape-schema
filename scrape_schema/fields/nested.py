@@ -1,21 +1,18 @@
-from typing import Optional, Any, Callable, Type, Iterable, Any
+from typing import Optional, Callable, Type, Iterable, Any
 from ..base import BaseField, BaseSchema
 
-__all__ = [
-    "Nested",
-    "NestedList"
-]
+__all__ = ["Nested", "NestedList"]
 
 
 class Nested(BaseField):
-
-    def __init__(self,
-                 schema: Type[BaseSchema],
-                 *,
-                 crop_rule: Callable[[str], str],
-                 default: Optional[Any] = None,
-                 factory: Optional[Callable[[BaseSchema], Any]] = None
-                 ):
+    def __init__(
+        self,
+        schema: Type[BaseSchema],
+        *,
+        crop_rule: Callable[[str], str],
+        default: Optional[Any] = None,
+        factory: Optional[Callable[[BaseSchema], Any]] = None,
+    ):
         """A "glue" for BaseSchema objects. return one parsed BaseSchema object
 
         :param schema: BaseSchema type
@@ -40,13 +37,14 @@ class Nested(BaseField):
 
 
 class NestedList(BaseField):
-    def __init__(self,
-                 schema: Type[BaseSchema],
-                 *,
-                 crop_rule: Callable[[str], Iterable[str]],
-                 default: Optional[Any] = None,
-                 factory: Optional[Callable[[list[BaseSchema]], Any]] = None
-                 ):
+    def __init__(
+        self,
+        schema: Type[BaseSchema],
+        *,
+        crop_rule: Callable[[str], Iterable[str]],
+        default: Optional[Any] = None,
+        factory: Optional[Callable[[list[BaseSchema]], Any]] = None,
+    ):
         """A "glue" for BaseSchema objects. return list of parsed BaseSchema objects
 
         :param schema: BaseSchema type

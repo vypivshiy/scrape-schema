@@ -1,4 +1,4 @@
-from typing import Pattern, Optional, Any, Callable, TypeVar
+from typing import Pattern, Optional, Any, Callable
 import re
 
 from ..base import BaseField, BaseSchema
@@ -6,17 +6,19 @@ from ..tools.other import nothing_callback
 
 
 class _ReMatch(BaseField):
-    def __init__(self,
-                 pattern: Pattern | str,
-                 group: int | str = 1,
-                 flags: Optional[int | re.RegexFlag] = None,
-                 *,
-                 default: Optional[Any] = None,
-                 callback: Callable[[str], Any] = nothing_callback,
-                 filter_: Optional[Callable[[str], bool]] = None,
-                 factory: Optional[Callable[[str], Any]] = None,
-                 ):
-        """ReMatch field. Match the **first** occurrence and transforms according to the given parameters
+    def __init__(
+        self,
+        pattern: Pattern | str,
+        group: int | str = 1,
+        flags: Optional[int | re.RegexFlag] = None,
+        *,
+        default: Optional[Any] = None,
+        callback: Callable[[str], Any] = nothing_callback,
+        filter_: Optional[Callable[[str], bool]] = None,
+        factory: Optional[Callable[[str], Any]] = None,
+    ):
+        """ReMatch field. Match the **first** occurrence and transforms
+        according to the given parameters
 
         :param pattern: str regex or compiled Pattern
         :param group:  group. Default 1
@@ -29,7 +31,11 @@ class _ReMatch(BaseField):
         """
         super().__init__(default=default, factory=factory, filter_=filter_)
         if flags:
-            self.pattern = re.compile(pattern, flags=flags) if isinstance(pattern, str) else pattern
+            self.pattern = (
+                re.compile(pattern, flags=flags)
+                if isinstance(pattern, str)
+                else pattern
+            )
         else:
             self.pattern = re.compile(pattern) if isinstance(pattern, str) else pattern
         self.group = group
@@ -50,17 +56,19 @@ class _ReMatch(BaseField):
 
 
 class _ReMatchList(_ReMatch):
-    def __init__(self,
-                 pattern: Pattern | str,
-                 group: int | str = 1,
-                 flags: Optional[int | re.RegexFlag] = None,
-                 *,
-                 callback: Callable[[str], Any] = nothing_callback,
-                 filter_: Optional[Callable[[list[str]], bool]] = None,
-                 default: Optional[list[Any]] = None,
-                 factory: Optional[Callable[[list[str]], Any]] = None,
-                 ):
-        """A ReMatchList field. Match the **all** occurrence and transforms according to the given parameters
+    def __init__(
+        self,
+        pattern: Pattern | str,
+        group: int | str = 1,
+        flags: Optional[int | re.RegexFlag] = None,
+        *,
+        callback: Callable[[str], Any] = nothing_callback,
+        filter_: Optional[Callable[[list[str]], bool]] = None,
+        default: Optional[list[Any]] = None,
+        factory: Optional[Callable[[list[str]], Any]] = None,
+    ):
+        """A ReMatchList field. Match the **all** occurrence and
+        transforms according to the given parameters
 
         :param pattern: str regex or compiled Pattern
         :param group:  group. Default 1
