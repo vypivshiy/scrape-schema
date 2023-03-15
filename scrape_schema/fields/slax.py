@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 
-class SLaxSelect(BaseField):
+class _SLaxSelect(BaseField):
     """selectolax.parser.HTMLParser (Modest) field"""
     __MARKUP_PARSER__ = HTMLParser
 
@@ -48,20 +48,20 @@ class SLaxSelect(BaseField):
         if not value:
             value = self.default
         value = self._filter_process(value)
-        value = self.callback(value)
+        value = self._callback(value)
         value = self._typing(instance, name, value)
         value = self._factory(value)
         self._raise_validator(instance, name, self.default)
         return value
 
 
-class SLaxSelectList(SLaxSelect):
+class _SLaxSelectList(_SLaxSelect):
     def __init__(self,
                  query: str,
                  strict: bool = False,
                  *,
                  callback: Callable[[Node], Any] = get_text(),
-                 default: Optional[Any] = None,
+                 default: Optional[list[Any]] = None,
                  validator: Optional[Callable[[Any], bool]] = None,
                  filter_: Optional[Callable[[Node], bool]] = None,
                  factory: Optional[Callable[[list[str]], Any]] = None):
@@ -75,8 +75,10 @@ class SLaxSelectList(SLaxSelect):
         :param filter_: a filter function. default None
         :param factory: a factory function. default None. If this param added, it ignored typing
         """
-        super().__init__(query, strict, callback=callback, default=default, validator=validator, filter_=filter_,
-                         factory=factory)
+        super().__init__(query, strict, validator=validator, filter_=filter_)
+        self.default = default if isinstance(default, list) else []
+        self.callback = callback
+        self.factory = factory
 
     def parse(self, instance: BaseSchema, name: str, markup: HTMLParser):
         values = markup.css(self.query)
@@ -85,8 +87,13 @@ class SLaxSelectList(SLaxSelect):
 
         values = self._filter_process(values)
         if values != self.default:
-            values = list(map(self.callback, values))
+            values = list(map(self._callback, values))
         values = self._typing(instance, name, values)
         values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values
+
+
+# dummy avoid mypy type[assignment] errors
+SLaxSelect: Any = _SLaxSelect
+SLaxSelectList: Any = _SLaxSelectList

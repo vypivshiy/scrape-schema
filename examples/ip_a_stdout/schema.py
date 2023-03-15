@@ -1,5 +1,6 @@
 from scrape_schema import BaseSchema
 from scrape_schema.fields.regex import ReMatch, ReMatchList
+from typing import Callable
 
 
 class Device(BaseSchema):

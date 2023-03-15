@@ -3,7 +3,9 @@ import warnings
 from abc import ABC, abstractmethod
 import copy
 from types import NoneType, GenericAlias, UnionType
-from typing import Type, Any, Optional, Callable, get_type_hints, get_args, Iterable, Sequence
+from typing import Type, Any, Optional, Callable, get_type_hints, get_args, Iterable, Sequence, TypeVar, no_type_check, \
+    cast
+
 import logging
 
 from .exceptions import ParseFailAttemptsError, ValidationError
@@ -15,18 +17,7 @@ _formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 _handler.setFormatter(_formatter)
 logger.addHandler(_handler)
 
-
-class ABCSchema(ABC):
-
-    @classmethod
-    @abstractmethod
-    def parse(cls, markup):
-        ...
-
-    @classmethod
-    @abstractmethod
-    def parse_many(cls, markups):
-        ...
+T = TypeVar("T")
 
 
 class ABCField(ABC):
@@ -51,15 +42,28 @@ class ABCField(ABC):
         ...
 
 
+class ABCSchema(ABC):
+
+    @classmethod
+    @abstractmethod
+    def parse(cls, markup):
+        ...
+
+    @classmethod
+    @abstractmethod
+    def parse_many(cls, markups):
+        ...
+
+
 class BaseField(ABCField):
-    __MARKUP_PARSER__: Optional[Type | Callable[[str, ...], Any]] = None
+    __MARKUP_PARSER__: Optional[Type[Any]] = None
 
     def __init__(self, *,
                  default: Optional[Any] = None,
-                 callback: Optional[Callable[[Any], ...]] = None,
-                 validator: Optional[Callable[[Any], bool]] = None,
-                 filter_: Optional[Callable[[Any], bool]] = None,
-                 factory: Optional[Callable[[Any], Any]] = None,
+                 callback: Optional[Callable[..., T]] = None,
+                 validator: Optional[Callable[..., bool]] = None,
+                 filter_: Optional[Callable[..., bool]] = None,
+                 factory: Optional[Callable[..., T]] = None,
                  **kwargs):
         self.callback = callback
         self.default = default

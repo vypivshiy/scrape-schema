@@ -1,14 +1,14 @@
-from typing import Pattern, Optional, Any, Callable
+from typing import Pattern, Optional, Any, Callable, TypeVar
 import re
 
 from ..base import BaseField, BaseSchema
 from ..tools.other import nothing_callback
 
 
-class ReMatch(BaseField):
+class _ReMatch(BaseField):
     def __init__(self,
                  pattern: Pattern | str,
-                 group: int | str | tuple[str | int, ...] = 1,
+                 group: int | str = 1,
                  flags: Optional[int | re.RegexFlag] = None,
                  *,
                  default: Optional[Any] = None,
@@ -49,15 +49,15 @@ class ReMatch(BaseField):
         return value
 
 
-class ReMatchList(ReMatch):
+class _ReMatchList(_ReMatch):
     def __init__(self,
                  pattern: Pattern | str,
-                 group: int | str | tuple[str | int, ...] = 1,
+                 group: int | str = 1,
                  flags: Optional[int | re.RegexFlag] = None,
                  *,
                  callback: Callable[[str], Any] = nothing_callback,
                  filter_: Optional[Callable[[list[str]], bool]] = None,
-                 default: Optional[Any] = None,
+                 default: Optional[list[Any]] = None,
                  factory: Optional[Callable[[list[str]], Any]] = None,
                  ):
         """A ReMatchList field. Match the **all** occurrence and transforms according to the given parameters
@@ -71,17 +71,25 @@ class ReMatchList(ReMatch):
         :param factory: a factory function rule. Default doing nothing. If this param added,
         it ignored typing
         """
-        super().__init__(pattern, group, flags, default=default, factory=factory, filter_=filter_)
+        super().__init__(pattern, group, flags)
+        self.default = default if isinstance(default, list) else []
+        self.factory = factory
+        self.filter_ = filter_
         self.callback = callback
 
     def parse(self, instance: BaseSchema, name: str, markup: str):
         if matches := self.pattern.finditer(markup):
             values = [m.group(self.group) for m in matches]
         else:
-            values = self.default
+            values = self.default  # type: ignore[assignment]
         values = self._filter_process(values)
         values = self._callback(values)
         values = self._typing(instance, name, values)
         values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values
+
+
+# dummy avoid mypy type[assignment] errors
+ReMatch: Any = _ReMatch
+ReMatchList: Any = _ReMatchList

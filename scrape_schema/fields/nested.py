@@ -1,5 +1,4 @@
-from typing import Optional, Any, Callable, Type, Iterable
-
+from typing import Optional, Any, Callable, Type, Iterable, Any
 from ..base import BaseField, BaseSchema
 
 __all__ = [
@@ -9,11 +8,12 @@ __all__ = [
 
 
 class Nested(BaseField):
+
     def __init__(self,
                  schema: Type[BaseSchema],
                  *,
+                 crop_rule: Callable[[str], str],
                  default: Optional[Any] = None,
-                 crop_rule: Callable[[str], str] = ...,
                  factory: Optional[Callable[[BaseSchema], Any]] = None
                  ):
         """A "glue" for BaseSchema objects. return one parsed BaseSchema object
@@ -39,12 +39,12 @@ class Nested(BaseField):
             return self.default
 
 
-class NestedList(Nested):
+class NestedList(BaseField):
     def __init__(self,
                  schema: Type[BaseSchema],
                  *,
+                 crop_rule: Callable[[str], Iterable[str]],
                  default: Optional[Any] = None,
-                 crop_rule: Callable[[str], Iterable[str]] = ...,
                  factory: Optional[Callable[[list[BaseSchema]], Any]] = None
                  ):
         """A "glue" for BaseSchema objects. return list of parsed BaseSchema objects
@@ -54,7 +54,8 @@ class NestedList(Nested):
         :param crop_rule: crop rule
         :param factory: factory function
         """
-        super().__init__(schema=schema, default=default)
+        super().__init__(default=default)
+        self.schema = schema
         self.factory = factory
         self.crop_rule = crop_rule
 

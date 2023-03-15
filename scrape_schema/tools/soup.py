@@ -3,7 +3,6 @@ import re
 
 from typing import Any, Callable, Optional
 
-
 from bs4 import BeautifulSoup, Tag
 
 RE_TAG_NAME = re.compile(r"<(\w+)")
@@ -27,7 +26,9 @@ def element_to_dict(element: str) -> dict[str, str | dict]:
         <p> -> {"name": "p", "attrs":{}}
         <a id="1", class="thing"> -> {"name": "a", "attrs": {"id": "1", "class": "thing"}}
     """
-    tag_name = RE_TAG_NAME.search(element).group(1)
+    if not (match := RE_TAG_NAME.search(element)):
+        raise TypeError(f"Element `{element}` is not HTML tag")
+    tag_name = match.group(1)
     attrs = dict(RE_TAG_ATTRS.findall(element))
     return {"name": tag_name, "attrs": attrs}
 
@@ -39,10 +40,12 @@ def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag], Any]:
     :param strip: strip flag. default False
     :return:
     """
+
     def wrapper(tag: Tag):
         if isinstance(tag, Tag):
             return tag.get_text(separator=separator, strip=strip)
         return tag
+
     return wrapper
 
 
@@ -53,12 +56,14 @@ def get_tag(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
     :param default: default value, if tag not founded
     :return:
     """
+
     def wrapper(tag: Tag):
         if isinstance(tag, Tag):
             if default == Ellipsis:
                 return tag.get(tag_name)
             return tag.get(tag_name, default=default)
         return tag
+
     return wrapper
 
 
@@ -76,6 +81,7 @@ def crop_by_tag_all(element: str | dict[str, Any],
     def wrapper(markup: str) -> list[str]:
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return [str(tag) for tag in soup.find_all(**element)]
+
     return wrapper
 
 
@@ -92,6 +98,7 @@ def crop_by_tag(element: str | dict[str, Any], features: str = "html.parser", **
     def wrapper(markup: str) -> str:
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return str(soup.find_all(**element))
+
     return wrapper
 
 
@@ -107,9 +114,11 @@ def crop_by_selector(selector: str,
     :param features: BeautifulSoup parser. default `html.parser`
     :param soup_config: any BeautifulSoup kwargs config
     """
+
     def wrapper(markup: str) -> str:
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return str(soup.select_one(selector, namespaces))
+
     return wrapper
 
 
@@ -125,7 +134,9 @@ def crop_by_selector_all(selector: str,
     :param features: BeautifulSoup parser. default `html.parser`
     :param soup_config: any BeautifulSoup kwargs config
     """
+
     def wrapper(markup: str) -> list[str]:
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return [str(tag) for tag in soup.select(selector, namespaces)]
+
     return wrapper

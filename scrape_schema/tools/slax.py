@@ -10,8 +10,8 @@ def crop_by_slax(query: str, **slax_config):
     :param slax_config: any selectolax.parser.HTMLParser kwargs
     """
     def wrapper(markup: str) -> str:
-        markup = HTMLParser(markup, **slax_config)
-        return markup.css_first(query).html
+        parser = HTMLParser(markup, **slax_config)
+        return parser.css_first(query).html
 
     return wrapper
 
@@ -23,8 +23,8 @@ def crop_by_slax_all(query: str, **slax_config):
     :param slax_config: any selectolax.parser.HTMLParser kwargs
     """
     def wrapper(markup: str) -> list[str]:
-        markup = HTMLParser(markup, **slax_config)
-        return [m.html for m in markup.css(query)]
+        parser = HTMLParser(markup, **slax_config)
+        return [m.html for m in parser.css(query)]
 
     return wrapper
 
@@ -35,10 +35,10 @@ def get_tag(name: str, default: Optional[Any] = None):
     :param name: tag name
     :param default: default value, if tag is not founded. default None
     """
-    def wrapper(node: Node) -> str:
+    def wrapper(node: Node | Any) -> str:
         if isinstance(node, Node):
             return node.attrs.get(name, default=default)
-        return node  # type: ignore
+        return node
 
     return wrapper
 

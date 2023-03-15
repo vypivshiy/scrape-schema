@@ -18,7 +18,7 @@ RE_TAG_NAME = re.compile(r"<(\w+)")
 RE_TAG_ATTRS = re.compile(r'(?P<name>[\w_\-:.]+)="(?P<value>[\w_\-:.]+)"')
 
 
-class SoupFind(BaseField):
+class _SoupFind(BaseField):
     __MARKUP_PARSER__ = BeautifulSoup
 
     def __init__(self,
@@ -51,14 +51,14 @@ class SoupFind(BaseField):
         value = markup.find(**self.element) or self.default
 
         value = self._filter_process(value)
-        value = self.callback(value)
+        value = self._callback(value)
         value = self._typing(instance, name, value)
         value = self._factory(value)
         self._raise_validator(instance, name, value)
         return value
 
 
-class SoupFindList(SoupFind):
+class _SoupFindList(_SoupFind):
     def __init__(self,
                  element: dict[str, Any] | str,
                  *,
@@ -86,14 +86,14 @@ class SoupFindList(SoupFind):
 
         values = self._filter_process(values)
         if values != self.default:
-            values = list(map(self.callback, values))
+            values = list(map(self._callback, values))
         values = self._typing(instance, name, values)
         values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values
 
 
-class SoupSelect(BaseField):
+class _SoupSelect(BaseField):
     __MARKUP_PARSER__ = BeautifulSoup
 
     def __init__(self,
@@ -127,14 +127,14 @@ class SoupSelect(BaseField):
         value = markup.select_one(self.selector, namespaces=self.namespaces) or self.default
 
         value = self._filter_process(value)
-        value = self.callback(value)
+        value = self._callback(value)
         value = self._typing(instance, name, value)
         value = self._factory(value)
         self._raise_validator(instance, name, value)
         return value
 
 
-class SoupSelectList(SoupSelect):
+class _SoupSelectList(_SoupSelect):
 
     def __init__(self,
                  selector: str,
@@ -162,9 +162,15 @@ class SoupSelectList(SoupSelect):
         values = markup.select(self.selector, namespaces=self.namespaces) or self.default
         values = self._filter_process(values)
         if values != self.default:
-            values = list(map(self.callback, values))
+            values = list(map(self._callback, values))
         values = self._typing(instance, name, values)
         values = self._factory(values)
         self._raise_validator(instance, name, values)
         return values
 
+
+# dummy avoid mypy type[assignment] errors
+SoupFind: Any = _SoupFind
+SoupFindList: Any = _SoupFindList
+SoupSelect: Any = _SoupSelect
+SoupSelectList: Any = _SoupSelectList
