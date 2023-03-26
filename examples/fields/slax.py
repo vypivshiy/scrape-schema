@@ -1,9 +1,11 @@
 import pprint
+from typing import Annotated
 
 from selectolax.parser import HTMLParser
-from scrape_schema import BaseSchema
-from scrape_schema.fields.slax import SLaxSelect, SLaxSelectList
-from scrape_schema.tools.slax import get_tag, get_text
+from scrape_schema import BaseSchema, MetaSchema
+
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
+from scrape_schema.callbacks.slax import get_tag, get_text
 
 HTML = """
 <!DOCTYPE html>
@@ -64,32 +66,36 @@ HTML = """
 
 class Schema(BaseSchema):
     # add parser to config
-    __MARKUP_PARSERS__ = {HTMLParser: {}}
+    class Meta(MetaSchema):
+        parsers_config = {HTMLParser: {}}
 
-    title = SLaxSelect("head > title")
-    # build-in callback for extract tag
-    lang = SLaxSelect("html", callback=get_tag("lang"))
+    title = SlaxSelect("head > title")
+    # build-in callback for get attribute
+    lang = SlaxSelect("html", callback=get_tag("lang"))
 
-    body_list_content: list[str] = SLaxSelectList("body > p")
-    list_int: list[int] = SLaxSelectList("body > p.body-int")
+    body_list_content: Annotated[list[str], SlaxSelectList("body > p")]
+    list_int: Annotated[list[int], SlaxSelectList("body > p.body-int")]
 
-    has_spam_tag: bool = SLaxSelect("body > spam.egg")
-    has_a_tag: bool = SLaxSelect("body > a")
-    body_list_float: list[float] = SLaxSelectList("a")
+    has_spam_tag: Annotated[bool, SlaxSelect("body > spam.egg")]
+    has_a_tag: Annotated[bool, SlaxSelect("body > a")]
+    body_list_float: Annotated[list[float], SlaxSelectList("a")]
     # filters, factory features
-    body_list_int_filter: list[int] = SLaxSelectList(
-        "p", filter_=lambda node: node.text(deep=False).isdigit(), callback=lambda node: int(node.text()))
+    body_list_int_filter: Annotated[list[int], SlaxSelectList("p",
+                                                              filter_=lambda node: node.text(deep=False).isdigit(),
+                                                              callback=lambda node: int(node.text()))]
 
-    body_spam_list: list[str] = SLaxSelectList(
-        "p", filter_=lambda node: not node.text(deep=False).startswith("spam"))
-    list_digit_less_100: list[int] = SLaxSelectList(
-        "a", filter_=lambda node: int(node.text(deep=False)) < 100
-    )
-    list_digit_bigger_100: list[int] = SLaxSelectList(
-        "a", filter_=lambda node: int(node.text(deep=False)) > 100
-    )
-    max_digit: int = SLaxSelectList("a", callback=lambda node: int(node.text()), factory=max)
-    min_digit: int = SLaxSelectList("a", callback=lambda node: int(node.text()), factory=min)
+    body_spam_list: Annotated[list[str], SlaxSelectList("p",
+                                                        filter_=lambda node: not node.text(deep=False).startswith("spam"))]
+    list_digit_less_100: Annotated[list[int], SlaxSelectList("a",
+                                                             filter_=lambda node: int(node.text(deep=False)) < 100)]
+    list_digit_bigger_100: Annotated[list[int], SlaxSelectList("a",
+                                                               filter_=lambda node: int(node.text(deep=False)) > 100)]
+    max_digit: Annotated[int, SlaxSelectList("a",
+                                             callback=lambda node: int(node.text()),
+                                             factory=max)]
+    min_digit: Annotated[int, SlaxSelectList("a",
+                                             callback=lambda node: int(node.text()),
+                                             factory=min)]
 
 
 if __name__ == "__main__":

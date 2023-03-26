@@ -1,14 +1,15 @@
 # required requests or any http lib
+from typing import Annotated
 from collections import Counter
 import json
 
 import requests
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.tools.soup import crop_by_tag_all, get_tag
+from scrape_schema.callbacks.soup import crop_by_tag_all, get_tag
 
 
 def top_10(lst: list[str]) -> list[str]:
@@ -18,32 +19,34 @@ def top_10(lst: list[str]) -> list[str]:
 
 class Quote(BaseSchema):
     # <div class="quote">
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
+    class Meta(MetaSchema):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    text: str = SoupFind('<span class="text">')
-    author: str = SoupFind('<small class="author">')
-    about: str = SoupFind(
-        {"name": "a", "string": "(about)"}, callback=get_tag("href")
-    )
-    tags: list[str] = SoupFindList('<a class="tag">')
+    text: Annotated[str, SoupFind('<span class="text">')]
+    author: Annotated[str, SoupFind('<small class="author">')]
+    about: Annotated[str, SoupFind(
+        {"name": "a", "string": "(about)"}, callback=get_tag("href"))]
+    tags: Annotated[list[str], SoupFindList('<a class="tag">')]
 
 
 class QuotePage(BaseSchema):
     # https://quotes.toscrape.com/page/{} document
     # set usage parsers backends
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
-    title: str = SoupSelect('head > title')
-    # wrote just example, recommended write properties or methods in this class
-    title_len: int = SoupFind("<title>", factory=len)
-    title_upper: str = SoupFind("<title>", factory=lambda t: t.upper())
+    class Meta(MetaSchema):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    quotes: list[Quote] = NestedList(Quote, crop_rule=crop_by_tag_all({"name": "div", "class_": "quote"},
-                                                                      features="html.parser"))
-    top_10_tags: list[str] = SoupFindList('<a class="tag">',
-                                          factory=top_10)
-    top_tags_5_len: list[str] = SoupFindList('<a class="tag">',
-                                             filter_=lambda el: len(el.get_text()) <= 5,
-                                             factory=top_10)
+    title: Annotated[str, SoupSelect('head > title')]
+    # wrote just example, recommended write properties or methods in this class
+    title_len: Annotated[int, SoupFind("<title>", factory=len)]
+    title_upper: Annotated[str, SoupFind("<title>", factory=lambda t: t.upper())]
+
+    quotes: Annotated[list[Quote], NestedList(Quote, crop_rule=crop_by_tag_all({"name": "div", "class_": "quote"},
+                                                                               features="html.parser"))]
+    top_10_tags: Annotated[list[str], SoupFindList('<a class="tag">',
+                                                   factory=top_10)]
+    top_tags_5_len: Annotated[list[str], SoupFindList('<a class="tag">',
+                                                      filter_=lambda el: len(el.get_text()) <= 5,
+                                                      factory=top_10)]
 
 
 if __name__ == '__main__':
@@ -60,7 +63,7 @@ if __name__ == '__main__':
     # NOTE: recommend usage selectolax backend for increase speed
     responses = [requests.get(f"https://quotes.toscrape.com/page/{i}/").text
                  for i in range(1, 3)]
-    schemas = QuotePage.parse_many(responses)
+    schemas = QuotePage.init_list(responses)
     print(*schemas, sep="\n---\n")
     # Quotes to Scrape
     # QUOTES TO SCRAPE

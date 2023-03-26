@@ -39,7 +39,7 @@ if __name__ == "__main__":
     interfaces = re.split(r"^\d+: ", STDOUT, flags=re.MULTILINE)
     interfaces = [f"{i}: {face}" for i, face in enumerate(interfaces, 0) if face]
 
-    devices: list[Device] = Device.parse_many(interfaces)
+    devices = Device.init_list(interfaces)
     print(*devices, sep="\n")
     for device in devices:
         print(device.name, device.ipv4, device.ipv6)

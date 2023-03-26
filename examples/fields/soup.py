@@ -1,10 +1,12 @@
+from typing import Annotated
 import pprint
-from bs4 import BeautifulSoup
 import re
 
-from scrape_schema import BaseSchema
+from bs4 import BeautifulSoup
+
+from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
-from scrape_schema.tools.soup import get_tag
+from scrape_schema.callbacks.soup import get_tag
 
 HTML = """
 <!DOCTYPE html>
@@ -64,40 +66,45 @@ HTML = """
 
 
 class Schema(BaseSchema):
-    # BeautifulSoup configuration
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
-    # auto convert to {"name": "title"} kwargs
+    class Meta(MetaSchema):
+        # BeautifulSoup configuration. You can change parser to lxml. html5.parser, xml, add any kwargs, etc
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
+
+    # <title> param auto converts to {"name": "title"} params
     title = SoupFind("<title>")
     title_select = SoupSelect("head > title")
     # usage build-in callback for get attribute
-    lang: str = SoupFind("<html>", callback=get_tag("lang"))
-    lang_select: str = SoupSelect("html", callback=get_tag("lang"))
-    # you can use both fields: find and css!
-    body_list: list[int] = SoupFindList('<a class="body-list">')
-    body_list_selector: list[int] = SoupSelectList("body > a.body-list")
-    all_digits: list[float] = SoupFindList("<a>", filter_=lambda tag: tag.get_text().isdigit())
-    # soup find features accept
-    body_list_re: list[int] = SoupFindList({"name": "a", "class_": re.compile("^list")})
-    p_and_a_tags: list[str] = SoupFindList({"name": ["p", "a"]})
-    has_spam_tag: bool = SoupFind("<spam>")
-    has_spam_tag_select: bool = SoupSelect("body > spam")
-    has_a_tag: bool = SoupFind("<a>")
-    has_a_tag_select: bool = SoupSelect("body > a")
+    lang: Annotated[str, SoupFind("<html>", callback=get_tag("lang"))]
+    lang_select: Annotated[str, SoupSelect("html", callback=get_tag("lang"))]
+    # you can use both fields: find or css!
+    body_list: Annotated[list[int], SoupFindList('<a class="body-list">')]
+    body_list_selector: Annotated[list[int], SoupSelectList("body > a.body-list")]
+    all_digits: Annotated[list[float], SoupFindList("<a>", filter_=lambda tag: tag.get_text().isdigit())]
+    # soup find method features accept
+    body_list_re: Annotated[list[int], SoupFindList({"name": "a", "class_": re.compile("^list")})]
+    p_and_a_tags: Annotated[list[str], SoupFindList({"name": ["p", "a"]})]
+    # bool flags
+    has_spam_tag: Annotated[bool, SoupFind("<spam>")]
+    has_spam_tag_select: Annotated[bool, SoupSelect("body > spam")]
+    has_a_tag: Annotated[bool, SoupFind("<a>")]
+    has_a_tag_select: Annotated[bool, SoupSelect("body > a")]
 
-    # filter, factory feature
-    bigger_100: list[int] = SoupFindList(
-        "<a>", filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100)
+    # filter, factory features
+    bigger_100: Annotated[list[int], SoupFindList("<a>",
+                                                  filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100)]
+    # get all <a> tags, filter if text isdigit, bigger 100, and get max value
+    bigger_100_max: Annotated[int, SoupFindList("<a>",
+                                                filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
+                                                callback=lambda tag: int(tag.get_text(strip=True)),
+                                                factory=max)]
 
-    bigger_100_max: int = SoupFindList(
-        "<a>", filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
-        callback=lambda tag: int(tag.get_text(strip=True)), factory=max)
-
-    spam_text: str = SoupFindList(
-        "<p>", filter_=lambda s: s.get_text().startswith("spam"),
-        factory=lambda lst: ", ".join(lst))
-    sum_all_digit: int = SoupFindList(
-        "<a>", filter_=lambda tag: tag.get_text().isdigit(), callback=lambda tag: int(tag.get_text()),
-        factory=sum)
+    spam_text: Annotated[str, SoupFindList("<p>",
+                                           filter_=lambda s: s.get_text().startswith("spam"),
+                                           factory=lambda lst: ", ".join(lst))]
+    sum_all_digit: Annotated[int, SoupFindList("<a>",
+                                               filter_=lambda tag: tag.get_text().isdigit(),
+                                               callback=lambda tag: int(tag.get_text()),
+                                               factory=sum)]
 
 
 if __name__ == '__main__':
