@@ -1,17 +1,34 @@
 from __future__ import annotations
 
+import sys
 import warnings
 from abc import abstractmethod, ABC
 from typing import Any, Type, ByteString, Iterable, TypeVar, get_type_hints, get_args, get_origin, Optional, Union, \
-    Callable, Annotated, TypeAlias, ClassVar
+    Callable, TypeAlias, ClassVar
 from types import NoneType
 import logging
+
+if sys.version_info.major >= 3 and sys.version_info.minor <= 9:
+    raise SystemError("Required python 3.9 or higher")
+
+
+if sys.version_info.major >= 3 and sys.version_info.minor <= 10:
+    from typing_extensions import Self  # type: ignore
+else:
+    from typing import Self  # type: ignore
+
+
+if sys.version_info.major >= 3 and sys.version_info.minor <= 9:  # sourcery skip: remove-redundant-if
+    from typing_extensions import Annotated
+else:
+    from typing import Annotated  # type: ignore
+
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
 
 logger = logging.getLogger("scrape_schema")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 _stdout_handler = logging.StreamHandler()
 _stdout_handler.setFormatter(_formatter)
@@ -223,7 +240,7 @@ class BaseSchema:
         _fields: dict[str, Any] = {
             name: attr
             for name, attr in self.__class__.__dict__.items()
-            if not name.startswith("__") and not isinstance(attr, BaseField)
+            if not name.startswith("__") and not isinstance(attr, BaseField) and not callable(attr)
         }
         return _fields
 
@@ -234,8 +251,8 @@ class BaseSchema:
         _fails_counter = 0
         logger.debug("Start serialise `%s`. Fields count: %i", self.__class__.__name__, len(_fields.keys()))
         # set defaults
-        for name, attr in self._get_default_values().items():
-            setattr(self, name, attr)
+        # for name, attr in self._get_default_values().items():
+        #     setattr(self, name, attr)
 
         for name, field in _fields.items():
             field_parser = field.Meta.parser
@@ -279,7 +296,7 @@ class BaseSchema:
         logger.debug("%s done! Fields fails: %i", self.__class__.__name__, _fails_counter)
 
     @classmethod
-    def init_list(cls, markups: list[str]) -> list[BaseSchema]:
+    def init_list(cls, markups: list[str]) -> list[Self]:
         return [cls(markup) for markup in markups]
 
     @staticmethod
@@ -303,6 +320,10 @@ class BaseSchema:
             for k, v in self.__dict__.items()
             if not k.startswith("__") and k != "Meta"
         }
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(" \
+               f"{', '.join(f'{k}: {type(v).__name__} = {v}' for k, v in self.dict().items())})"
 
 
 if __name__ == '__main__':
