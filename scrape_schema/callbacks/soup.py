@@ -11,12 +11,26 @@ RE_TAG_ATTRS = re.compile(r'(?P<name>[\w_\-:.]+)="(?P<value>[\w_\-:.]+)"')
 __all__ = [
     "get_tag",
     "get_text",
+    "replace_text",
     "crop_by_tag",
     "crop_by_tag_all",
     "crop_by_selector",
     "crop_by_selector_all",
     "element_to_dict",
 ]
+
+
+def replace_text(old: str,
+                 new: str,
+                 count: int = -1,
+                 *,
+                 separator: str = "",
+                 strip: bool = False):
+    def wrapper(tag: Tag):
+        if isinstance(tag, Tag):
+            return tag.get_text(separator=separator, strip=strip).replace(old, new, count)
+        return tag
+    return wrapper
 
 
 def element_to_dict(element: str) -> dict[str, str | dict]:
@@ -63,7 +77,6 @@ def get_tag(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
                 return tag.get(tag_name)
             return tag.get(tag_name, default=default)
         return tag
-
     return wrapper
 
 

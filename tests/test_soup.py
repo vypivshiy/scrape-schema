@@ -1,42 +1,47 @@
-from typing import Optional
+from typing import Optional, Annotated
 
-import pytest
 from bs4 import BeautifulSoup
+import pytest
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupFindList, SoupSelectList
-from scrape_schema.tools.soup import get_tag
+from scrape_schema.callbacks.soup import get_tag
 
 from tests.fixtures import HTML
 
 
 class SoupSchema(BaseSchema):
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
-    # Soup
-    lang: str = SoupFind("<html>", callback=get_tag("lang"))
-    charset: str = SoupFind("<meta>", callback=get_tag("charset"), factory=lambda s: s.replace("-", ""))
-    title: str = SoupFind({"name": "title"})
-    title_lower: str = SoupSelect("head > title", factory=lambda text: text.lower())
-    body_string: str = SoupFind('<p class="body-string>')
-    body_string_chars: list[str] = SoupFind('<p class="body-string>', factory=list)
-    body_string_flag: bool = SoupSelect('body > p.body-string')
-    body_int: int = SoupFind('<p class="body-int">')
-    body_float: float = SoupSelect("body > p.body-int")
-    body_int_x10: int = SoupSelect("body > p.body-int", factory=lambda el: int(el) * 10)
+    class Meta(MetaSchema):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    fail_value_1: Optional[str] = SoupFind({"name": "spam"})
-    fail_value_2: bool = SoupFind("<spam>")
-    fail_value_3: str = SoupSelect('body > spam.egg', default="spam")
+    # Soup
+    lang: Annotated[str, SoupFind("<html>", callback=get_tag("lang"))]
+    charset: Annotated[str, SoupFind("<meta>",
+                                     callback=get_tag("charset"),
+                                     factory=lambda s: s.replace("-", ""))]
+    title: Annotated[str, SoupFind({"name": "title"})]
+    title_lower: Annotated[str, SoupSelect("head > title", factory=lambda text: text.lower())]
+    body_string: Annotated[str, SoupFind('<p class="body-string>')]
+    body_string_chars: Annotated[list[str], SoupFind('<p class="body-string>', factory=list)]
+    body_string_flag: Annotated[bool, SoupSelect('body > p.body-string')]
+    body_int: Annotated[int, SoupFind('<p class="body-int">')]
+    body_float: Annotated[float, SoupSelect("body > p.body-int")]
+    body_int_x10: Annotated[int, SoupSelect("body > p.body-int", factory=lambda el: int(el) * 10)]
+
+    fail_value_1: Annotated[Optional[str], SoupFind({"name": "spam"})]
+    fail_value_2: Annotated[bool, SoupFind("<spam>")]
+    fail_value_3: Annotated[str, SoupSelect('body > spam.egg', default="spam")]
 
     # SoupList
-    body_int_list: list[int] = SoupFindList('<a class="body-list">')
-    body_float_list: list[float] = SoupSelectList('body > a.body-list')
-    max_body_list: int = SoupFindList({"name": "a", "class_": "body-list"}, factory=lambda els: max(int(i) for i in els))
-    body_float_flag: bool = SoupFindList({"name": "a", "class_": "body-list"}, factory=bool)
+    body_int_list: Annotated[list[int], SoupFindList('<a class="body-list">')]
+    body_float_list: Annotated[list[float], SoupSelectList('body > a.body-list')]
+    max_body_list: Annotated[int, SoupFindList({"name": "a", "class_": "body-list"},
+                                               factory=lambda els: max(int(i) for i in els))]
+    body_float_flag: Annotated[bool, SoupFindList({"name": "a", "class_": "body-list"}, factory=bool)]
 
-    fail_list_1: Optional[list[int]] = SoupFindList({"name": "spam"})
-    fail_list_2: bool = SoupSelectList('body > spam.egg')
-    fail_list_3: list[str] = SoupFindList('<spam class="egg">', default=["spam", "egg"])
+    fail_list_1: Annotated[Optional[list[int]], SoupFindList({"name": "spam"})]
+    fail_list_2: Annotated[bool, SoupSelectList('body > spam.egg')]
+    fail_list_3: Annotated[list[str], SoupFindList('<spam class="egg">', default=["spam", "egg"])]
 
 
 SOUP_SCHEMA = SoupSchema(HTML)

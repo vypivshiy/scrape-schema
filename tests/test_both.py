@@ -1,70 +1,86 @@
-from operator import eq
+from typing import Annotated
 
 from bs4 import BeautifulSoup
 from selectolax.parser import HTMLParser
 
-from scrape_schema import BaseSchema
-from scrape_schema.fields.slax import SLaxSelect, SLaxSelectList
+from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupFindList, SoupSelectList
 from scrape_schema.fields.nested import NestedList, Nested
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 
-from scrape_schema.tools.slax import crop_by_slax, crop_by_slax_all
+from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all
 
-from fixtures import HTML
-
-
-class MixSchemaConfig(BaseSchema):
-    __MARKUP_PARSERS__ = {HTMLParser: {}, BeautifulSoup: {"features": "html.parser"}}
+from tests.fixtures import HTML
 
 
-class NestedSubMixSlax(MixSchemaConfig):
-    p: str = SLaxSelect("p.sub-string", factory=lambda text: text.strip())
-    a: list[int] = SoupSelectList("a.sub-list")
+class BaseMixSchema(BaseSchema):
+    class Meta(MetaSchema):
+        parsers_config = {
+            HTMLParser: {},
+            BeautifulSoup: {"features": "html.parser"}
+        }
 
 
-class NestedSubMixSoupFind(MixSchemaConfig):
-    p: str = SoupFind('<p class="sub-string">', factory=lambda text: text.strip())
-    a: list[int] = SoupFindList('<a class="sub-list">')
+class NestedSubMixSlax(BaseMixSchema):
+    p: Annotated[str, SlaxSelect("p.sub-string",
+                                 factory=lambda text: text.strip())]
+    a: Annotated[list[int], SoupSelectList("a.sub-list")]
 
 
-class NestedSubMixSoupSelect(MixSchemaConfig):
-    p: str = SoupSelect("p.sub-string", factory=lambda text: text.strip())
-    a: list[int] = SLaxSelectList("a.sub-list")
+class NestedSubMixSoupFind(BaseMixSchema):
+    p: Annotated[str, SoupFind('<p class="sub-string">',
+                               factory=lambda text: text.strip())]
+    a: Annotated[list[int], SoupFindList('<a class="sub-list">')]
 
 
-class NestedSubMixRe(MixSchemaConfig):
-    p: str = ReMatch(r'<p class="sub-string">(.*?)</p>', factory=lambda text: text.strip())
-    a: list[int] = ReMatchList(r'<a class="sub-list">(\d+)</a>')
+class NestedSubMixSoupSelect(BaseMixSchema):
+    p: Annotated[str, SoupSelect("p.sub-string",
+                                 factory=lambda text: text.strip())]
+    a: Annotated[list[int], SlaxSelectList("a.sub-list")]
 
 
-class NestedDivSoupFind(MixSchemaConfig):
-    p: str = SoupFind('<p class="string">')
-    a_int: list[int] = SoupFindList('<a class="list">')
-    sub_dict_slax: NestedSubMixSlax = Nested(NestedSubMixSlax, crop_rule=crop_by_slax('div.sub-dict'))
-    sub_dict_soup_find: NestedSubMixSlax = Nested(NestedSubMixSoupFind, crop_rule=crop_by_slax('div.sub-dict'))
-    sub_dict_soup_select: NestedSubMixSlax = Nested(NestedSubMixSoupSelect, crop_rule=crop_by_slax('div.sub-dict'))
-    sub_dict_re: NestedSubMixSlax = Nested(NestedSubMixRe, crop_rule=crop_by_slax('div.sub-dict'))
+class NestedSubMixRe(BaseMixSchema):
+    p: Annotated[str, ReMatch(r'<p class="sub-string">(.*?)</p>',
+                              factory=lambda text: text.strip())]
+    a: Annotated[list[int], ReMatchList(r'<a class="sub-list">(\d+)</a>')]
 
 
-class MixSchema(MixSchemaConfig):
-    title_soup_find: str = SoupFind("<title>")
-    title_soup_select: str = SoupSelect("head > title")
-    title_slax: str = SLaxSelect('head > title')
-    title_re: str = ReMatch(R"<title>(.*?)</title>")
+class NestedDivSoupFind(BaseMixSchema):
+    p: Annotated[str, SoupFind('<p class="string">')]
+    a_int: Annotated[list[int], SoupFindList('<a class="list">')]
+    sub_dict_slax: \
+        Annotated[NestedSubMixSlax, Nested(NestedSubMixSlax,
+                                           crop_rule=crop_by_slax('div.sub-dict'))]
+    sub_dict_soup_find: \
+        Annotated[NestedSubMixSlax, Nested(NestedSubMixSoupFind,
+                                           crop_rule=crop_by_slax('div.sub-dict'))]
+    sub_dict_soup_select: \
+        Annotated[NestedSubMixSlax, Nested(NestedSubMixSoupSelect,
+                                           crop_rule=crop_by_slax('div.sub-dict'))]
+    sub_dict_re: Annotated[NestedSubMixSlax, Nested(NestedSubMixRe,
+                                                    crop_rule=crop_by_slax('div.sub-dict'))]
 
-    float_soup_find: float = SoupFind('<p class="body-int">555</p>')
-    float_soup_select: float = SoupSelect('body > p.body-int')
-    float_slax: float = SLaxSelect('body > p.body-int')
-    float_re: float = ReMatch(r'<p class="body-int">(\d+)</p>')
 
-    list_int_soup_find: list[int] = SoupFindList('<a class="body-list">')
-    list_int_soup_select: list[int] = SoupSelectList("body > a.body-list")
-    list_int_slax: list[int] = SLaxSelectList("body > a.body-list")
-    list_int_re: list[int] = ReMatchList(r'<a class="body-list">(\d+)</a>')
+class MixSchema(BaseMixSchema):
+    title_soup_find: Annotated[str, SoupFind("<title>")]
+    title_soup_select: Annotated[str, SoupSelect("head > title")]
+    title_slax: Annotated[str, SlaxSelect('head > title')]
+    title_re: Annotated[str, ReMatch(R"<title>(.*?)</title>")]
 
-    nested_list: list[NestedDivSoupFind] = NestedList(NestedDivSoupFind,
-                                                      crop_rule=crop_by_slax_all('body > div.dict'))
+    float_soup_find: Annotated[float, SoupFind('<p class="body-int">555</p>')]
+    float_soup_select: Annotated[float, SoupSelect('body > p.body-int')]
+    float_slax: Annotated[float, SlaxSelect('body > p.body-int')]
+    float_re: Annotated[float, ReMatch(r'<p class="body-int">(\d+)</p>')]
+
+    list_int_soup_find: Annotated[list[int], SoupFindList('<a class="body-list">')]
+    list_int_soup_select: Annotated[list[int], SoupSelectList("body > a.body-list")]
+    list_int_slax: Annotated[list[int], SlaxSelectList("body > a.body-list")]
+    list_int_re: Annotated[list[int], ReMatchList(r'<a class="body-list">(\d+)</a>')]
+
+    nested_list: \
+        Annotated[list[NestedDivSoupFind], NestedList(NestedDivSoupFind,
+                                                      crop_rule=crop_by_slax_all('body > div.dict'))]
 
 
 MIX_SCHEMA = MixSchema(HTML)

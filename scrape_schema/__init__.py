@@ -1,3 +1,2 @@
-from .base import BaseSchema
-
-__version__ = "0.0.1"
+from scrape_schema.base import BaseSchema, BaseField, MetaField, MetaSchema
+from scrape_schema import fields

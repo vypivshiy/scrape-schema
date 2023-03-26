@@ -2,6 +2,14 @@ from typing import Optional, Any, Callable
 
 from selectolax.parser import HTMLParser, Node
 
+__all__ = [
+    "crop_by_slax",
+    "crop_by_slax_all",
+    "get_tag",
+    "get_text",
+    "replace_text"
+]
+
 
 def crop_by_slax(query: str, **slax_config):
     """crop markup document to string chunk by selectolax selector
@@ -43,6 +51,20 @@ def get_tag(name: str, default: Optional[Any] = None):
             return node.attrs.get(name, default=default)
         return node
 
+    return wrapper
+
+
+def replace_text(old: str,
+                 new: str,
+                 count: int = -1,
+                 *,
+                 deep: bool = True,
+                 separator: str = "",
+                 strip: bool = False):
+    def wrapper(element: Node):
+        if isinstance(element, Node):
+            return element.text(deep=deep, separator=separator, strip=strip).replace(old, new, count)
+        return element
     return wrapper
 
 

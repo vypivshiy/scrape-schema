@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, Optional, Annotated
 from dataclasses import dataclass, is_dataclass
 import json
 
@@ -7,11 +7,10 @@ from bs4 import BeautifulSoup
 
 import pytest
 
-from scrape_schema import BaseSchema
-from scrape_schema.base import BaseField
+from scrape_schema import BaseSchema, MetaSchema, BaseField, MetaField
 from scrape_schema.fields.nested import Nested
 from scrape_schema.fields.soup import SoupFindList, SoupFind
-from scrape_schema.tools.soup import crop_by_tag
+from scrape_schema.callbacks.soup import crop_by_tag
 
 from fixtures import HTML
 
@@ -19,16 +18,17 @@ from scrape_schema.exceptions import ValidationError
 
 
 class FieldTitle(BaseField):
-    def parse(self, instance: BaseSchema, name: str, markup: str) -> str:
+    def _parse(self, markup: str) -> Optional[str]:
         if match := re.search(r'<title>(.*?)</title>', markup):
             return match[1]
-        return self.default
+        return None
 
 
 class FieldSoupImages(BaseField):
-    __MARKUP_PARSER__ = BeautifulSoup
+    class Meta(MetaField):
+        parser = BeautifulSoup
 
-    def parse(self, instance: BaseSchema, name: str, markup: BeautifulSoup):
+    def _parse(self, markup: BeautifulSoup) -> list[str]:
         if results := markup.find_all("img"):
             return [element['src'] for element in results if element.get("src")]
         return []
@@ -41,47 +41,35 @@ class DictData:
 
 
 class FeaturesNested(BaseSchema):
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
-    p: str = SoupFind('<p class="string">')
-    a_int: list[int] = SoupFindList('<a class="list">')
+    class Meta(MetaSchema):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
+
+    p: Annotated[str, SoupFind('<p class="string">')]
+    a_int: Annotated[list[int], SoupFindList('<a class="list">')]
 
 
 class FeaturesSchema(BaseSchema):
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
+    class Meta(MetaSchema):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
+
     title = FieldTitle()
-    p_sub_strings: list[str] = SoupFindList("<p>",
-                                            # soup get return list names
-                                            filter_=lambda el: el.get("class", [None])[0] == "sub-string")
+    p_sub_strings: Annotated[list[str], SoupFindList("<p>",
+                                                     # soup get return list names
+                                                     filter_=lambda el: el.get("class", [None])[0] == "sub-string")]
     images = FieldSoupImages()
     # convert nested class to dict
-    sub_dict: dict[str, Any] = Nested(FeaturesNested,
-                                      crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),
-                                      factory=lambda schema: schema.dict())
+    sub_dict: Annotated[dict[str, Any], Nested(FeaturesNested,
+                                               crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),
+                                               factory=lambda schema: schema.dict())]
     # convert nested class to dataclass
-    sub_dataclass: DictData = Nested(FeaturesNested,
-                                     crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),
-                                     factory=lambda schema: DictData(**schema.dict()))
-    sub_json_str: str = Nested(FeaturesNested,
-                               crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),
-                               factory=lambda schema: json.dumps(schema.dict()))
+    sub_dataclass: Annotated[DictData, Nested(FeaturesNested,
+                                              crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),
+                                              factory=lambda schema: DictData(**schema.dict()))]
 
+    sub_json_str: Annotated[str, Nested(FeaturesNested,
+                                        crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),
+                                        factory=lambda schema: json.dumps(schema.dict()))]
 
-class ValidationSchema(BaseSchema):
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
-    __VALIDATE__ = True
-    p_sub_strings: list[str] = SoupFindList(
-        "<p>",
-        filter_=lambda el: el.get("class", [None])[0] == "sub-string",
-        validator=lambda els: all(el.startswith("spam-") for el in els),
-    )
-
-
-class FailValidationSchema(BaseSchema):
-    __MARKUP_PARSERS__ = {BeautifulSoup: {"features": "html.parser"}}
-    __VALIDATE__ = True
-    p_sub_strings: list[str] = SoupFindList(
-        "<p>", validator=lambda els: all(el.startswith("spam-") for el in els)
-    )
 
 
 FEATURES_SCHEMA = FeaturesSchema(HTML)
@@ -94,16 +82,6 @@ def test_custom_field():
 
 def test_filter():
     assert FEATURES_SCHEMA.p_sub_strings == ['spam-1', 'spam-2', 'spam-3']
-
-
-def test_success_validator():
-    schema = ValidationSchema(HTML)
-    assert all(el.startswith("spam-") for el in schema.p_sub_strings)
-
-
-def test_validate_error():
-    with pytest.raises(ValidationError):
-        FailValidationSchema(HTML)
 
 
 def test_factory():

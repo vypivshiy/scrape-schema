@@ -1,34 +1,36 @@
+from typing import Annotated
 import pytest
 
 from selectolax.parser import HTMLParser
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, MetaSchema
 
-from scrape_schema.fields.slax import SLaxSelect, SLaxSelectList
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.fields.nested import NestedList, Nested
-from scrape_schema.tools.slax import get_tag, get_text, crop_by_slax, crop_by_slax_all
+from scrape_schema.callbacks.slax import get_tag, get_text, crop_by_slax, crop_by_slax_all
 from fixtures import HTML
 
 
 class SLaxSchema(BaseSchema):
-    __MARKUP_PARSERS__ = {HTMLParser: {}}
+    class Meta(MetaSchema):
+        parsers_config = {HTMLParser: {}}
 
 
 class SubDict(SLaxSchema):
-    p: str = SLaxSelect("p.sub-string", factory=lambda text: text.strip())
-    a: list[int] = SLaxSelectList("a.sub-list")
+    p: Annotated[str, SlaxSelect("p.sub-string", factory=lambda text: text.strip())]
+    a: Annotated[list[int], SlaxSelectList("a.sub-list")]
 
 
 class DivDict(SLaxSchema):
-    p: str = SLaxSelect('p.string')
-    a_int: list[int] = SLaxSelectList('a.list')
-    a_float: list[float] = SLaxSelectList("a.list")
-    sub_dict: SubDict = Nested(SubDict, crop_rule=crop_by_slax('div.sub-dict'))
+    p: Annotated[str, SlaxSelect('p.string')]
+    a_int: Annotated[list[int], SlaxSelectList('a.list')]
+    a_float: Annotated[list[float], SlaxSelectList("a.list")]
+    sub_dict: Annotated[SubDict, Nested(SubDict, crop_rule=crop_by_slax('div.sub-dict'))]
 
 
 class NestedSchema(SLaxSchema):
-    title: str = SLaxSelect("head > title")
-    first_div: DivDict = Nested(DivDict, crop_rule=crop_by_slax('body > div.dict'))
-    nested_list: list[DivDict] = NestedList(DivDict, crop_rule=crop_by_slax_all('body > div.dict'))
+    title: Annotated[str, SlaxSelect("head > title")]
+    first_div: Annotated[DivDict, Nested(DivDict, crop_rule=crop_by_slax('body > div.dict'))]
+    nested_list: Annotated[list[DivDict], NestedList(DivDict, crop_rule=crop_by_slax_all('body > div.dict'))]
 
 
 NESTED_SCHEMA = NestedSchema(HTML)

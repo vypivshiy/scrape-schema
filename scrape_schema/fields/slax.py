@@ -1,103 +1,46 @@
-from typing import Callable, Any, Optional
+from abc import ABC
+from typing import Any, Optional, Callable
 
-from selectolax.parser import HTMLParser
-from selectolax.parser import Node
+from ..base import BaseField, MetaField
+from ..callbacks.slax import get_text
 
-from .. import BaseSchema
-from ..base import BaseField
-from ..tools.slax import get_text
-
-__all__ = ["SLaxSelect", "SLaxSelectList"]
+from selectolax.parser import HTMLParser, Node
 
 
-class _SLaxSelect(BaseField):
-    """selectolax.parser.HTMLParser (Modest) field"""
+class BaseSlax(BaseField, ABC):
+    class Meta(MetaField):
+        parser = HTMLParser
 
-    __MARKUP_PARSER__ = HTMLParser
 
-    def __init__(
-        self,
-        query: str,
-        strict: bool = False,
-        *,
-        callback: Callable[[Node], Any] = get_text(),
-        default: Optional[Any] = None,
-        validator: Optional[Callable[[Any], bool]] = None,
-        filter_: Optional[Callable[[Node], bool]] = None,
-        factory: Optional[Callable[[str], Any]] = None,
-    ):
-        """Get first value by css selector
-
-        :param query: css selector
-        :param strict: Set to True if you want to check if there
-        is strictly only one match in the document
-        :param callback: a callback function, default get_text
-        :param default: default value if Node not founded. Default None
-        :param validator: a validator function. default None
-        :param filter_: a filter function. default None
-        :param factory: a factory function. default None. If this param added, it ignored typing
-        """
-        super().__init__(
-            default=default, validator=validator, filter_=filter_, factory=factory
-        )
-        self.query = query
+class SlaxSelect(BaseSlax):
+    def __init__(self,
+                 selector: str,
+                 strict: bool = False,
+                 *,
+                 default: Optional[Any] = None,
+                 callback: Optional[Callable[[Node], str | Any]] = get_text(),
+                 factory: Optional[Callable[[str | Any], Any]] = None,
+                 ):
+        super().__init__(default=default, callback=callback, factory=factory)
+        self.selector = selector
         self.strict = strict
-        self.callback = callback
 
-    def parse(self, instance: BaseSchema, name: str, markup: HTMLParser):
-        value = markup.css_first(self.query, strict=self.strict)
-        if not value:
-            value = self.default
-        value = self._filter_process(value)
-        value = self._callback(value)
-        value = self._typing(instance, name, value)
-        value = self._factory(value)
-        self._raise_validator(instance, name, self.default)
-        return value
+    def _parse(self, markup: HTMLParser) -> Node:
+        return markup.css_first(self.selector, strict=self.strict)
 
 
-class _SLaxSelectList(_SLaxSelect):
-    def __init__(
-        self,
-        query: str,
-        strict: bool = False,
-        *,
-        callback: Callable[[Node], Any] = get_text(),
-        default: Optional[list[Any]] = None,
-        validator: Optional[Callable[[Any], bool]] = None,
-        filter_: Optional[Callable[[Node], bool]] = None,
-        factory: Optional[Callable[[list[str]], Any]] = None,
-    ):
-        """Get first value by css selector
+class SlaxSelectList(BaseSlax):
 
-        :param query: css selector
-        :param strict: Set to True if you want to check if there
-        is strictly only one match in the document
-        :param callback: a callback function, default get_text
-        :param default: default value if Node not founded. Default None
-        :param validator: a validator function. default None
-        :param filter_: a filter function. default None
-        :param factory: a factory function. default None. If this param added, it ignored typing
-        """
-        super().__init__(query, strict, validator=validator, filter_=filter_)
-        self.default = default if isinstance(default, list) else []
-        self.callback = callback
-        self.factory = factory
+    def __init__(self,
+                 selector: str,
+                 *,
+                 default: Optional[Any] = None,
+                 filter_: Optional[Callable[[Node], bool]] = None,
+                 callback: Optional[Callable[[Node], str | Any]] = get_text(),
+                 factory: Optional[Callable[[list[str | Any]], Any]] = None,
+                 ):
+        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
+        self.selector = selector
 
-    def parse(self, instance: BaseSchema, name: str, markup: HTMLParser):
-        values = markup.css(self.query)
-        if not values:
-            values = self.default
-
-        values = self._filter_process(values)
-        if values != self.default:
-            values = list(map(self._callback, values))
-        values = self._typing(instance, name, values)
-        values = self._factory(values)
-        self._raise_validator(instance, name, values)
-        return values
-
-
-# dummy avoid mypy type[assignment] errors
-SLaxSelect: Any = _SLaxSelect
-SLaxSelectList: Any = _SLaxSelectList
+    def _parse(self, markup: HTMLParser) -> list[Node]:
+        return markup.css(self.selector)
