@@ -8,27 +8,28 @@ from typing import Any, Type, ByteString, Iterable, TypeVar, get_type_hints, get
 from types import NoneType
 import logging
 
-if sys.version_info.major >= 3 and sys.version_info.minor <= 9:
-    raise SystemError("Required python 3.9 or higher")
 
-
-if sys.version_info.major >= 3 and sys.version_info.minor <= 10:
-    from typing_extensions import Self  # type: ignore
-else:
-    from typing import Self  # type: ignore
-
-
-if sys.version_info.major >= 3 and sys.version_info.minor <= 9:  # sourcery skip: remove-redundant-if
-    from typing_extensions import Annotated
-else:
+# python < 3.10
+try:
     from typing import Annotated  # type: ignore
+except ImportError:
+    from typing_extensions import Annotated  # type: ignore
 
+# python < 3.11
+try:
+    from typing import Self  # type: ignore
+except ImportError:
+    try:
+        from typing_extensions import Self  # type: ignore
+    except ImportError:
+        # very old python
+        Self: TypeAlias = 'BaseSchema'  # type: ignore
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
 
 logger = logging.getLogger("scrape_schema")
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 _stdout_handler = logging.StreamHandler()
 _stdout_handler.setFormatter(_formatter)
@@ -151,9 +152,6 @@ class BaseField(ABCField, TypeCaster):
         ...
 
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
-        # if self.Meta.parser:
-        #     parser_kwargs = instance.Meta.parsers_configs.get(self.Meta.parser)
-        #     markup = self.Meta.parser(**parser_kwargs)
         logger.debug("%s.%s[%s] Start parse",
                      instance.__class__.__name__, name, self.Meta.parser or 'str')
         value = self._parse(markup)
@@ -324,26 +322,3 @@ class BaseSchema:
     def __repr__(self):
         return f"{self.__class__.__name__}(" \
                f"{', '.join(f'{k}: {type(v).__name__} = {v}' for k, v in self.dict().items())})"
-
-
-if __name__ == '__main__':
-    class Field(BaseField):
-
-        def __init__(self, val: Any, **kwargs):
-            super().__init__(**kwargs)
-            self.val = val
-
-        def _parse(self, markup: MARKUP_TYPE) -> Any:
-            return self.val
-
-
-    class ESchema(BaseSchema):
-        a: int = 100
-        b = "lorem"
-        c: Annotated[str, Field("test")]
-        d = Field(123)
-        e: Annotated[int, Field("100")]
-        f: Annotated[list[float], Field(["1", "2", "100"])]
-
-    sc = ESchema("a")
-    print(sc.dict())
