@@ -5,7 +5,7 @@ from selectolax.parser import HTMLParser, Node
 __all__ = [
     "crop_by_slax",
     "crop_by_slax_all",
-    "get_tag",
+    "get_attr",
     "get_text",
     "replace_text"
 ]
@@ -39,7 +39,7 @@ def crop_by_slax_all(query: str, **slax_config):
     return wrapper
 
 
-def get_tag(name: str, default: Optional[Any] = None):
+def get_attr(name: str, default: Optional[Any] = None):
     """get tag from Node object
 
     :param name: tag name

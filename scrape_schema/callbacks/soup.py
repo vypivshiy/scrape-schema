@@ -9,7 +9,7 @@ RE_TAG_NAME = re.compile(r"<(\w+)")
 RE_TAG_ATTRS = re.compile(r'(?P<name>[\w_\-:.]+)="(?P<value>[\w_\-:.]+)"')
 
 __all__ = [
-    "get_tag",
+    "get_attr",
     "get_text",
     "replace_text",
     "crop_by_tag",
@@ -63,7 +63,7 @@ def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag], Any]:
     return wrapper
 
 
-def get_tag(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
+def get_attr(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
     """get tag from element
 
     :param tag_name: tag name
