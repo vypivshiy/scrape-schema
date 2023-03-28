@@ -8,7 +8,6 @@ from typing import Any, Type, ByteString, Iterable, TypeVar, get_type_hints, get
 from types import NoneType
 import logging
 
-
 # python < 3.10
 try:
     from typing import Annotated  # type: ignore
@@ -26,7 +25,6 @@ except ImportError:
         Self: TypeAlias = 'BaseSchema'  # type: ignore
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
-
 
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
@@ -215,46 +213,52 @@ class MetaSchema:
 
 
 class BaseSchema:
-
     class Meta(MetaSchema):
         pass
 
-    def _get_fields(self) -> dict[str, BaseField]:
-        _fields: dict[str, BaseField] = {}
+    @staticmethod
+    def _is_annotated_field(attr: Type):
+        return get_origin(attr) is Annotated and isinstance(get_args(attr)[-1], BaseField)
+
+    @staticmethod
+    def _is_annotated_tuple_fields(attr: Type):
+        return get_origin(attr) is Annotated \
+            and isinstance(get_args(attr)[-1], tuple) \
+            and all(isinstance(fld, BaseField) for fld in get_args(attr)[-1])
+
+    def _get_fields(self) -> dict[str, BaseField | tuple[BaseField, ...]]:
+        _fields: dict[str, BaseField | tuple[BaseField, ...]] = {}
 
         for name, attr in get_type_hints(self.__class__, include_extras=True).items():
-            # get fields from annotations Annotated[Type, Field(..)]
-            if get_origin(attr) is Annotated and isinstance(get_args(attr)[-1], BaseField):
+            # get fields from Annotated[Type, Field(..) ]
+            if self._is_annotated_field(attr):
                 _type, _field = get_args(attr)
                 self.__fields_annotations__[name] = _type
                 _fields[name] = _field
+            # get field from Annotated[Type, (Field(..), Field(..), ...)]
+            elif self._is_annotated_tuple_fields(attr):
+                _type, _tuple_fields = get_args(attr)
+                self.__fields_annotations__[name] = _type
+                _fields[name] = _tuple_fields
+
         # get non-typed fields
         for name, attr in self.__class__.__dict__.items():
             if not name.startswith("__") and isinstance(attr, BaseField):
                 _fields[name] = attr
         return _fields
 
-    def _get_default_values(self) -> dict[str, Any]:
-        _fields: dict[str, Any] = {
-            name: attr
-            for name, attr in self.__class__.__dict__.items()
-            if not name.startswith("__") and not isinstance(attr, BaseField) and not callable(attr)
-        }
-        return _fields
+    def _parse_field_value(self,
+                           cached_parsers: dict[Type[Any], Any],
+                           name: str,
+                           fields: BaseField | tuple[BaseField, ...],
+                           markup: str) -> Any:
+        value: Any = None
+        if not isinstance(fields, tuple):
+            fields = (fields, )
 
-    def __init__(self, markup: str):
-        self.__fields_annotations__: dict[str, Type] = {}
-        _fields = self._get_fields()
-        _parsers: dict[Type[Any], Any] = {}
-        _fails_counter = 0
-        logger.debug("Start serialise `%s`. Fields count: %i", self.__class__.__name__, len(_fields.keys()))
-        # set defaults
-        # for name, attr in self._get_default_values().items():
-        #     setattr(self, name, attr)
-
-        for name, field in _fields.items():
+        for field in fields:
             field_parser = field.Meta.parser
-            # send raw markup if parser is not defined
+            # parser is not defined in field.Meta.parser
             if not field_parser:
                 value = field(self, name, markup)
 
@@ -267,12 +271,34 @@ class BaseSchema:
                     raise e
 
             else:
-                # cache markup parsers
-                if not _parsers.get(field_parser):
+                # cache markup parser like BeautifulSoup, HTMLParser, and thing instances
+                if not cached_parsers.get(field_parser):
                     parser_kwargs = self.Meta.parsers_config.get(field_parser)
-                    _parsers[field_parser] = field_parser(markup, **parser_kwargs)
+                    cached_parsers[field_parser] = field_parser(markup, **parser_kwargs)
 
-                value = field(self, name, _parsers[field_parser])
+                value = field(self, name, cached_parsers[field_parser])
+
+            if hasattr(field, "default") and value != field.default or value == field.default or not value:
+                continue
+            else:
+                return value
+        return value
+
+    def __init__(self, markup: str):
+        self.__fields_annotations__: dict[str, Type] = {}
+
+        _fields = self._get_fields()
+        _parsers: dict[Type[Any], Any] = {}
+        _fails_counter = 0
+        logger.debug("Start serialise `%s`. Fields count: %i", self.__class__.__name__, len(_fields.keys()))
+
+        for name, field in _fields.items():
+            value = self._parse_field_value(
+                cached_parsers=_parsers,
+                name=name,
+                fields=field,
+                markup=markup
+            )
 
             # calculate fails - compare by default value
             if self.Meta.fails_attempt >= 0 and hasattr(field, "default") and value == field.default:
@@ -283,7 +309,7 @@ class BaseSchema:
                               category=RuntimeWarning)
 
                 logger.warning("[%i] Failed parse `%s.%s` by `%s`, set `%s`",
-                    _fails_counter, self.__class__.__name__, name, field.__class__.__name__, value)
+                               _fails_counter, self.__class__.__name__, name, field.__class__.__name__, value)
 
                 if _fails_counter > self.Meta.fails_attempt:
                     raise ParseFailAttemptsError(f"{_fails_counter} of {len(_fields.keys())} "
