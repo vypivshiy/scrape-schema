@@ -5,7 +5,7 @@ from selectolax.parser import HTMLParser
 from scrape_schema import BaseSchema, MetaSchema
 
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
-from scrape_schema.callbacks.slax import get_tag, get_text
+from scrape_schema.callbacks.slax import get_attr, get_text
 
 HTML = """
 <!DOCTYPE html>
@@ -71,7 +71,7 @@ class Schema(BaseSchema):
 
     title = SlaxSelect("head > title")
     # build-in callback for get attribute
-    lang = SlaxSelect("html", callback=get_tag("lang"))
+    lang = SlaxSelect("html", callback=get_attr("lang"))
 
     body_list_content: Annotated[list[str], SlaxSelectList("body > p")]
     list_int: Annotated[list[int], SlaxSelectList("body > p.body-int")]

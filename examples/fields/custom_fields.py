@@ -77,10 +77,6 @@ class SoupImageList(SoupImage):
         return []
 
 
-# Note: this typing needed if you usage mypy in your project for avoid error.
-# If it's not, then don't do it.
-
-
 class Schema(BaseSchema):
     class Meta(MetaSchema):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
@@ -127,5 +123,3 @@ if __name__ == '__main__':
     #         '    <img src="/foo.png">\n'
     #         '    <img src="/bar.png">\n'
     #         '    <img src="/baz.jpg">\n'}
-    #
-    # Process finished with exit code 0

@@ -8,7 +8,7 @@ from selectolax.parser import HTMLParser
 
 from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
-from scrape_schema.callbacks.slax import get_tag, get_text
+from scrape_schema.callbacks.slax import get_attr, get_text
 
 
 class MainEnPage(BaseSchema):
@@ -24,7 +24,7 @@ class MainEnPage(BaseSchema):
     on_this_day_date: Annotated[str, SlaxSelect('#mp-otd > p')]
     on_this_day: Annotated[list[str], SlaxSelectList('#mp-otd > ul > li')]
     today_feature_picture: Annotated[str, SlaxSelect('#mp-tfp > table > tbody > tr:nth-child(1) > td > a',
-                                                     callback=get_tag('href'))]
+                                                     callback=get_attr('href'))]
     today_feature_picture_description: Annotated[str, SlaxSelect(
         '#mp-tfp > table > tbody > tr:nth-child(2) > td > p:nth-child(1)')]
     footer_info: Annotated[str, SlaxSelect('#footer', callback=get_text(strip=True))]

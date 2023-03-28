@@ -6,7 +6,7 @@ from scrape_schema.fields.regex import ReMatch, ReMatchList
 
 class Schema(BaseSchema):
     first_digit = ReMatch(r'(\d)')  # return string
-    first_digit_2 = ReMatch(r'(\d)', callback=int)  # typing without annotation
+    first_digit_2 = ReMatch(r'(\d)', callback=int)  # return int, typing without annotation
 
     first_digit_int: Annotated[int, ReMatch(r'(\d)')]  # return int
     first_digit_float: Annotated[float, ReMatch(r'(\d)')]  # return float

@@ -1,12 +1,10 @@
-"""NOTE: THIS EXAMPLE WORKS ONLY CIS REGIONS!"""
-
 from typing import Annotated
 from bs4 import BeautifulSoup
 
 from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupSelectList
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.callbacks.soup import get_tag, crop_by_tag_all, get_text, replace_text
+from scrape_schema.callbacks.soup import get_attr, crop_by_tag_all, get_text, replace_text
 
 from callbacks import crop_schedule, crop_ongoing, crop_new_anime
 
@@ -24,10 +22,10 @@ class SchemaConfig(BaseSchema):
 # schemas
 class AnimeSeason(SchemaConfig):
     # <div class="item"> -> <div class="media-body">
-    url: Annotated[str, SoupFind('<a class="text-nowrap">', callback=get_tag("href"))]
+    url: Annotated[str, SoupFind('<a class="text-nowrap">', callback=get_attr("href"))]
     name: Annotated[str, SoupFind('<a class="text-nowrap">')]
     image: Annotated[str, SoupFind({"name": "div", "class_": "tns-lazy-img"},
-                                   callback=get_tag("data-src"))]
+                                   callback=get_attr("data-src"))]
     rating: Annotated[float, SoupFind('<div class="p-rate-flag__text">',
                                       callback=replace_text(',', '.', strip=True))]
 
@@ -47,8 +45,8 @@ class Ongoing(SchemaConfig):
 
 
 class NewAnime(SchemaConfig):
-    image: Annotated[str, SoupFind('<div class="anime-list-lazy">', callback=get_tag('data-original'))]
-    url: Annotated[str, SoupSelect('div.h5 > a', callback=get_tag('href'))]
+    image: Annotated[str, SoupFind('<div class="anime-list-lazy">', callback=get_attr('data-original'))]
+    url: Annotated[str, SoupSelect('div.h5 > a', callback=get_attr('href'))]
     rating: Annotated[float, SoupFind('<div class="p-rate-flag__text">',
                                       default='0',
                                       callback=replace_text(',', '.'))]
@@ -56,14 +54,14 @@ class NewAnime(SchemaConfig):
     title_orig: Annotated[str, SoupSelect('div.text-gray-dark-6.small.mb-2 > div')]
     type: Annotated[str, SoupSelect('span > a.text-link-gray')]
     year: Annotated[int, SoupSelect('span.anime-year > a')]
-    genres: Annotated[list[str], SoupSelectList('span.anime-genre > a', callback=get_tag('title'))]
+    genres: Annotated[list[str], SoupSelectList('span.anime-genre > a', callback=get_attr('title'))]
     description: Annotated[str, SoupFind('<div class="description">',
                                          callback=get_text(strip=True))]
 
 
 class AnimegoSchema(SchemaConfig):
     title: Annotated[str, SoupFind("<title>")]
-    lang: Annotated[str, SoupFind("<html>", callback=get_tag("lang"))]
+    lang: Annotated[str, SoupFind("<html>", callback=get_attr("lang"))]
     anime_seasons: Annotated[list[AnimeSeason], NestedList(AnimeSeason,
                                                            crop_rule=crop_by_tag_all('<div class="item">'))]
     schedule: Annotated[list[ScheduleItem], NestedList(ScheduleItem,

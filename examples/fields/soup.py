@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
-from scrape_schema.callbacks.soup import get_tag
+from scrape_schema.callbacks.soup import get_attr
 
 HTML = """
 <!DOCTYPE html>
@@ -74,8 +74,8 @@ class Schema(BaseSchema):
     title = SoupFind("<title>")
     title_select = SoupSelect("head > title")
     # usage build-in callback for get attribute
-    lang: Annotated[str, SoupFind("<html>", callback=get_tag("lang"))]
-    lang_select: Annotated[str, SoupSelect("html", callback=get_tag("lang"))]
+    lang: Annotated[str, SoupFind("<html>", callback=get_attr("lang"))]
+    lang_select: Annotated[str, SoupSelect("html", callback=get_attr("lang"))]
     # you can use both fields: find or css!
     body_list: Annotated[list[int], SoupFindList('<a class="body-list">')]
     body_list_selector: Annotated[list[int], SoupSelectList("body > a.body-list")]

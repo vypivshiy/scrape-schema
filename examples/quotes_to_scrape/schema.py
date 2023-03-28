@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.callbacks.soup import crop_by_tag_all, get_tag
+from scrape_schema.callbacks.soup import crop_by_tag_all, get_attr
 
 
 def top_10(lst: list[str]) -> list[str]:
@@ -25,7 +25,7 @@ class Quote(BaseSchema):
     text: Annotated[str, SoupFind('<span class="text">')]
     author: Annotated[str, SoupFind('<small class="author">')]
     about: Annotated[str, SoupFind(
-        {"name": "a", "string": "(about)"}, callback=get_tag("href"))]
+        {"name": "a", "string": "(about)"}, callback=get_attr("href"))]
     tags: Annotated[list[str], SoupFindList('<a class="tag">')]
 
 
