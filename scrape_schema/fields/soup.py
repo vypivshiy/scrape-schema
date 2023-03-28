@@ -7,6 +7,14 @@ from ..callbacks.soup import get_text, element_to_dict
 from bs4 import BeautifulSoup, Tag, ResultSet
 
 
+__all__ = [
+    'BaseSoup',
+    'SoupFind',
+    'SoupFindList',
+    'SoupSelect',
+    'SoupSelectList'
+]
+
 class BaseSoup(BaseField, ABC):
     class Meta(MetaField):
         parser = BeautifulSoup
