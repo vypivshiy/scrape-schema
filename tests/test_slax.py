@@ -5,7 +5,7 @@ from selectolax.parser import HTMLParser
 
 from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
-from scrape_schema.callbacks.slax import get_tag, get_text
+from scrape_schema.callbacks.slax import get_attr, get_text
 
 from tests.fixtures import HTML
 
@@ -14,9 +14,9 @@ class SlaxSchema(BaseSchema):
     class Meta(MetaSchema):
         parsers_config = {HTMLParser: {}}
 
-    lang: Annotated[str, SlaxSelect("html", callback=get_tag("lang"))]
-    charset: Annotated[str, SlaxSelect("head > meta", 
-                                       callback=get_tag("charset"), 
+    lang: Annotated[str, SlaxSelect("html", callback=get_attr("lang"))]
+    charset: Annotated[str, SlaxSelect("head > meta",
+                                       callback=get_attr("charset"),
                                        factory=lambda s: s.replace("-", ""))]
     title: Annotated[str, SlaxSelect('head > title')]
     title_lower: Annotated[str, SlaxSelect("head > title",

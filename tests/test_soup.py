@@ -5,7 +5,7 @@ import pytest
 
 from scrape_schema import BaseSchema, MetaSchema
 from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupFindList, SoupSelectList
-from scrape_schema.callbacks.soup import get_tag
+from scrape_schema.callbacks.soup import get_attr
 
 from tests.fixtures import HTML
 
@@ -15,9 +15,9 @@ class SoupSchema(BaseSchema):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     # Soup
-    lang: Annotated[str, SoupFind("<html>", callback=get_tag("lang"))]
+    lang: Annotated[str, SoupFind("<html>", callback=get_attr("lang"))]
     charset: Annotated[str, SoupFind("<meta>",
-                                     callback=get_tag("charset"),
+                                     callback=get_attr("charset"),
                                      factory=lambda s: s.replace("-", ""))]
     title: Annotated[str, SoupFind({"name": "title"})]
     title_lower: Annotated[str, SoupSelect("head > title", factory=lambda text: text.lower())]

@@ -6,7 +6,7 @@ from scrape_schema import BaseSchema, MetaSchema
 
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.fields.nested import NestedList, Nested
-from scrape_schema.callbacks.slax import get_tag, get_text, crop_by_slax, crop_by_slax_all
+from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all
 from fixtures import HTML
 
 
