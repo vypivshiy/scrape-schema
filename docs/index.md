@@ -1,5 +1,7 @@
 **Documentation for version 0.0.1**
+
 # Scrape-schema
+
 This library is designed to write structured, readable, 
 reusable parsers for various text data (like html, stdout or any text) and
 is inspired by dataclasses
@@ -61,12 +63,3 @@ This library is not designed to work with structured formats like:
 * any structures
 
 Use third-party libraries designed for these structures!
-
-* [About schema and field classes](fields/schema.md)
-* [regex fields](fields/regex.md)
-* [nested](fields/nested.md)
-* [bs4 fields](fields/soup.md)
-* [selectolax fields](fields/slax.md)
-* [custom fields](fields/custom.md)
-* [Examples](examples.md)
-

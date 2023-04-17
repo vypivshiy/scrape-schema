@@ -6,7 +6,7 @@ is inspired by dataclasses
 
 # Motivation
 Simplifying parsers support, where it is difficult to use 
-or the complete absence of the **API interfaces**.
+or the complete absence of the **API interfaces** and decrease lines of code
 
 Also structuring, data serialization and use as an intermediate layer 
 for third-party serialization libraries: json, dataclasses, pydantic, etc

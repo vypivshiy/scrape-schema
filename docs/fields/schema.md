@@ -19,11 +19,9 @@ from scrape_schema import BaseSchema, BaseSchemaConfig
 
 
 class Schema(BaseSchema):
- class Config(BaseSchemaConfig):
-  parsers_config = {BeautifulSoup: {"features": "lxml"},
-                    HTMLParser: {}}
-
- ...
+    class Config(BaseSchemaConfig):
+        parsers_config = {BeautifulSoup: {"features": "lxml"}, HTMLParser: {}}
+    ...
 ```
 
 * type_caster: bool - usage type casting feature. Default `True` 
@@ -32,7 +30,7 @@ class Schema(BaseSchema):
 | value | mode    | description                                                                                                          |
 |-------|---------|----------------------------------------------------------------------------------------------------------------------|
 | < 0   | disable | disable fields values checker (default)                                                                              |
-| == 0  | enable  | throw `ParseFailAttemptsError` if first field return `default` value                                                 |
+| == 0  | enable  | throw `ParseFailAttemptsError` if _first_ field return `default` value                                               |
 | n > 0 | enable  | print *n* warning's messages if field return `default` value. if n == fail_attempts - throw `ParseFailAttemptsError` |
 
 ```python
@@ -48,9 +46,10 @@ class FailedSchema(BaseSchema):
     fail = ReMatch(r"(\d+)")
 
 
-FailedSchema("lorem upsum dolor")  # raise ParseFailAttemptsError
+FailedSchema("lorem upsum dolor")
 ```
-
+raise `ParseFailAttemptsError`
+_____
 ```python
 from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.regex import ReMatch
@@ -64,9 +63,10 @@ class FailedSchema(BaseSchema):
     fail = ReMatch(r"(\d+)")
 
 
-FailedSchema("lorem upsum dolor")  # print warning message
+FailedSchema("lorem upsum dolor")
 ```
-
+print warning message
+____
 ```python
 from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.regex import ReMatch
@@ -81,9 +81,10 @@ class FailedSchema(BaseSchema):
     fail_2 = ReMatch(r"(\d+)")
 
 
-FailedSchema("lorem upsum dolor")  # print warning message, and raise ParseFailAttemptsError
+FailedSchema("lorem upsum dolor")
 ```
-
+print warning message, and raise `ParseFailAttemptsError`
+___
 # BaseField
 
 The base class of the field for interacting with the `BaseSchema`

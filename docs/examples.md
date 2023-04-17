@@ -10,9 +10,11 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrape_schema import BaseSchema, BaseSchemaConfig
+
+from scrape_schema.callbacks.soup import crop_by_tag_all, get_attr
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.callbacks.soup import crop_by_tag_all, get_attr
+
 
 
 def top_10(lst: list[str]) -> list[str]:

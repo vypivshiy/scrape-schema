@@ -10,7 +10,7 @@ from scrape_schema import BaseSchema, BaseSchemaConfig
 
 
 class SoupSchema(BaseSchema):
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         # can add extra configurations, or usage another parser
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
@@ -27,23 +27,27 @@ this field can automatically convert sting html tag string to kwargs for this me
 ```python
 from scrape_schema.callbacks.soup import element_to_dict
 
+
 print(element_to_dict("<a>"))
 # {"name": "a"}
-
 print(element_to_dict('<div class="spam" id="100">'))
 # {"name": "div", "attrs": {"class": "spam", "id": "100"}}
 ```
 
 ```python
 from scrape_schema.fields.soup import SoupFind, SoupFindList
+
+
 SoupFind("<a>")  # {"name": "a"}
-SoupFind('<div class="spam" id="0">')  # {"name": "div", "attrs": {"class":"spam", "id": "0"}}
+SoupFindList('<div class="spam" id="0">')  # {"name": "div", "attrs": {"class":"spam", "id": "0"}}
 SoupFind("foobar") # raise TypeError
 ```
 Also, you can simplify tag for search elements:
 
 ```python
 from scrape_schema.fields.soup import SoupFind
+
+
 # find div tag with class="spam" tag like <div class="spam" foo="bar", href="/foo">
 # <div class="spam egg">
 # <div class="spam foo bar baz">

@@ -1,8 +1,37 @@
 site_name: Scrape Schema
-site_description: A lightweight library for converting any text (xml, html, plain text, stdout, etc) to python datatypes
+site_description: Converting any text (xml, html, plain text, stdout, etc) to python datatypes
 strict: true
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: dark blue
+      accent: dark blue
+      toggle:
+        icon: material/lightbulb-outline
+        name: "Switch to dark mode"
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: dark blue
+      accent: dark blue
+      toggle:
+        icon: material/lightbulb
+        name: "Switch to light mode"
+
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+
 nav:
   - Home: index.md
+  - BaseSchema: fields/schema.md
+  - Fields:
+      - regex: fields/regex.md
+      - nested: fields/nested.md
+      - soup: fields/soup.md
+      - slax: fields/slax.md
+      - custom: fields/custom.md
   - Examples: examples.md
-  - BaseSchema: base_schema.md
-  - Fields: fields.md
