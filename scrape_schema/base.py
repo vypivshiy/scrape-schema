@@ -25,7 +25,6 @@ except ImportError:
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
-
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
 _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
@@ -82,8 +81,8 @@ class TypeCaster:
                          self.__class__.__name__, value)
             return value
 
-        logger.debug("`%s` Cast type start. Origin: `%s[%s]`, Annotation `%s` with args `%s`",
-                     self.__class__.__name__, value, value_type.__name__, type_origin, type_args)
+        logger.debug("`%s` Cast type start. `value[%s]=%s`, type_annotation=%s, `type_origin=%s`, `args=%s`",
+                     self.__class__.__name__, value_type.__name__, value, type_annotation, type_origin, type_args)
 
         # Optional
         if type_origin is Union and NoneType in type_args:
@@ -121,7 +120,7 @@ class TypeCaster:
 
         else:
             # single type
-            logger.debug('Cast `%s`  `%s(%s)`', self.__class__.__name__, type_annotation.__name__, value)
+            logger.debug('Cast `%s` `%s(%s)`', self.__class__.__name__, type_annotation.__name__, value)
             return type_annotation(value)
 
 
@@ -150,31 +149,38 @@ class BaseField(ABCField, TypeCaster):
         ...
 
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
-        logger.debug("%s.%s[%s] Start parse",
-                     instance.__class__.__name__, name, self.Config.parser or 'str')
+        logger.info("`%s.%s[%s]`. Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
+                    instance.__class__.__name__, name, self.Config.parser or 'str',
+                    getattr(self.factory, "__name__", None),
+                    getattr(self.callback, "__name__", None),
+                    getattr(self.filter_, "__name__", None),
+                    self.default)
         value = self._parse(markup)
-        logger.debug("`%s.%s = %s` raw value(s)", instance.__class__.__name__, name, value)
         if not value:
             logger.debug("`%s.%s` value not found, set default `%s` value",
                          instance.__class__.__name__, name, self.default)
             value = self.default
+        else:
+            logger.debug("`%s.%s = %s` raw value(s)",
+                         instance.__class__.__name__, name,
+                         value)
 
         if self._is_iterable_and_not_string_value(value):
             value = self._filter(value)
-            logger.debug('`%s.%s = %s` filter result list',
-                         instance.__class__.__name__, name, value)
+            if self.filter_:
+                logger.debug('filter_ `%s.%s = %s`',
+                             instance.__class__.__name__, name, value)
 
         value = self._callback(value)
         if self.callback:
-            logger.debug('`%s.%s = %s` callback', instance.__class__.__name__, name, value)
+            logger.debug('callback `%s.%s = %s`', instance.__class__.__name__, name, value)
+
         if self.factory:
             value = self._factory(value)
-            logger.debug('`%s.%s = %s` factory value',
+            logger.debug('factory `%s.%s = %s`',
                          instance.__class__.__name__, name, value)
         else:
             value = self._typing(instance, name, value)
-            logger.debug('`%s.%s = %s` cast typing value',
-                         instance.__class__.__name__, name, value)
         return value
 
     def _filter(self, value: T) -> Any:
@@ -254,7 +260,7 @@ class BaseSchema:
                            markup: str) -> Any:
         value: Any = None
         if not isinstance(fields, tuple):
-            fields = (fields, )
+            fields = (fields,)
 
         for field in fields:
             field_parser = field.Config.parser
@@ -290,7 +296,7 @@ class BaseSchema:
         _fields = self._get_fields()
         _parsers: dict[Type[Any], Any] = {}
         _fails_counter = 0
-        logger.debug("Start serialise `%s`. Fields count: %i", self.__class__.__name__, len(_fields.keys()))
+        logger.info("Start parse `%s`. Fields count: %i", self.__class__.__name__, len(_fields.keys()))
 
         for name, field in _fields.items():
             value = self._parse_field_value(
@@ -314,7 +320,7 @@ class BaseSchema:
                 if _fails_counter > self.Config.fails_attempt:
                     raise ParseFailAttemptsError(f"{_fails_counter} of {len(_fields.keys())} "
                                                  "fields failed parse.")
-            logger.debug("Setattr `%s.%s[%s] = %s`",
+            logger.debug("`%s.%s[%s] = %s`",
                          self.__class__.__name__, name, field.__class__.__name__, value)
             setattr(self, name, value)
         logger.debug("%s done! Fields fails: %i", self.__class__.__name__, _fails_counter)
@@ -342,7 +348,7 @@ class BaseSchema:
         return {
             k: self._to_dict(v)
             for k, v in self.__dict__.items()
-            if not k.startswith("__") and k != "Meta"
+            if not k.startswith("__") and k != "Config"
         }
 
     def __repr__(self):
