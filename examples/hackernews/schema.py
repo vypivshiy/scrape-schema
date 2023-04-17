@@ -35,7 +35,7 @@ class Post(BaseSchema):
 
 
 class HackerNewsSchema(BaseSchema):
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     posts: Annotated[list[Post], NestedList(Post, crop_rule=crop_posts)]

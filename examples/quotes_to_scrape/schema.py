@@ -32,7 +32,7 @@ class Quote(BaseSchema):
 class QuotePage(BaseSchema):
     # https://quotes.toscrape.com/page/{} document
     # set usage parsers backends
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     title: Annotated[str, SoupSelect('head > title')]
