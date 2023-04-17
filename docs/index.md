@@ -1,75 +1,72 @@
-# Overview
+**Documentation for version 0.0.1**
+# Scrape-schema
+This library is designed to write structured, readable, 
+reusable parsers for various text data (like html, stdout or any text) and
+is inspired by dataclasses
 
-Scrape Schema - a library for serialization of chaotic plain text data 
-to python datatypes
+# Motivation
+Simplifying parsers support, (mostly html, stdout output, unstructured text and unofficial APIs), 
+where it is difficult to use or the complete absence of the **REST API**.
 
-# Why?
-This project is an attempt to serialize chaos from 
-unstructured text into readable, reusing structures.
+Also structuring, data serialization and use as an intermediate layer 
+for third-party serialization libraries: json, dataclasses, attrs, pydantic, etc
+____
 
-# Install
-## Nested + Regex fields (minimalism, zero dependencies)
-```shell
-pip install scrape-schema
-```
-## Add all fields
-```shell
-pip install scrape-schema[all]
-```
-## Add bs4 fields
-```shell
-pip install scrape-schema[bs4]
-```
-## Add selectolax fields
-```shell
-pip install scrape-schema[slax]
-```
-# Logs
-for enable/disable/config logger, get `scrape_schema` logger:
+# Fields
+## How it works
+1. extract string from text
+2. if it's not founded or empty - set `default` value
+3. if it's iterable (not str) - call `filter_`, for first filter values
+4. applies a callback function on a value. If value is iterable, applies for every element
+5. if a `factory` function is passed - applies this for value, ignore auto type-cast and return a factored value
+6. if factory is None - try to apply auto type-cast
 
-```python
-import logging
-logger = logging.getLogger("scrape_schema")
-...
-```
-# Quickstart
-```python
-import pprint
-from scrape_schema import BaseSchema
-from scrape_schema.fields.regex import ReMatch, ReMatchList
+Arguments eval steps:
 
-TEXT = """
-banana potato BANANA POTATO
--foo:10
--bar:20
-lorem upsum dolor
-192.168.0.1
-"""
+1. parse value
+2. if value None - return default
+3. filter_ (if list/iterable)
+4. eval callback elements
+5. typing or factory
 
+## About typing.Annotated 
 
-class Schema(BaseSchema):
-    status: str = "OK"
-    ip_v4: str = ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-    max_digit: int = ReMatchList(r"(\d+)", factory=lambda lst: max(int(i) for i in lst))
+This project usage [Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated)
+[(PEP 593)](https://peps.python.org/pep-0593/) typehint for annotation fields 
+and make the static type checker happy 😀 and didn't need write a mypy plugin 🤯.
 
-    failed_value: bool = ReMatchList(r"(ora)", default=False)
-    digits: list[int] = ReMatchList(r"(\d+)")
-    digits_float: list[float] = ReMatchList(r"(\d+)", callback=lambda s: f"{s}.5")
-    words_lower: list[str] = ReMatchList(r"([a-z]+)")
-    words_upper: list[str] = ReMatchList(r"([A-Z]+)")
-    
-if __name__ == '__main__':
-    schema = Schema(TEXT)
-    pprint.pprint(schema.dict(), width=48, compact=True)
-    # {'digits': [10, 20, 192, 168, 0, 1],
-    #  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5,
-    #                   1.5],
-    #  'failed_value': False,
-    #  'ip_v4': '192.168.0.1',
-    #  'max_digit': 192,
-    #  'words_lower': ['banana', 'potato', 'foo',
-    #                  'bar', 'lorem', 'upsum',
-    #                  'dolor'],
-    #  'words_upper': ['BANANA', 'POTATO']}
-```
+![img_2.png](imgs/img_2.png)
+
+**No annotation** - IDE marks attribute as "ReMatch" object (it's wrong)
+____
+
+![img_1.png](imgs/img_1.png)
+
+Without **Annotated** type - static type checker marks as error
+____
+
+![img_3.png](imgs/img_3.png)
+
+With **Annotated** - correct type, mypy OK
+____
+
+## About backend parsers
+This library is not designed to work with structured formats like:
+
+* cfg
+* yaml
+* toml
+* json
+* msgpack
+* any structures
+
+Use third-party libraries designed for these structures!
+
+* [About schema and field classes](fields/schema.md)
+* [regex fields](fields/regex.md)
+* [nested](fields/nested.md)
+* [bs4 fields](fields/soup.md)
+* [selectolax fields](fields/slax.md)
+* [custom fields](fields/custom.md)
+* [Examples](examples.md)
 
