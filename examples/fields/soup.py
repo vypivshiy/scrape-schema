@@ -66,7 +66,7 @@ HTML = """
 
 
 class Schema(BaseSchema):
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         # BeautifulSoup configuration. You can change parser to lxml. html5.parser, xml, add any kwargs, etc
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 

@@ -14,7 +14,7 @@ from callbacks import crop_posts, concat_href
 
 
 class Post(BaseSchema):
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     id: Annotated[int, SoupFind('<tr class="athing">', callback=get_attr('id'))]

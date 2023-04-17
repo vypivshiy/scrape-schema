@@ -48,7 +48,7 @@ class RawText(BaseField):
 
 class SoupImage(BaseField):
     # markup parser rule config
-    class Meta(BaseConfigField):
+    class Config(BaseConfigField):
         parser = BeautifulSoup
 
     # base api provide filter_ (for iterable values), callback, factory and default
@@ -78,7 +78,7 @@ class SoupImageList(SoupImage):
 
 
 class Schema(BaseSchema):
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     raw: Annotated[str, RawText(foil_arg=object())]

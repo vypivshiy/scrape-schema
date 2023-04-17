@@ -66,7 +66,7 @@ HTML = """
 
 class Schema(BaseSchema):
     # add parser to config
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
     title = SlaxSelect("head > title")

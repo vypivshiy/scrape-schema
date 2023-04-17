@@ -12,7 +12,7 @@ from scrape_schema.callbacks.slax import get_attr, get_text
 
 
 class MainEnPage(BaseSchema):
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
     articles_count: Annotated[int, SlaxSelect("#articlecount > a:nth-child(1)",

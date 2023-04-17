@@ -9,14 +9,10 @@ from scrape_schema.callbacks.soup import get_attr, crop_by_tag_all, get_text, re
 from callbacks import crop_schedule, crop_ongoing, crop_new_anime
 
 
-class BaseSchemaMeta(BaseSchemaConfig):
-    parsers_config = {BeautifulSoup: {"features": "html.parser"}}
-
-
 class SchemaConfig(BaseSchema):
     """schema config"""
-    class Meta(BaseSchemaMeta):
-        pass
+    class Config(BaseSchemaConfig):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
 
 # schemas

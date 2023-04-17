@@ -67,7 +67,7 @@ HTML = """
 
 
 class SchemaConfig(BaseSchema):
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
 

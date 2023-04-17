@@ -1,3 +1,4 @@
+# TODO documentary this
 from typing import Annotated, Optional
 from scrape_schema import BaseSchema
 from scrape_schema.fields.regex import ReMatch

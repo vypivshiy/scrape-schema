@@ -19,7 +19,7 @@ def top_10(lst: list[str]) -> list[str]:
 
 class Quote(BaseSchema):
     # <div class="quote">
-    class Meta(BaseSchemaConfig):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     text: Annotated[str, SoupFind('<span class="text">')]
