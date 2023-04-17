@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Callable, Optional
 
-from ..base import BaseField, MetaField
+from ..base import BaseField, BaseConfigField
 from ..callbacks.soup import get_text, element_to_dict
 
 from bs4 import BeautifulSoup, Tag, ResultSet
@@ -15,8 +15,9 @@ __all__ = [
     'SoupSelectList'
 ]
 
+
 class BaseSoup(BaseField, ABC):
-    class Meta(MetaField):
+    class Config(BaseConfigField):
         parser = BeautifulSoup
 
 

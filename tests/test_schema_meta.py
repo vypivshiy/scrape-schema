@@ -1,13 +1,15 @@
+from typing import Annotated
+
 import pytest
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.exceptions import ParseFailAttemptsError
 from scrape_schema.fields.regex import ReMatch
 
 
 # raises ParseFailAttemptsError if fail not founded
 class FailedSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         fails_attempt = 0
     foo = ReMatch(r"(lorem)")
     fail = ReMatch(r"(\d+)")
@@ -15,10 +17,17 @@ class FailedSchema(BaseSchema):
 
 # print RuntimeWarning message
 class WarningSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         fails_attempt = 1
     foo = ReMatch(r"(lorem)")
     fail = ReMatch(r"(\d+)")
+
+
+class DisabledTypingSchema(BaseSchema):
+    class Config(BaseSchemaConfig):
+        type_cast = False
+
+    foo: Annotated[int, ReMatch(r'(\d+)')]
 
 
 def test_raise_attempts():
@@ -29,3 +38,9 @@ def test_raise_attempts():
 def test_warning_attempts():
     with pytest.warns(RuntimeWarning):
         WarningSchema("lorem upsum dolor")
+
+
+def test_disable_typing():
+    sc = DisabledTypingSchema("lorem 100500")
+    assert not isinstance(sc.foo, int)
+    assert isinstance(sc.foo, str)

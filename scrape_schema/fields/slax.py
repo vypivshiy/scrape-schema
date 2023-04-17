@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Optional, Callable
 
-from ..base import BaseField, MetaField
+from ..base import BaseField, BaseConfigField
 from ..callbacks.slax import get_text
 
 from selectolax.parser import HTMLParser, Node
@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 class BaseSlax(BaseField, ABC):
-    class Meta(MetaField):
+    class Config(BaseConfigField):
         parser = HTMLParser
 
 

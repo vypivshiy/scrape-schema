@@ -3,7 +3,7 @@ import pytest
 
 from selectolax.parser import HTMLParser
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.callbacks.slax import get_attr, get_text
 
@@ -11,7 +11,7 @@ from tests.fixtures import HTML
 
 
 class SlaxSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
     lang: Annotated[str, SlaxSelect("html", callback=get_attr("lang"))]

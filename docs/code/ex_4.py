@@ -4,9 +4,10 @@ import re
 
 from bs4 import BeautifulSoup
 
+from scrape_schema.fields.nested import NestedList, Nested
 from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
-from scrape_schema.callbacks.soup import get_attr
+from scrape_schema.callbacks.soup import get_attr, crop_by_selector_all
 
 HTML = """
 <!DOCTYPE html>
@@ -65,6 +66,15 @@ HTML = """
 """
 
 
+class DivDict(BaseSchema):
+    # <div class="dict">
+    class Meta(BaseSchemaConfig):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
+
+    string: Annotated[str, SoupFind('<p class="string">')]
+    a_list: Annotated[list[int], SoupFindList('<a class="list">')]
+
+
 class Schema(BaseSchema):
     class Meta(BaseSchemaConfig):
         # BeautifulSoup configuration. You can change parser to lxml. html5.parser, xml, add any kwargs, etc
@@ -105,6 +115,7 @@ class Schema(BaseSchema):
                                                filter_=lambda tag: tag.get_text().isdigit(),
                                                callback=lambda tag: int(tag.get_text()),
                                                factory=sum)]
+    div_dicts: Annotated[list[DivDict], NestedList(DivDict, crop_rule=crop_by_selector_all("body > div.dict"))]
 
 
 if __name__ == '__main__':
@@ -119,6 +130,12 @@ if __name__ == '__main__':
     #  'body_list': [666, 777, 888],
     #  'body_list_re': [1, 2, 3, 4, 5, 6, 7, 8, 9],
     #  'body_list_selector': [666, 777, 888],
+    #  'div_dicts': [{'a_list': [1, 2, 3],
+    #                 'string': 'test-1'},
+    #                {'a_list': [4, 5, 6],
+    #                 'string': 'test-2'},
+    #                {'a_list': [7, 8, 9],
+    #                 'string': 'test-3'}],
     #  'has_a_tag': True,
     #  'has_a_tag_select': True,
     #  'has_spam_tag': False,

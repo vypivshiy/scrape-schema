@@ -3,7 +3,7 @@ from typing import Annotated
 from bs4 import BeautifulSoup
 from selectolax.parser import HTMLParser
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupFindList, SoupSelectList
 from scrape_schema.fields.nested import NestedList, Nested
@@ -15,7 +15,7 @@ from tests.fixtures import HTML
 
 
 class BaseMixSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         parsers_config = {
             HTMLParser: {},
             BeautifulSoup: {"features": "html.parser"}

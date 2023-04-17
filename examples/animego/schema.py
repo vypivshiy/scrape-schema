@@ -1,7 +1,7 @@
 from typing import Annotated
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupSelectList
 from scrape_schema.fields.nested import NestedList
 from scrape_schema.callbacks.soup import get_attr, crop_by_tag_all, get_text, replace_text
@@ -9,13 +9,13 @@ from scrape_schema.callbacks.soup import get_attr, crop_by_tag_all, get_text, re
 from callbacks import crop_schedule, crop_ongoing, crop_new_anime
 
 
-class BaseMeta(MetaSchema):
+class BaseSchemaMeta(BaseSchemaConfig):
     parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
 
 class SchemaConfig(BaseSchema):
     """schema config"""
-    class Meta(BaseMeta):
+    class Meta(BaseSchemaMeta):
         pass
 
 
@@ -26,7 +26,7 @@ class AnimeSeason(SchemaConfig):
     name: Annotated[str, SoupFind('<a class="text-nowrap">')]
     image: Annotated[str, SoupFind({"name": "div", "class_": "tns-lazy-img"},
                                    callback=get_attr("data-src"))]
-    rating: Annotated[float, SoupFind('<div class="p-rate-flag__text">',
+    rating: Annotated[float, SoupFind('<div class="p-rate-flag__text">', default='0',
                                       callback=replace_text(',', '.', strip=True))]
 
 

@@ -2,7 +2,7 @@ import pprint
 from typing import Optional, Any, Annotated, Callable
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseSchema, MetaField, MetaSchema
+from scrape_schema import BaseSchema, BaseConfigField, BaseSchemaConfig
 from scrape_schema.base import BaseField
 from scrape_schema.fields.regex import ReMatch
 
@@ -48,7 +48,7 @@ class RawText(BaseField):
 
 class SoupImage(BaseField):
     # markup parser rule config
-    class Meta(MetaField):
+    class Meta(BaseConfigField):
         parser = BeautifulSoup
 
     # base api provide filter_ (for iterable values), callback, factory and default
@@ -78,7 +78,7 @@ class SoupImageList(SoupImage):
 
 
 class Schema(BaseSchema):
-    class Meta(MetaSchema):
+    class Meta(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     raw: Annotated[str, RawText(foil_arg=object())]

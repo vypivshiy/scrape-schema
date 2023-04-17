@@ -2,7 +2,7 @@ from typing import Annotated
 import pytest
 
 from selectolax.parser import HTMLParser
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.fields.nested import NestedList, Nested
@@ -11,7 +11,7 @@ from fixtures import HTML
 
 
 class SLaxSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
 

@@ -2,10 +2,10 @@ import pprint
 from typing import Annotated
 
 from selectolax.parser import HTMLParser
-from scrape_schema import BaseSchema, MetaSchema
 
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
-from scrape_schema.callbacks.slax import get_attr, get_text
+from scrape_schema.callbacks.slax import get_attr
 
 HTML = """
 <!DOCTYPE html>
@@ -66,7 +66,7 @@ HTML = """
 
 class Schema(BaseSchema):
     # add parser to config
-    class Meta(MetaSchema):
+    class Meta(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
     title = SlaxSelect("head > title")

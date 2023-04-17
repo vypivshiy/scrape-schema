@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import warnings
 from abc import abstractmethod, ABC
 from typing import Any, Type, ByteString, Iterable, TypeVar, get_type_hints, get_args, get_origin, Optional, Union, \
@@ -25,6 +24,7 @@ except ImportError:
         Self: TypeAlias = 'BaseSchema'  # type: ignore
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
+
 
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
@@ -125,12 +125,12 @@ class TypeCaster:
             return type_annotation(value)
 
 
-class MetaField:
+class BaseConfigField:
     parser: ClassVar[Optional[Type[Any]]] = None
 
 
 class BaseField(ABCField, TypeCaster):
-    class Meta(MetaField):
+    class Config(BaseConfigField):
         pass
 
     def __init__(self, *,
@@ -151,7 +151,7 @@ class BaseField(ABCField, TypeCaster):
 
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
         logger.debug("%s.%s[%s] Start parse",
-                     instance.__class__.__name__, name, self.Meta.parser or 'str')
+                     instance.__class__.__name__, name, self.Config.parser or 'str')
         value = self._parse(markup)
         logger.debug("`%s.%s = %s` raw value(s)", instance.__class__.__name__, name, value)
         if not value:
@@ -200,20 +200,20 @@ class BaseField(ABCField, TypeCaster):
         return self.callback(value)
 
     def _typing(self, instance: BaseSchema, name: str, value: T) -> Any:
-        if instance.Meta.type_cast:
+        if instance.Config.type_cast:
             if type_annotation := instance.__fields_annotations__.get(name):
                 value = self._cast_type(type_annotation, value)
         return value
 
 
-class MetaSchema:
+class BaseSchemaConfig:
     parsers_config: ClassVar[dict[Type[Any], dict[str, Any]]] = {}
     type_cast: ClassVar[bool] = True
     fails_attempt: ClassVar[int] = -1
 
 
 class BaseSchema:
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         pass
 
     @staticmethod
@@ -257,12 +257,12 @@ class BaseSchema:
             fields = (fields, )
 
         for field in fields:
-            field_parser = field.Meta.parser
-            # parser is not defined in field.Meta.parser
+            field_parser = field.Config.parser
+            # parser is not defined in field.Config.parser
             if not field_parser:
                 value = field(self, name, markup)
 
-            elif self.Meta.parsers_config.get(field_parser, None) is None:
+            elif self.Config.parsers_config.get(field_parser, None) is None:
                 try:
                     raise MarkupNotFoundError(f"{field.__class__.__name__} required "
                                               f"{field_parser.__class__.__name__} configuration")
@@ -273,7 +273,7 @@ class BaseSchema:
             else:
                 # cache markup parser like BeautifulSoup, HTMLParser, and thing instances
                 if not cached_parsers.get(field_parser):
-                    parser_kwargs = self.Meta.parsers_config.get(field_parser)
+                    parser_kwargs = self.Config.parsers_config.get(field_parser)
                     cached_parsers[field_parser] = field_parser(markup, **parser_kwargs)
 
                 value = field(self, name, cached_parsers[field_parser])
@@ -301,7 +301,7 @@ class BaseSchema:
             )
 
             # calculate fails - compare by default value
-            if self.Meta.fails_attempt >= 0 and hasattr(field, "default") and value == field.default:
+            if self.Config.fails_attempt >= 0 and hasattr(field, "default") and value == field.default:
                 _fails_counter += 1
                 warnings.warn(f"[{_fails_counter}] Failed parse `{self.__class__.__name__}.{name}` "
                               f"by {field.__class__.__name__} field, set `{value}`.",
@@ -311,7 +311,7 @@ class BaseSchema:
                 logger.warning("[%i] Failed parse `%s.%s` by `%s`, set `%s`",
                                _fails_counter, self.__class__.__name__, name, field.__class__.__name__, value)
 
-                if _fails_counter > self.Meta.fails_attempt:
+                if _fails_counter > self.Config.fails_attempt:
                     raise ParseFailAttemptsError(f"{_fails_counter} of {len(_fields.keys())} "
                                                  "fields failed parse.")
             logger.debug("Setattr `%s.%s[%s] = %s`",

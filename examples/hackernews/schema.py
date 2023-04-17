@@ -4,7 +4,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.soup import SoupFind, SoupSelect
 from scrape_schema.fields.nested import NestedList
 from scrape_schema.fields.regex import ReMatch
@@ -14,7 +14,7 @@ from callbacks import crop_posts, concat_href
 
 
 class Post(BaseSchema):
-    class Meta(MetaSchema):
+    class Meta(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     id: Annotated[int, SoupFind('<tr class="athing">', callback=get_attr('id'))]
@@ -35,7 +35,7 @@ class Post(BaseSchema):
 
 
 class HackerNewsSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Meta(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     posts: Annotated[list[Post], NestedList(Post, crop_rule=crop_posts)]

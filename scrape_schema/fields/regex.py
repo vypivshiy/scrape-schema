@@ -10,6 +10,7 @@ __all__ = [
     'ReMatchListDict'
 ]
 
+
 class ReMatch(BaseField):
     def __init__(self,
                  pattern: str | Pattern,

@@ -3,7 +3,7 @@ import pprint
 
 from selectolax.parser import HTMLParser
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.fields.nested import NestedList, Nested
 from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all, get_attr
@@ -67,7 +67,7 @@ HTML = """
 
 
 class SchemaConfig(BaseSchema):
-    class Meta(MetaSchema):
+    class Meta(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
 

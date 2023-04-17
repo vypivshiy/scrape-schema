@@ -3,7 +3,7 @@ from typing import Optional, Annotated
 from bs4 import BeautifulSoup
 import pytest
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupFindList, SoupSelectList
 from scrape_schema.callbacks.soup import get_attr
 
@@ -11,7 +11,7 @@ from tests.fixtures import HTML
 
 
 class SoupSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     # Soup

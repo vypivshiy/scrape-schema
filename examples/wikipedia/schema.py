@@ -6,13 +6,13 @@ import json
 import requests
 from selectolax.parser import HTMLParser
 
-from scrape_schema import BaseSchema, MetaSchema
+from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.callbacks.slax import get_attr, get_text
 
 
 class MainEnPage(BaseSchema):
-    class Meta(MetaSchema):
+    class Meta(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
 
     articles_count: Annotated[int, SlaxSelect("#articlecount > a:nth-child(1)",

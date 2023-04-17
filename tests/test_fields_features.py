@@ -5,16 +5,13 @@ import json
 
 from bs4 import BeautifulSoup
 
-import pytest
 
-from scrape_schema import BaseSchema, MetaSchema, BaseField, MetaField
+from scrape_schema import BaseSchema, BaseSchemaConfig, BaseField, BaseConfigField
 from scrape_schema.fields.nested import Nested
 from scrape_schema.fields.soup import SoupFindList, SoupFind
 from scrape_schema.callbacks.soup import crop_by_tag
 
 from fixtures import HTML
-
-from scrape_schema.exceptions import ValidationError
 
 
 class FieldTitle(BaseField):
@@ -25,7 +22,7 @@ class FieldTitle(BaseField):
 
 
 class FieldSoupImages(BaseField):
-    class Meta(MetaField):
+    class Config(BaseConfigField):
         parser = BeautifulSoup
 
     def _parse(self, markup: BeautifulSoup) -> list[str]:
@@ -41,7 +38,7 @@ class DictData:
 
 
 class FeaturesNested(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     p: Annotated[str, SoupFind('<p class="string">')]
@@ -49,7 +46,7 @@ class FeaturesNested(BaseSchema):
 
 
 class FeaturesSchema(BaseSchema):
-    class Meta(MetaSchema):
+    class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     title = FieldTitle()
@@ -69,7 +66,6 @@ class FeaturesSchema(BaseSchema):
     sub_json_str: Annotated[str, Nested(FeaturesNested,
                                         crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),
                                         factory=lambda schema: json.dumps(schema.dict()))]
-
 
 
 FEATURES_SCHEMA = FeaturesSchema(HTML)
