@@ -7,11 +7,8 @@ from ..callbacks.slax import get_text
 from selectolax.parser import HTMLParser, Node
 
 
-__all__ = [
-    'BaseSlax',
-    'SlaxSelect',
-    'SlaxSelectList'
-]
+__all__ = ["BaseSlax", "SlaxSelect", "SlaxSelectList"]
+
 
 class BaseSlax(BaseField, ABC):
     class Config(BaseConfigField):
@@ -19,14 +16,15 @@ class BaseSlax(BaseField, ABC):
 
 
 class SlaxSelect(BaseSlax):
-    def __init__(self,
-                 selector: str,
-                 strict: bool = False,
-                 *,
-                 default: Optional[Any] = None,
-                 callback: Optional[Callable[[Node], str | Any]] = get_text(),
-                 factory: Optional[Callable[[str | Any], Any]] = None,
-                 ):
+    def __init__(
+        self,
+        selector: str,
+        strict: bool = False,
+        *,
+        default: Optional[Any] = None,
+        callback: Optional[Callable[[Node], str | Any]] = get_text(),
+        factory: Optional[Callable[[str | Any], Any]] = None,
+    ):
         super().__init__(default=default, callback=callback, factory=factory)
         self.selector = selector
         self.strict = strict
@@ -36,16 +34,18 @@ class SlaxSelect(BaseSlax):
 
 
 class SlaxSelectList(BaseSlax):
-
-    def __init__(self,
-                 selector: str,
-                 *,
-                 default: Optional[Any] = None,
-                 filter_: Optional[Callable[[Node], bool]] = None,
-                 callback: Optional[Callable[[Node], str | Any]] = get_text(),
-                 factory: Optional[Callable[[list[str | Any]], Any]] = None,
-                 ):
-        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
+    def __init__(
+        self,
+        selector: str,
+        *,
+        default: Optional[Any] = None,
+        filter_: Optional[Callable[[Node], bool]] = None,
+        callback: Optional[Callable[[Node], str | Any]] = get_text(),
+        factory: Optional[Callable[[list[str | Any]], Any]] = None,
+    ):
+        super().__init__(
+            default=default, callback=callback, factory=factory, filter_=filter_
+        )
         self.selector = selector
 
     def _parse(self, markup: HTMLParser) -> list[Node]:

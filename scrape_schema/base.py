@@ -2,8 +2,21 @@ from __future__ import annotations
 
 import warnings
 from abc import abstractmethod, ABC
-from typing import Any, Type, ByteString, Iterable, TypeVar, get_type_hints, get_args, get_origin, Optional, Union, \
-    Callable, TypeAlias, ClassVar
+from typing import (
+    Any,
+    Type,
+    ByteString,
+    Iterable,
+    TypeVar,
+    get_type_hints,
+    get_args,
+    get_origin,
+    Optional,
+    Union,
+    Callable,
+    TypeAlias,
+    ClassVar,
+)
 from types import NoneType
 import logging
 
@@ -21,7 +34,7 @@ except ImportError:
         from typing_extensions import Self  # type: ignore
     except ImportError:
         # very old python
-        Self: TypeAlias = 'BaseSchema'  # type: ignore
+        Self: TypeAlias = "BaseSchema"  # type: ignore
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
@@ -61,8 +74,9 @@ class ABCField(ABC):
 class TypeCaster:
     @staticmethod
     def _is_iterable_and_not_string_type(value_type: Type) -> bool:
-        return (issubclass(value_type, Iterable)
-                and not issubclass(value_type, (ByteString, str)))
+        return issubclass(value_type, Iterable) and not issubclass(
+            value_type, (ByteString, str)
+        )
 
     @staticmethod
     def _is_iterable_and_not_string_value(value: T) -> bool:
@@ -77,19 +91,33 @@ class TypeCaster:
 
         # skip if value type is annotated correct or is missing
         if value_type is type_annotation:
-            logger.debug("`%s` value `%s` has same type, skip cast",
-                         self.__class__.__name__, value)
+            logger.debug(
+                "`%s` value `%s` has same type, skip cast",
+                self.__class__.__name__,
+                value,
+            )
             return value
 
-        logger.debug("`%s` Cast type start. `value[%s]=%s`, type_annotation=%s, `type_origin=%s`, `args=%s`",
-                     self.__class__.__name__, value_type.__name__, value, type_annotation, type_origin, type_args)
+        logger.debug(
+            "`%s` Cast type start. `value[%s]=%s`, type_annotation=%s, `type_origin=%s`, `args=%s`",
+            self.__class__.__name__,
+            value_type.__name__,
+            value,
+            type_annotation,
+            type_origin,
+            type_args,
+        )
 
         # Optional
         if type_origin is Union and NoneType in type_args:
             # get optional type, set
             if value:
-                logger.debug('`%s` Cast Optional type `%s(%s)`',
-                             self.__class__.__name__, value, type_args[0])
+                logger.debug(
+                    "`%s` Cast Optional type `%s(%s)`",
+                    self.__class__.__name__,
+                    value,
+                    type_args[0],
+                )
                 if optional_args := get_args(type_args[0]):
                     # Optional[list[T]]
                     if isinstance(value, list):
@@ -100,27 +128,44 @@ class TypeCaster:
                         return {k_type(k): v_type(v) for k, v in value.items()}
                 return type_args[0](value)
             else:
-                logger.debug('`%s` Cast Optional type, value `%s` is False',
-                             self.__class__.__name__, value)
+                logger.debug(
+                    "`%s` Cast Optional type, value `%s` is False",
+                    self.__class__.__name__,
+                    value,
+                )
                 return value
 
         # dict, list
         elif type_origin:
             if issubclass(type_origin, dict) and isinstance(value, dict):
-                logger.debug("`%s` Cast dict type: `%s(key)`, `%s(value)`",
-                             self.__class__.__name__, type_args[0], type_args[1])
+                logger.debug(
+                    "`%s` Cast dict type: `%s(key)`, `%s(value)`",
+                    self.__class__.__name__,
+                    type_args[0],
+                    type_args[1],
+                )
                 # get dict set
                 return {type_args[0](k): type_args[1](v) for k, v in value.items()}
 
-            elif self._is_iterable_and_not_string_type(type_origin) and isinstance(value, list):
-                logger.debug("`%s` Cast list items to `%s(item)`",
-                             self.__class__.__name__, type_args[0])
+            elif self._is_iterable_and_not_string_type(type_origin) and isinstance(
+                value, list
+            ):
+                logger.debug(
+                    "`%s` Cast list items to `%s(item)`",
+                    self.__class__.__name__,
+                    type_args[0],
+                )
                 # get list, set
                 return [type_args[0](i) for i in value]
 
         else:
             # single type
-            logger.debug('Cast `%s` `%s(%s)`', self.__class__.__name__, type_annotation.__name__, value)
+            logger.debug(
+                "Cast `%s` `%s(%s)`",
+                self.__class__.__name__,
+                type_annotation.__name__,
+                value,
+            )
             return type_annotation(value)
 
 
@@ -132,13 +177,15 @@ class BaseField(ABCField, TypeCaster):
     class Config(BaseConfigField):
         pass
 
-    def __init__(self, *,
-                 default: Optional[Any] = None,
-                 filter_: Optional[Callable[[T], bool]] = None,
-                 callback: Optional[Callable[..., T]] = None,
-                 factory: Optional[Callable[..., T]] = None,
-                 **kwargs
-                 ):
+    def __init__(
+        self,
+        *,
+        default: Optional[Any] = None,
+        filter_: Optional[Callable[[T], bool]] = None,
+        callback: Optional[Callable[..., T]] = None,
+        factory: Optional[Callable[..., T]] = None,
+        **kwargs,
+    ):
         self.factory = factory
         self.callback = callback
         self.filter_ = filter_
@@ -149,36 +196,48 @@ class BaseField(ABCField, TypeCaster):
         ...
 
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
-        logger.info("`%s.%s[%s]`. Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
-                    instance.__class__.__name__, name, self.Config.parser or 'str',
-                    getattr(self.factory, "__name__", None),
-                    getattr(self.callback, "__name__", None),
-                    getattr(self.filter_, "__name__", None),
-                    self.default)
+        logger.info(
+            "`%s.%s[%s]`. Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
+            instance.__class__.__name__,
+            name,
+            self.Config.parser or "str",
+            getattr(self.factory, "__name__", None),
+            getattr(self.callback, "__name__", None),
+            getattr(self.filter_, "__name__", None),
+            self.default,
+        )
         value = self._parse(markup)
         if not value:
-            logger.debug("`%s.%s` value not found, set default `%s` value",
-                         instance.__class__.__name__, name, self.default)
+            logger.debug(
+                "`%s.%s` value not found, set default `%s` value",
+                instance.__class__.__name__,
+                name,
+                self.default,
+            )
             value = self.default
         else:
-            logger.debug("`%s.%s = %s` raw value(s)",
-                         instance.__class__.__name__, name,
-                         value)
+            logger.debug(
+                "`%s.%s = %s` raw value(s)", instance.__class__.__name__, name, value
+            )
 
         if self._is_iterable_and_not_string_value(value):
             value = self._filter(value)
             if self.filter_:
-                logger.debug('filter_ `%s.%s = %s`',
-                             instance.__class__.__name__, name, value)
+                logger.debug(
+                    "filter_ `%s.%s = %s`", instance.__class__.__name__, name, value
+                )
 
         value = self._callback(value)
         if self.callback:
-            logger.debug('callback `%s.%s = %s`', instance.__class__.__name__, name, value)
+            logger.debug(
+                "callback `%s.%s = %s`", instance.__class__.__name__, name, value
+            )
 
         if self.factory:
             value = self._factory(value)
-            logger.debug('factory `%s.%s = %s`',
-                         instance.__class__.__name__, name, value)
+            logger.debug(
+                "factory `%s.%s = %s`", instance.__class__.__name__, name, value
+            )
         else:
             value = self._typing(instance, name, value)
         return value
@@ -224,13 +283,17 @@ class BaseSchema:
 
     @staticmethod
     def _is_annotated_field(attr: Type):
-        return get_origin(attr) is Annotated and isinstance(get_args(attr)[-1], BaseField)
+        return get_origin(attr) is Annotated and isinstance(
+            get_args(attr)[-1], BaseField
+        )
 
     @staticmethod
     def _is_annotated_tuple_fields(attr: Type):
-        return get_origin(attr) is Annotated \
-            and isinstance(get_args(attr)[-1], tuple) \
+        return (
+            get_origin(attr) is Annotated
+            and isinstance(get_args(attr)[-1], tuple)
             and all(isinstance(fld, BaseField) for fld in get_args(attr)[-1])
+        )
 
     def _get_fields(self) -> dict[str, BaseField | tuple[BaseField, ...]]:
         _fields: dict[str, BaseField | tuple[BaseField, ...]] = {}
@@ -253,11 +316,13 @@ class BaseSchema:
                 _fields[name] = attr
         return _fields
 
-    def _parse_field_value(self,
-                           cached_parsers: dict[Type[Any], Any],
-                           name: str,
-                           fields: BaseField | tuple[BaseField, ...],
-                           markup: str) -> Any:
+    def _parse_field_value(
+        self,
+        cached_parsers: dict[Type[Any], Any],
+        name: str,
+        fields: BaseField | tuple[BaseField, ...],
+        markup: str,
+    ) -> Any:
         value: Any = None
         if not isinstance(fields, tuple):
             fields = (fields,)
@@ -270,8 +335,10 @@ class BaseSchema:
 
             elif self.Config.parsers_config.get(field_parser, None) is None:
                 try:
-                    raise MarkupNotFoundError(f"{field.__class__.__name__} required "
-                                              f"{field_parser.__class__.__name__} configuration")
+                    raise MarkupNotFoundError(
+                        f"{field.__class__.__name__} required "
+                        f"{field_parser.__class__.__name__} configuration"
+                    )
                 except MarkupNotFoundError as e:
                     logger.exception(e)
                     raise e
@@ -284,7 +351,12 @@ class BaseSchema:
 
                 value = field(self, name, cached_parsers[field_parser])
 
-            if hasattr(field, "default") and value != field.default or value == field.default or not value:
+            if (
+                hasattr(field, "default")
+                and value != field.default
+                or value == field.default
+                or not value
+            ):
                 continue
             else:
                 return value
@@ -296,34 +368,56 @@ class BaseSchema:
         _fields = self._get_fields()
         _parsers: dict[Type[Any], Any] = {}
         _fails_counter = 0
-        logger.info("Start parse `%s`. Fields count: %i", self.__class__.__name__, len(_fields.keys()))
+        logger.info(
+            "Start parse `%s`. Fields count: %i",
+            self.__class__.__name__,
+            len(_fields.keys()),
+        )
 
         for name, field in _fields.items():
             value = self._parse_field_value(
-                cached_parsers=_parsers,
-                name=name,
-                fields=field,
-                markup=markup
+                cached_parsers=_parsers, name=name, fields=field, markup=markup
             )
 
             # calculate fails - compare by default value
-            if self.Config.fails_attempt >= 0 and hasattr(field, "default") and value == field.default:
+            if (
+                self.Config.fails_attempt >= 0
+                and hasattr(field, "default")
+                and value == field.default
+            ):
                 _fails_counter += 1
-                warnings.warn(f"[{_fails_counter}] Failed parse `{self.__class__.__name__}.{name}` "
-                              f"by {field.__class__.__name__} field, set `{value}`.",
-                              stacklevel=2,
-                              category=RuntimeWarning)
+                warnings.warn(
+                    f"[{_fails_counter}] Failed parse `{self.__class__.__name__}.{name}` "
+                    f"by {field.__class__.__name__} field, set `{value}`.",
+                    stacklevel=2,
+                    category=RuntimeWarning,
+                )
 
-                logger.warning("[%i] Failed parse `%s.%s` by `%s`, set `%s`",
-                               _fails_counter, self.__class__.__name__, name, field.__class__.__name__, value)
+                logger.warning(
+                    "[%i] Failed parse `%s.%s` by `%s`, set `%s`",
+                    _fails_counter,
+                    self.__class__.__name__,
+                    name,
+                    field.__class__.__name__,
+                    value,
+                )
 
                 if _fails_counter > self.Config.fails_attempt:
-                    raise ParseFailAttemptsError(f"{_fails_counter} of {len(_fields.keys())} "
-                                                 "fields failed parse.")
-            logger.debug("`%s.%s[%s] = %s`",
-                         self.__class__.__name__, name, field.__class__.__name__, value)
+                    raise ParseFailAttemptsError(
+                        f"{_fails_counter} of {len(_fields.keys())} "
+                        "fields failed parse."
+                    )
+            logger.debug(
+                "`%s.%s[%s] = %s`",
+                self.__class__.__name__,
+                name,
+                field.__class__.__name__,
+                value,
+            )
             setattr(self, name, value)
-        logger.debug("%s done! Fields fails: %i", self.__class__.__name__, _fails_counter)
+        logger.debug(
+            "%s done! Fields fails: %i", self.__class__.__name__, _fails_counter
+        )
 
     @classmethod
     def init_list(cls, markups: list[str]) -> list[Self]:
@@ -352,5 +446,7 @@ class BaseSchema:
         }
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(" \
-               f"{', '.join(f'{k}: {type(v).__name__} = {v}' for k, v in self.dict().items())})"
+        return (
+            f"{self.__class__.__name__}("
+            f"{', '.join(f'{k}: {type(v).__name__} = {v}' for k, v in self.dict().items())})"
+        )

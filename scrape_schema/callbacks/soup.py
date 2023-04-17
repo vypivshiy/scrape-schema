@@ -20,16 +20,16 @@ __all__ = [
 ]
 
 
-def replace_text(old: str,
-                 new: str,
-                 count: int = -1,
-                 *,
-                 separator: str = "",
-                 strip: bool = False):
+def replace_text(
+    old: str, new: str, count: int = -1, *, separator: str = "", strip: bool = False
+):
     def wrapper(tag: Tag):
         if isinstance(tag, Tag):
-            return tag.get_text(separator=separator, strip=strip).replace(old, new, count)
+            return tag.get_text(separator=separator, strip=strip).replace(
+                old, new, count
+            )
         return tag
+
     return wrapper
 
 
@@ -77,6 +77,7 @@ def get_attr(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
                 return tag.get(tag_name)
             return tag.get(tag_name, default=default)
         return tag
+
     return wrapper
 
 

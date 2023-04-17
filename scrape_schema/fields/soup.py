@@ -7,13 +7,7 @@ from ..callbacks.soup import get_text, element_to_dict
 from bs4 import BeautifulSoup, Tag, ResultSet
 
 
-__all__ = [
-    'BaseSoup',
-    'SoupFind',
-    'SoupFindList',
-    'SoupSelect',
-    'SoupSelectList'
-]
+__all__ = ["BaseSoup", "SoupFind", "SoupFindList", "SoupSelect", "SoupSelectList"]
 
 
 class BaseSoup(BaseField, ABC):
@@ -22,13 +16,15 @@ class BaseSoup(BaseField, ABC):
 
 
 class SoupFind(BaseSoup):
-    def __init__(self,
-                 element: str | dict[str, Any],
-                 *,
-                 default: Optional[Any] = None,
-                 callback: Optional[Callable[[Tag], str | Any]] = get_text(),
-                 factory: Optional[Callable[[str | Any], Any]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        element: str | dict[str, Any],
+        *,
+        default: Optional[Any] = None,
+        callback: Optional[Callable[[Tag], str | Any]] = get_text(),
+        factory: Optional[Callable[[str | Any], Any]] = None,
+        **kwargs,
+    ):
         super().__init__(default=default, callback=callback, factory=factory, **kwargs)
         self.element = element_to_dict(element) if isinstance(element, str) else element
 
@@ -37,15 +33,18 @@ class SoupFind(BaseSoup):
 
 
 class SoupFindList(BaseSoup):
-    def __init__(self,
-                 element: str | dict[str, Any],
-                 *,
-                 default: Optional[Any] = None,
-                 filter_: Optional[Callable[[Tag], bool]] = None,
-                 callback: Optional[Callable[[Tag], str | Any]] = get_text(),
-                 factory: Optional[Callable[[list[str | Any] | Any], Any]] = None,
-                 ):
-        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
+    def __init__(
+        self,
+        element: str | dict[str, Any],
+        *,
+        default: Optional[Any] = None,
+        filter_: Optional[Callable[[Tag], bool]] = None,
+        callback: Optional[Callable[[Tag], str | Any]] = get_text(),
+        factory: Optional[Callable[[list[str | Any] | Any], Any]] = None,
+    ):
+        super().__init__(
+            default=default, callback=callback, factory=factory, filter_=filter_
+        )
         self.element = element_to_dict(element) if isinstance(element, str) else element
 
     def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:
@@ -53,13 +52,14 @@ class SoupFindList(BaseSoup):
 
 
 class SoupSelect(BaseSoup):
-    def __init__(self,
-                 selector: str,
-                 *,
-                 default: Optional[Any] = None,
-                 callback: Optional[Callable[[Tag], Any]] = get_text(),
-                 factory: Optional[Callable[[str | Any], Any]] = None,
-                 ):
+    def __init__(
+        self,
+        selector: str,
+        *,
+        default: Optional[Any] = None,
+        callback: Optional[Callable[[Tag], Any]] = get_text(),
+        factory: Optional[Callable[[str | Any], Any]] = None,
+    ):
         super().__init__(default=default, callback=callback, factory=factory)
         self.selector = selector
 
@@ -68,15 +68,18 @@ class SoupSelect(BaseSoup):
 
 
 class SoupSelectList(BaseSoup):
-    def __init__(self,
-                 selector: str,
-                 *,
-                 default: Optional[Any] = None,
-                 filter_: Optional[Callable[[Tag], bool]] = None,
-                 callback: Optional[Callable[[Tag], Any]] = get_text(),
-                 factory: Optional[Callable[[list[str | Any]], Any]] = None,
-                 ):
-        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
+    def __init__(
+        self,
+        selector: str,
+        *,
+        default: Optional[Any] = None,
+        filter_: Optional[Callable[[Tag], bool]] = None,
+        callback: Optional[Callable[[Tag], Any]] = get_text(),
+        factory: Optional[Callable[[list[str | Any]], Any]] = None,
+    ):
+        super().__init__(
+            default=default, callback=callback, factory=factory, filter_=filter_
+        )
         self.selector = selector
 
     def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:

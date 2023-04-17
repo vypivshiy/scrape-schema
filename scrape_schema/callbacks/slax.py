@@ -2,13 +2,7 @@ from typing import Optional, Any, Callable
 
 from selectolax.parser import HTMLParser, Node
 
-__all__ = [
-    "crop_by_slax",
-    "crop_by_slax_all",
-    "get_attr",
-    "get_text",
-    "replace_text"
-]
+__all__ = ["crop_by_slax", "crop_by_slax_all", "get_attr", "get_text", "replace_text"]
 
 
 def crop_by_slax(query: str, **slax_config):
@@ -54,17 +48,22 @@ def get_attr(name: str, default: Optional[Any] = None):
     return wrapper
 
 
-def replace_text(old: str,
-                 new: str,
-                 count: int = -1,
-                 *,
-                 deep: bool = True,
-                 separator: str = "",
-                 strip: bool = False):
+def replace_text(
+    old: str,
+    new: str,
+    count: int = -1,
+    *,
+    deep: bool = True,
+    separator: str = "",
+    strip: bool = False,
+):
     def wrapper(element: Node):
         if isinstance(element, Node):
-            return element.text(deep=deep, separator=separator, strip=strip).replace(old, new, count)
+            return element.text(deep=deep, separator=separator, strip=strip).replace(
+                old, new, count
+            )
         return element
+
     return wrapper
 
 
