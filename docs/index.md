@@ -12,6 +12,26 @@ where it is difficult to use or the complete absence of the **REST API**.
 
 Also structuring, data serialization and use as an intermediate layer 
 for third-party serialization libraries: json, dataclasses, attrs, pydantic, etc
+
+# Install
+
+zero dependencies (regex, nested fields)
+```shell
+pip install scrape-schema
+```
+add bs4 fields
+```shell
+pip install scrape-schema[bs4]
+```
+
+add selectolax fields
+```shell
+pip install scrape-schema[selectolax]
+```
+add all fields
+```shell
+pip install scrape-schema[all]
+```
 ____
 
 # Fields
