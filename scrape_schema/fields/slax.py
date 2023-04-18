@@ -1,3 +1,18 @@
+"""This fields usage selectolax backend
+
+References:
+
+* https://selectolax.readthedocs.io/en/latest/index.html
+
+**SlaxSelect**
+
+* https://selectolax.readthedocs.io/en/latest/parser.html#selectolax.parser.HTMLParser.css_first
+
+**SlaxSelectList**
+
+* https://selectolax.readthedocs.io/en/latest/parser.html#selectolax.parser.HTMLParser.css
+
+"""
 from abc import ABC
 from typing import Any, Optional, Callable
 
@@ -25,6 +40,14 @@ class SlaxSelect(BaseSlax):
         callback: Optional[Callable[[Node], str | Any]] = get_text(),
         factory: Optional[Callable[[str | Any], Any]] = None,
     ):
+        """Get Node by HTMLParser(...).css_first
+
+        :param selector: css selector
+        :param strict: Check if there is strictly only one match in the document. Default False
+        :param default: default value if match not founded. default None
+        :param callback: function eval result. default get text from element
+        :param factory: function final cast result. If passed - ignore type-casting. Default None
+        """
         super().__init__(default=default, callback=callback, factory=factory)
         self.selector = selector
         self.strict = strict
@@ -43,6 +66,14 @@ class SlaxSelectList(BaseSlax):
         callback: Optional[Callable[[Node], str | Any]] = get_text(),
         factory: Optional[Callable[[list[str | Any]], Any]] = None,
     ):
+        """get all Nodes by HTMLParser(...).css
+
+        :param selector: css selector
+        :param default: default value if match not founded. default None
+        :param filter_: function for filter result list. default None
+        :param callback: function eval result. default get text from element
+        :param factory: function final cast result. If passed - ignore type-casting. Default None
+        """
         super().__init__(
             default=default, callback=callback, factory=factory, filter_=filter_
         )

@@ -170,6 +170,9 @@ class TypeCaster:
 
 
 class BaseConfigField:
+    """BaseField configuration class:
+
+    * parser: Optional[Type[Any]] - parser backend object. If value None - work with python str"""
     parser: ClassVar[Optional[Type[Any]]] = None
 
 
@@ -186,6 +189,14 @@ class BaseField(ABCField, TypeCaster):
         factory: Optional[Callable[..., T]] = None,
         **kwargs,
     ):
+        """BaseField object.
+
+        :param default: default value if parser return None or empty value. Default None
+        :param filter_: (for iterables only) filter value by function. If None - ignore
+        :param callback: function for evaluate parsed value
+        :param factory: function for evaluate result value. If passed - **ignore auto-typing feature**
+        :param kwargs: any params for create fields
+        """
         self.factory = factory
         self.callback = callback
         self.filter_ = filter_
@@ -193,6 +204,11 @@ class BaseField(ABCField, TypeCaster):
 
     @abstractmethod
     def _parse(self, markup: MARKUP_TYPE) -> Any:
+        """first parser entrypoint
+
+        :param markup: parser class object or string. this value can be config in Config class
+        :return: first parsed value
+        """
         ...
 
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
@@ -243,6 +259,11 @@ class BaseField(ABCField, TypeCaster):
         return value
 
     def _filter(self, value: T) -> Any:
+        """filter parsed value by filter_ function, if it passed
+
+        :param value: list or dict value. dict filter by values
+        :return: filtered value
+        """
         if self.filter_:
             if isinstance(value, list):
                 return list(filter(self.filter_, value))
@@ -251,9 +272,19 @@ class BaseField(ABCField, TypeCaster):
         return value
 
     def _factory(self, value: T) -> Any:
+        """factory result value entrypoint
+
+        :param value: parsed value
+        :return:
+        """
         return self.factory(value) if self.factory else value
 
     def _callback(self, value: T) -> Any:
+        """eval value by callback function
+
+        :param value:
+        :return:
+        """
         if not self.callback:
             return value
         if not self._is_iterable_and_not_string_value(value):
@@ -265,6 +296,13 @@ class BaseField(ABCField, TypeCaster):
         return self.callback(value)
 
     def _typing(self, instance: BaseSchema, name: str, value: T) -> Any:
+        """auto type-cast method
+
+        :param instance: BaseSchema instance
+        :param name: field name
+        :param value: field value
+        :return: typed value
+        """
         if instance.Config.type_cast:
             if type_annotation := instance.__fields_annotations__.get(name):
                 value = self._cast_type(type_annotation, value)
@@ -272,6 +310,21 @@ class BaseField(ABCField, TypeCaster):
 
 
 class BaseSchemaConfig:
+    """Schema configuration for BaseSchema
+
+    parsers_config: dict[Type[Any], dict[str, Any]] parser classes for usage backend
+
+    type_cast: bool usage type casting feature. default True
+
+    fails_attempt: int - fields parse success counter checker. default -1 disable
+
+    fails_attempt < 0   - disable checker (default)
+
+    fails_attempt == 0  - if _first_ field return `default` value - throw `ParseFailAttemptsError`
+
+    fails_attempt = n, fails_attempt > 0 - print *n* warnings messages if field return `default` value.
+    if `n` msgs - throw `ParseFailAttemptsError`
+    """
     parsers_config: ClassVar[dict[Type[Any], dict[str, Any]]] = {}
     type_cast: ClassVar[bool] = True
     fails_attempt: ClassVar[int] = -1
@@ -363,6 +416,9 @@ class BaseSchema:
         return value
 
     def __init__(self, markup: str):
+        """
+        :param str markup: text target
+        """
         self.__fields_annotations__: dict[str, Type] = {}
 
         _fields = self._get_fields()

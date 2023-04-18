@@ -1,4 +1,4 @@
-"""build-in callbacks for soup"""
+"""build-in callbacks for fields.soup"""
 import re
 
 from typing import Any, Callable, Optional
@@ -22,8 +22,8 @@ __all__ = [
 
 def replace_text(
     old: str, new: str, count: int = -1, *, separator: str = "", strip: bool = False
-):
-    def wrapper(tag: Tag):
+) -> Callable[[Tag | Any], str | Any]:
+    def wrapper(tag: Tag | Any) -> str | Any:
         if isinstance(tag, Tag):
             return tag.get_text(separator=separator, strip=strip).replace(
                 old, new, count
@@ -47,7 +47,7 @@ def element_to_dict(element: str) -> dict[str, str | dict]:
     return {"name": tag_name, "attrs": attrs}
 
 
-def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag], Any]:
+def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag | Any], str | Any]:
     """get text from bs4.Tag
 
     :param separator: separator. default ""
@@ -55,7 +55,7 @@ def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag], Any]:
     :return:
     """
 
-    def wrapper(tag: Tag):
+    def wrapper(tag: Tag | Any) -> str | Any:
         if isinstance(tag, Tag):
             return tag.get_text(separator=separator, strip=strip)
         return tag
@@ -63,15 +63,15 @@ def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag], Any]:
     return wrapper
 
 
-def get_attr(tag_name: str, default: Any = ...) -> Callable[[Tag], Any]:
+def get_attr(tag_name: str, default: Any = ...) -> Callable[[Tag | Any], str | Any]:
     """get tag from element
 
     :param tag_name: tag name
-    :param default: default value, if tag not founded
+    :param default: default value, if attr not founded
     :return:
     """
 
-    def wrapper(tag: Tag):
+    def wrapper(tag: Tag | Any) -> str | Any:
         if isinstance(tag, Tag):
             if default == Ellipsis:
                 return tag.get(tag_name)
