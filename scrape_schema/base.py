@@ -20,7 +20,7 @@ from typing import (
 from types import NoneType
 import logging
 
-# python < 3.10
+# python < 3.9
 try:
     from typing import Annotated  # type: ignore
 except ImportError:
@@ -30,11 +30,8 @@ except ImportError:
 try:
     from typing import Self  # type: ignore
 except ImportError:
-    try:
-        from typing_extensions import Self  # type: ignore
-    except ImportError:
-        # very old python
-        Self: TypeAlias = "BaseSchema"  # type: ignore
+    from typing_extensions import Self  # type: ignore
+
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
