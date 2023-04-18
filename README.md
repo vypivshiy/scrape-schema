@@ -1,4 +1,5 @@
 [![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg)](https://github.com/pypa/hatch)
+[![Documentation Status](https://readthedocs.org/projects/scrape-schema/badge/?version=latest)](https://scrape-schema.readthedocs.io/en/latest/?badge=latest)
 # Scrape-schema
 This library is designed to write structured, readable, 
 reusable parsers for unstructured text data (like html, stdout or any text) and
@@ -103,6 +104,7 @@ logger.setLevel(logging.WARNING)
 ...
 ```
 
-See more [examples](examples) and [documentation](docs) for get more information/examples
+See more [examples](examples) and [documentation](https://scrape-schema.readthedocs.io/en/latest/) 
+for get more information/examples
 ____
 This project is licensed under the terms of the MIT license.
