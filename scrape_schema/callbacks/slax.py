@@ -37,7 +37,7 @@ def crop_by_slax_all(query: str, **slax_config) -> Callable[[str], list[str]]:
 
 
 def get_attr(name: str, default: Optional[Any] = None) -> Callable[[Node | Any], str | Any]:
-    """get tag from Node object
+    """get attribute from Node object
 
     :param name: tag name
     :param default: default value, if tag is not founded. default None
