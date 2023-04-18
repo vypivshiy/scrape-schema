@@ -26,8 +26,23 @@ ____
 * parsel (TODO)
 ____
 # Install
+
+zero dependencies (regex, nested fields)
 ```shell
 pip install scrape-schema
+```
+add bs4 fields
+```shell
+pip install scrape-schema[bs4]
+```
+
+add selectolax fields
+```shell
+pip install scrape-schema[selectolax]
+```
+add all fields
+```shell
+pip install scrape-schema[all]
 ```
 ____
 # Example
