@@ -34,4 +34,5 @@ nav:
       - soup: fields/soup.md
       - slax: fields/slax.md
       - custom: fields/custom.md
+  - Callbacks: callbacks.md
   - Examples: examples.md
