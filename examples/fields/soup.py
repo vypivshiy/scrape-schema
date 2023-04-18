@@ -1,12 +1,12 @@
-from typing import Annotated
 import pprint
 import re
+from typing import Annotated
 
 from bs4 import BeautifulSoup
 
 from scrape_schema import BaseSchema, BaseSchemaConfig
-from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
 from scrape_schema.callbacks.soup import get_attr
+from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
 
 HTML = """
 <!DOCTYPE html>
@@ -79,9 +79,13 @@ class Schema(BaseSchema):
     # you can use both fields: find or css!
     body_list: Annotated[list[int], SoupFindList('<a class="body-list">')]
     body_list_selector: Annotated[list[int], SoupSelectList("body > a.body-list")]
-    all_digits: Annotated[list[float], SoupFindList("<a>", filter_=lambda tag: tag.get_text().isdigit())]
+    all_digits: Annotated[
+        list[float], SoupFindList("<a>", filter_=lambda tag: tag.get_text().isdigit())
+    ]
     # soup find method features accept
-    body_list_re: Annotated[list[int], SoupFindList({"name": "a", "class_": re.compile("^list")})]
+    body_list_re: Annotated[
+        list[int], SoupFindList({"name": "a", "class_": re.compile("^list")})
+    ]
     p_and_a_tags: Annotated[list[str], SoupFindList({"name": ["p", "a"]})]
     # bool flags
     has_spam_tag: Annotated[bool, SoupFind("<spam>")]
@@ -90,24 +94,43 @@ class Schema(BaseSchema):
     has_a_tag_select: Annotated[bool, SoupSelect("body > a")]
 
     # filter, factory features
-    bigger_100: Annotated[list[int], SoupFindList("<a>",
-                                                  filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100)]
+    bigger_100: Annotated[
+        list[int],
+        SoupFindList(
+            "<a>", filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100
+        ),
+    ]
     # get all <a> tags, filter if text isdigit, bigger 100, and get max value
-    bigger_100_max: Annotated[int, SoupFindList("<a>",
-                                                filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
-                                                callback=lambda tag: int(tag.get_text(strip=True)),
-                                                factory=max)]
+    bigger_100_max: Annotated[
+        int,
+        SoupFindList(
+            "<a>",
+            filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
+            callback=lambda tag: int(tag.get_text(strip=True)),
+            factory=max,
+        ),
+    ]
 
-    spam_text: Annotated[str, SoupFindList("<p>",
-                                           filter_=lambda s: s.get_text().startswith("spam"),
-                                           factory=lambda lst: ", ".join(lst))]
-    sum_all_digit: Annotated[int, SoupFindList("<a>",
-                                               filter_=lambda tag: tag.get_text().isdigit(),
-                                               callback=lambda tag: int(tag.get_text()),
-                                               factory=sum)]
+    spam_text: Annotated[
+        str,
+        SoupFindList(
+            "<p>",
+            filter_=lambda s: s.get_text().startswith("spam"),
+            factory=lambda lst: ", ".join(lst),
+        ),
+    ]
+    sum_all_digit: Annotated[
+        int,
+        SoupFindList(
+            "<a>",
+            filter_=lambda tag: tag.get_text().isdigit(),
+            callback=lambda tag: int(tag.get_text()),
+            factory=sum,
+        ),
+    ]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     schema = Schema(HTML)
     pprint.pprint(schema.dict(), width=48, compact=True)
     # {'all_digits': [666.0, 777.0, 888.0, 1.0, 2.0,

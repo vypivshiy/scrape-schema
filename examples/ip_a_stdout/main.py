@@ -1,11 +1,9 @@
-import re
 import json
-
-import sys
+import re
 import subprocess
+import sys
 
 from schema import Device
-
 
 if sys.platform == "linux":
     STDOUT = subprocess.Popen(["ip", "a"], stdout=subprocess.PIPE, text=True).stdout.read()  # type: ignore

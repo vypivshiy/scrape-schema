@@ -1,6 +1,5 @@
 """build-in callbacks for fields.soup"""
 import re
-
 from typing import Any, Callable, Optional
 
 from bs4 import BeautifulSoup, Tag
@@ -25,9 +24,7 @@ def replace_text(
 ) -> Callable[[Tag | Any], str | Any]:
     def wrapper(tag: Tag | Any) -> str | Any:
         if isinstance(tag, Tag):
-            return tag.get_text(separator=separator, strip=strip).replace(
-                old, new, count
-            )
+            return tag.get_text(separator=separator, strip=strip).replace(old, new, count)
         return tag
 
     return wrapper

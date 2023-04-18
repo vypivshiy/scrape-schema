@@ -4,8 +4,8 @@ from typing import Annotated
 from selectolax.parser import HTMLParser
 
 from scrape_schema import BaseSchema, BaseSchemaConfig
-from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.callbacks.slax import get_attr
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 
 HTML = """
 <!DOCTYPE html>
@@ -80,22 +80,31 @@ class Schema(BaseSchema):
     has_a_tag: Annotated[bool, SlaxSelect("body > a")]
     body_list_float: Annotated[list[float], SlaxSelectList("a")]
     # filters, factory features
-    body_list_int_filter: Annotated[list[int], SlaxSelectList("p",
-                                                              filter_=lambda node: node.text(deep=False).isdigit(),
-                                                              callback=lambda node: int(node.text()))]
+    body_list_int_filter: Annotated[
+        list[int],
+        SlaxSelectList(
+            "p",
+            filter_=lambda node: node.text(deep=False).isdigit(),
+            callback=lambda node: int(node.text()),
+        ),
+    ]
 
-    body_spam_list: Annotated[list[str], SlaxSelectList("p",
-                                                        filter_=lambda node: not node.text(deep=False).startswith("spam"))]
-    list_digit_less_100: Annotated[list[int], SlaxSelectList("a",
-                                                             filter_=lambda node: int(node.text(deep=False)) < 100)]
-    list_digit_bigger_100: Annotated[list[int], SlaxSelectList("a",
-                                                               filter_=lambda node: int(node.text(deep=False)) > 100)]
-    max_digit: Annotated[int, SlaxSelectList("a",
-                                             callback=lambda node: int(node.text()),
-                                             factory=max)]
-    min_digit: Annotated[int, SlaxSelectList("a",
-                                             callback=lambda node: int(node.text()),
-                                             factory=min)]
+    body_spam_list: Annotated[
+        list[str],
+        SlaxSelectList("p", filter_=lambda node: not node.text(deep=False).startswith("spam")),
+    ]
+    list_digit_less_100: Annotated[
+        list[int], SlaxSelectList("a", filter_=lambda node: int(node.text(deep=False)) < 100)
+    ]
+    list_digit_bigger_100: Annotated[
+        list[int], SlaxSelectList("a", filter_=lambda node: int(node.text(deep=False)) > 100)
+    ]
+    max_digit: Annotated[
+        int, SlaxSelectList("a", callback=lambda node: int(node.text()), factory=max)
+    ]
+    min_digit: Annotated[
+        int, SlaxSelectList("a", callback=lambda node: int(node.text()), factory=min)
+    ]
 
 
 if __name__ == "__main__":

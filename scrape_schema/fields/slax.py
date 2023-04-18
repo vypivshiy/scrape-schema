@@ -14,13 +14,12 @@ References:
 
 """
 from abc import ABC
-from typing import Any, Optional, Callable
-
-from ..base import BaseField, BaseConfigField
-from ..callbacks.slax import get_text
+from typing import Any, Callable, Optional
 
 from selectolax.parser import HTMLParser, Node
 
+from ..base import BaseConfigField, BaseField
+from ..callbacks.slax import get_text
 
 __all__ = ["BaseSlax", "SlaxSelect", "SlaxSelectList"]
 
@@ -74,9 +73,7 @@ class SlaxSelectList(BaseSlax):
         :param callback: function eval result. default get text from element
         :param factory: function final cast result. If passed - ignore type-casting. Default None
         """
-        super().__init__(
-            default=default, callback=callback, factory=factory, filter_=filter_
-        )
+        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
         self.selector = selector
 
     def _parse(self, markup: HTMLParser) -> list[Node]:

@@ -27,10 +27,10 @@ References:
 
 * https://docs.python.org/3.11/library/re.html#re.Match.groupdict
 """
+import re
 from typing import Any, Callable, Optional, Pattern
 
 from ..base import BaseField
-import re
 
 __all__ = ["ReMatch", "ReMatchList", "ReMatchDict", "ReMatchListDict"]
 
@@ -56,9 +56,7 @@ class ReMatch(BaseField):
         :param factory: function cast final result. If passed - ignore type-casting. Default None
         """
         super().__init__(default=default, callback=callback, factory=factory)
-        self.pattern = (
-            re.compile(pattern, flags) if isinstance(pattern, str) else pattern
-        )
+        self.pattern = re.compile(pattern, flags) if isinstance(pattern, str) else pattern
         self.group = group
 
     def _parse(self, markup: str) -> Optional[str]:
@@ -89,12 +87,8 @@ class ReMatchList(BaseField):
         :param callback: function eval result. default None
         :param factory: function cast final result. If passed - ignore type-casting. Default None
         """
-        super().__init__(
-            default=default, filter_=filter_, callback=callback, factory=factory
-        )
-        self.pattern = (
-            re.compile(pattern, flags) if isinstance(pattern, str) else pattern
-        )
+        super().__init__(default=default, filter_=filter_, callback=callback, factory=factory)
+        self.pattern = re.compile(pattern, flags) if isinstance(pattern, str) else pattern
         self.group = group
 
     def _parse(self, markup: str) -> list[str]:
@@ -122,9 +116,7 @@ class ReMatchDict(BaseField):
         :param factory: function final cast result. If passed - ignore type-casting. Default None
         """
         super().__init__(default=default, callback=callback, factory=factory)
-        self.pattern = (
-            re.compile(pattern, flags) if isinstance(pattern, str) else pattern
-        )
+        self.pattern = re.compile(pattern, flags) if isinstance(pattern, str) else pattern
         if not self.pattern.groupindex:
             raise AttributeError(f"{pattern.pattern} required named groups")  # type: ignore
 
@@ -152,12 +144,8 @@ class ReMatchListDict(BaseField):
         :param callback: function eval result. default None
         :param factory: function cast final result. If passed - ignore type-casting. Default None
         """
-        super().__init__(
-            default=default, callback=callback, filter_=filter_, factory=factory
-        )
-        self.pattern = (
-            re.compile(pattern, flags) if isinstance(pattern, str) else pattern
-        )
+        super().__init__(default=default, callback=callback, filter_=filter_, factory=factory)
+        self.pattern = re.compile(pattern, flags) if isinstance(pattern, str) else pattern
         if not self.pattern.groupindex:
             raise AttributeError(f"{pattern.pattern} required named groups")  # type: ignore
 

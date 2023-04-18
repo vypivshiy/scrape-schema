@@ -1,6 +1,7 @@
+from typing import Annotated
+
 from scrape_schema import BaseSchema
 from scrape_schema.fields.regex import ReMatch, ReMatchList
-from typing import Annotated
 
 
 class Device(BaseSchema):

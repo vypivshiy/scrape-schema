@@ -1,13 +1,12 @@
-from typing import Annotated
 import pprint
+from typing import Annotated
 
 from selectolax.parser import HTMLParser
 
 from scrape_schema import BaseSchema, BaseSchemaConfig
-from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
-from scrape_schema.fields.nested import NestedList, Nested
 from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all, get_attr
-
+from scrape_schema.fields.nested import Nested, NestedList
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 
 HTML = """
 <!DOCTYPE html>
@@ -72,7 +71,7 @@ class SchemaConfig(BaseSchema):
 
 
 class SchemaDivSubDict(SchemaConfig):
-    p: Annotated[str, SlaxSelect('p.sub-string')]
+    p: Annotated[str, SlaxSelect("p.sub-string")]
     a: Annotated[list[float], SlaxSelectList("a.sub-list")]
 
 
@@ -80,7 +79,9 @@ class SchemaDivDict(SchemaConfig):
     p: Annotated[str, SlaxSelect("p.string")]
     a: Annotated[list[int], SlaxSelectList("a.list")]
     # crop <div class="sub-dict">...</div>
-    sub_div: Annotated[SchemaDivSubDict, Nested(SchemaDivSubDict, crop_rule=crop_by_slax("div.sub-dict"))]
+    sub_div: Annotated[
+        SchemaDivSubDict, Nested(SchemaDivSubDict, crop_rule=crop_by_slax("div.sub-dict"))
+    ]
 
 
 class Schema(SchemaConfig):
@@ -89,11 +90,14 @@ class Schema(SchemaConfig):
     lang = SlaxSelect("html", callback=get_attr("lang"))
     # you can be found build-in crop rules in tools directory package or write manual
     # crop <div class="dict">...</div>
-    first_div: Annotated[SchemaDivDict, Nested(SchemaDivDict,
-                                               crop_rule=crop_by_slax("body > div.dict"))]
+    first_div: Annotated[
+        SchemaDivDict, Nested(SchemaDivDict, crop_rule=crop_by_slax("body > div.dict"))
+    ]
     # crop <div class="dict">...</div>
-    all_divs: Annotated[list[SchemaDivDict], NestedList(SchemaDivDict,
-                                                        crop_rule=crop_by_slax_all("body > div.dict"))]
+    all_divs: Annotated[
+        list[SchemaDivDict],
+        NestedList(SchemaDivDict, crop_rule=crop_by_slax_all("body > div.dict")),
+    ]
 
 
 if __name__ == "__main__":

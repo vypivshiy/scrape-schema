@@ -3,23 +3,23 @@ from bs4 import BeautifulSoup
 
 def crop_posts(markup: str) -> list[str]:
     """a crop rule for hackenews schema"""
-    soup = BeautifulSoup(markup, 'html.parser')
+    soup = BeautifulSoup(markup, "html.parser")
     # get main news table
-    table = soup.find('tr', class_='athing').parent
+    table = soup.find("tr", class_="athing").parent
     elements: list[str] = []
-    first_tag: str = ''
+    first_tag: str = ""
     # get two 'tr' tags and concatenate, skip <tr class='spacer'>
 
-    for tr in table.find_all('tr'):
+    for tr in table.find_all("tr"):
         # <tr class="athing">
-        if tr.attrs.get('class') and 'athing' in tr.attrs.get('class'):
+        if tr.attrs.get("class") and "athing" in tr.attrs.get("class"):
             first_tag = str(tr)
         # <tr>
         elif not tr.attrs:
-            elements.append(first_tag + '\n' + str(tr))
-            first_tag = ''
+            elements.append(first_tag + "\n" + str(tr))
+            first_tag = ""
         # <tr class="morespace"> END page, stop iteration
-        elif tr.attrs.get('class') and 'morespace' in tr.attrs.get('class'):
+        elif tr.attrs.get("class") and "morespace" in tr.attrs.get("class"):
             break
     return elements
 

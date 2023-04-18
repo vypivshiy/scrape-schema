@@ -1,13 +1,13 @@
 from typing import Annotated
+
 import pytest
-
-from selectolax.parser import HTMLParser
-from scrape_schema import BaseSchema, BaseSchemaConfig
-
-from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
-from scrape_schema.fields.nested import NestedList, Nested
-from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all
 from fixtures import HTML
+from selectolax.parser import HTMLParser
+
+from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all
+from scrape_schema.fields.nested import Nested, NestedList
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 
 
 class SLaxSchema(BaseSchema):
@@ -21,16 +21,18 @@ class SubDict(SLaxSchema):
 
 
 class DivDict(SLaxSchema):
-    p: Annotated[str, SlaxSelect('p.string')]
-    a_int: Annotated[list[int], SlaxSelectList('a.list')]
+    p: Annotated[str, SlaxSelect("p.string")]
+    a_int: Annotated[list[int], SlaxSelectList("a.list")]
     a_float: Annotated[list[float], SlaxSelectList("a.list")]
-    sub_dict: Annotated[SubDict, Nested(SubDict, crop_rule=crop_by_slax('div.sub-dict'))]
+    sub_dict: Annotated[SubDict, Nested(SubDict, crop_rule=crop_by_slax("div.sub-dict"))]
 
 
 class NestedSchema(SLaxSchema):
     title: Annotated[str, SlaxSelect("head > title")]
-    first_div: Annotated[DivDict, Nested(DivDict, crop_rule=crop_by_slax('body > div.dict'))]
-    nested_list: Annotated[list[DivDict], NestedList(DivDict, crop_rule=crop_by_slax_all('body > div.dict'))]
+    first_div: Annotated[DivDict, Nested(DivDict, crop_rule=crop_by_slax("body > div.dict"))]
+    nested_list: Annotated[
+        list[DivDict], NestedList(DivDict, crop_rule=crop_by_slax_all("body > div.dict"))
+    ]
 
 
 NESTED_SCHEMA = NestedSchema(HTML)

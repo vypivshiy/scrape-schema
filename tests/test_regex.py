@@ -1,10 +1,10 @@
-from typing import Optional, Annotated
+from typing import Annotated, Optional
 
 import pytest
+from tests.fixtures import TEXT
+
 from scrape_schema import BaseSchema
 from scrape_schema.fields.regex import ReMatch, ReMatchList
-
-from tests.fixtures import TEXT
 
 
 class MockSchema(BaseSchema):
@@ -31,38 +31,45 @@ class MockSchema(BaseSchema):
     digits_float: Annotated[list[float], ReMatchList(r"(\d+)", callback=lambda s: f"{s}.5")]
     max_digit: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=max)]
     # auto typing is not stable works for more complex types, usage factory
-    fail_list_1: Annotated[Optional[list[str]],
-    ReMatchList(r"(ora)", factory=lambda lst: [] if isinstance(lst, type(None)) else lst)]
+    fail_list_1: Annotated[
+        Optional[list[str]],
+        ReMatchList(r"(ora)", factory=lambda lst: [] if isinstance(lst, type(None)) else lst),
+    ]
 
-    fail_list_2: Annotated[list[str], ReMatchList(r"(ora)", default=[], factory=lambda lst: lst)]
+    fail_list_2: Annotated[
+        list[str], ReMatchList(r"(ora)", default=[], factory=lambda lst: lst)
+    ]
     fail_list_3: Annotated[bool, ReMatchList(r"(ora)", default=False)]
 
 
 re_schema = MockSchema(TEXT)
 
 
-@pytest.mark.parametrize("attr,result", [
-    ("default_1", "default"),
-    ("default_2", 100),
-    ("ipv4", "192.168.0.1"),
-    ("digit", 10),
-    ("digit_float", 10.5),
-    ("digit_x10", 100),
-    ("b_word", "banana"),
-    ("b_word_chars", ['b', 'a', 'n', 'a', 'n', 'a']),
-    ("b_word_title", "Banana"),
-    ("has_b_word", True),
-    ("has_y_word", False),
-    ("fail_value_none", None),
-    ("fail_value", False),
-    ("words_lower", ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor']),
-    ("words_upper", ['BANANA', 'POTATO']),
-    ("digits", [10, 20, 192, 168, 0, 1]),
-    ("digits_float", [10.5, 20.5, 192.5, 168.5, 0.5, 1.5]),
-    ("max_digit", 192),
-    ("fail_list_1", []),
-    ("fail_list_2", []),
-    ("fail_list_3", False)
-])
+@pytest.mark.parametrize(
+    "attr,result",
+    [
+        ("default_1", "default"),
+        ("default_2", 100),
+        ("ipv4", "192.168.0.1"),
+        ("digit", 10),
+        ("digit_float", 10.5),
+        ("digit_x10", 100),
+        ("b_word", "banana"),
+        ("b_word_chars", ["b", "a", "n", "a", "n", "a"]),
+        ("b_word_title", "Banana"),
+        ("has_b_word", True),
+        ("has_y_word", False),
+        ("fail_value_none", None),
+        ("fail_value", False),
+        ("words_lower", ["banana", "potato", "foo", "bar", "lorem", "upsum", "dolor"]),
+        ("words_upper", ["BANANA", "POTATO"]),
+        ("digits", [10, 20, 192, 168, 0, 1]),
+        ("digits_float", [10.5, 20.5, 192.5, 168.5, 0.5, 1.5]),
+        ("max_digit", 192),
+        ("fail_list_1", []),
+        ("fail_list_2", []),
+        ("fail_list_3", False),
+    ],
+)
 def test_re_parse(attr: str, result):
     assert getattr(re_schema, attr) == result

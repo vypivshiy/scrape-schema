@@ -1,4 +1,3 @@
-
 TEXT = """
 banana potato BANANA POTATO
 -foo:10
@@ -62,4 +61,3 @@ HTML = """
 </body>
 </html>
 """
-

@@ -1,7 +1,7 @@
 """Build-in callbacks for fields.slax
 
 """
-from typing import Optional, Any, Callable
+from typing import Any, Callable, Optional
 
 from selectolax.parser import HTMLParser, Node
 
@@ -52,13 +52,13 @@ def get_attr(name: str, default: Optional[Any] = None) -> Callable[[Node | Any],
 
 
 def replace_text(
-        old: str,
-        new: str,
-        count: int = -1,
-        *,
-        deep: bool = True,
-        separator: str = "",
-        strip: bool = False,
+    old: str,
+    new: str,
+    count: int = -1,
+    *,
+    deep: bool = True,
+    separator: str = "",
+    strip: bool = False,
 ) -> Callable[[Node | Any], str | Any]:
     """replace text in Node element
 
@@ -82,9 +82,8 @@ def replace_text(
 
 
 def get_text(
-        deep: bool = True,
-        separator: str = "",
-        strip: bool = False) -> Callable[[Node | Any], str | Any]:
+    deep: bool = True, separator: str = "", strip: bool = False
+) -> Callable[[Node | Any], str | Any]:
     """get text from Node object
 
     :param deep: If True, includes text from all child nodes.

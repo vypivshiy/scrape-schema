@@ -11,6 +11,7 @@ from scrape_schema.fields.regex import ReMatch
 class FailedSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         fails_attempt = 0
+
     foo = ReMatch(r"(lorem)")
     fail = ReMatch(r"(\d+)")
 
@@ -19,6 +20,7 @@ class FailedSchema(BaseSchema):
 class WarningSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         fails_attempt = 1
+
     foo = ReMatch(r"(lorem)")
     fail = ReMatch(r"(\d+)")
 
@@ -27,7 +29,7 @@ class DisabledTypingSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         type_cast = False
 
-    foo: Annotated[int, ReMatch(r'(\d+)')]
+    foo: Annotated[int, ReMatch(r"(\d+)")]
 
 
 def test_raise_attempts():

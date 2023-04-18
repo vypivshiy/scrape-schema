@@ -1,10 +1,10 @@
 import pprint
-import requests
 
+import requests
 from schema import HackerNewsSchema
 
-if __name__ == '__main__':
-    resp = requests.get('https://news.ycombinator.com').text
+if __name__ == "__main__":
+    resp = requests.get("https://news.ycombinator.com").text
     schema = HackerNewsSchema(resp)
     # # or you can get posts list:
     # from schema import Post

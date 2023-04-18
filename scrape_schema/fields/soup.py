@@ -28,11 +28,10 @@ References:
 from abc import ABC
 from typing import Any, Callable, Optional
 
-from ..base import BaseField, BaseConfigField
-from ..callbacks.soup import get_text, element_to_dict
+from bs4 import BeautifulSoup, ResultSet, Tag
 
-from bs4 import BeautifulSoup, Tag, ResultSet
-
+from ..base import BaseConfigField, BaseField
+from ..callbacks.soup import element_to_dict, get_text
 
 __all__ = ["BaseSoup", "SoupFind", "SoupFindList", "SoupSelect", "SoupSelectList"]
 
@@ -83,9 +82,7 @@ class SoupFindList(BaseSoup):
         :param callback: function eval result. default get text from element
         :param factory: function final cast result. If passed - ignore type-casting. Default None
         """
-        super().__init__(
-            default=default, callback=callback, factory=factory, filter_=filter_
-        )
+        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
         self.element = element_to_dict(element) if isinstance(element, str) else element
 
     def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:
@@ -133,9 +130,7 @@ class SoupSelectList(BaseSoup):
         :param callback: function eval result. default get text from element
         :param factory: function final cast result. If passed - ignore type-casting. Default None
         """
-        super().__init__(
-            default=default, callback=callback, factory=factory, filter_=filter_
-        )
+        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
         self.selector = selector
 
     def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:
