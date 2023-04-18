@@ -57,6 +57,11 @@ This project usage [Annotated](https://docs.python.org/3/library/typing.html#typ
 [(PEP 593)](https://peps.python.org/pep-0593/) typehint for annotation fields 
 and make the static type checker happy 😀 and didn't need write a mypy plugin 🤯.
 
+if you have python <3.9 - import this type from `typing_extension`
+```python
+from typing_extensions import Annotated
+```
+
 ![img_2.png](imgs/img_2.png)
 
 **No annotation** - IDE marks attribute as "ReMatch" object (it's wrong)
