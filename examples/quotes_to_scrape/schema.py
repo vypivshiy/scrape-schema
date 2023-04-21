@@ -54,7 +54,9 @@ class QuotePage(BaseSchema):
     top_tags_5_len: Annotated[
         list[str],
         SoupFindList(
-            '<a class="tag">', filter_=lambda el: len(el.get_text()) <= 5, factory=top_10
+            '<a class="tag">',
+            filter_=lambda el: len(el.get_text()) <= 5,
+            factory=top_10,
         ),
     ]
 

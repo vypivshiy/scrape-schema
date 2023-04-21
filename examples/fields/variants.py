@@ -8,7 +8,9 @@ from scrape_schema.fields.regex import ReMatch
 class Schema(BaseSchema):
     digit: Annotated[Optional[int], (ReMatch(r"spam=(\d+)"), ReMatch(r"egg=(\d+)"))]
 
-    word: Annotated[Optional[str], (ReMatch(r"egg=([a-z]+)"), ReMatch(r"spam=([a-z]+)"))]
+    word: Annotated[
+        Optional[str], (ReMatch(r"egg=([a-z]+)"), ReMatch(r"spam=([a-z]+)"))
+    ]
 
 
 if __name__ == "__main__":

@@ -80,7 +80,8 @@ class SchemaDivDict(SchemaConfig):
     a: Annotated[list[int], SlaxSelectList("a.list")]
     # crop <div class="sub-dict">...</div>
     sub_div: Annotated[
-        SchemaDivSubDict, Nested(SchemaDivSubDict, crop_rule=crop_by_slax("div.sub-dict"))
+        SchemaDivSubDict,
+        Nested(SchemaDivSubDict, crop_rule=crop_by_slax("div.sub-dict")),
     ]
 
 

@@ -16,8 +16,12 @@ class WordData:
 
 class Digits(BaseSchema):
     digits: Annotated[list[int], ReMatchList(r"(\d+)")]
-    odd_digits: Annotated[list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 != 0)]
-    even_digits: Annotated[list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 == 0)]
+    odd_digits: Annotated[
+        list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 != 0)
+    ]
+    even_digits: Annotated[
+        list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 == 0)
+    ]
     sum: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=sum)]
     max: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=max)]
     min: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=min)]
@@ -32,7 +36,8 @@ class HelloWorld(BaseSchema):
     hello: Annotated[str, ReMatch(r"(hello) world")]
     world: Annotated[list[str], ReMatch(r"(hello) (world)", group=2, factory=list)]
     digits: Annotated[
-        str, Nested(Digits, crop_rule=lambda s: s, factory=lambda sc: json.dumps(sc.dict()))
+        str,
+        Nested(Digits, crop_rule=lambda s: s, factory=lambda sc: json.dumps(sc.dict())),
     ]
     words: Annotated[
         list[WordData],

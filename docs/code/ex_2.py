@@ -8,8 +8,12 @@ from scrape_schema.fields.regex import ReMatch, ReMatchList
 
 class Digits(BaseSchema):
     digits: Annotated[list[int], ReMatchList(r"(\d+)")]
-    odd_digits: Annotated[list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 != 0)]
-    even_digits: Annotated[list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 == 0)]
+    odd_digits: Annotated[
+        list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 != 0)
+    ]
+    even_digits: Annotated[
+        list[int], ReMatchList(r"(\d+)", filter_=lambda i: int(i) % 2 == 0)
+    ]
     sum: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=sum)]
     max: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=max)]
     min: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=min)]

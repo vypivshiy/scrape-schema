@@ -60,7 +60,9 @@ class SoupImage(BaseField):
         factory: Optional[Callable[[Any], Any]] = None,
         default: Optional[str] = "empty",
     ):
-        super().__init__(factory=factory, filter_=filter_, callback=callback, default=default)
+        super().__init__(
+            factory=factory, filter_=filter_, callback=callback, default=default
+        )
 
     def _parse(self, markup: BeautifulSoup) -> str | Any:
         return image.get("src") if (image := markup.find("img")) else self.default
@@ -74,7 +76,9 @@ class SoupImageList(SoupImage):
         factory: Optional[Callable[[Any], Any]] = None,
         default: Optional[str] = "empty",
     ):
-        super().__init__(filter_=filter_, callback=callback, factory=factory, default=default)
+        super().__init__(
+            filter_=filter_, callback=callback, factory=factory, default=default
+        )
 
     def _parse(self, markup: BeautifulSoup) -> str | list[str]:
         if images := markup.find_all("img"):
@@ -91,11 +95,14 @@ class Schema(BaseSchema):
     ipv4: Annotated[str, Ipv4]
     image: Annotated[str, SoupImage()]
     images: Annotated[list[str], SoupImageList()]
-    images_png: Annotated[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"))]
+    images_png: Annotated[
+        list[str], SoupImageList(filter_=lambda s: s.endswith(".png"))
+    ]
     images_png_full: Annotated[
         list[str],
         SoupImageList(
-            filter_=lambda s: s.endswith(".png"), callback=lambda s: "https://example.com" + s
+            filter_=lambda s: s.endswith(".png"),
+            callback=lambda s: "https://example.com" + s,
         ),
     ]
 

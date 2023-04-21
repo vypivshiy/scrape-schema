@@ -3,7 +3,9 @@ from bs4 import BeautifulSoup
 
 def crop_schedule(markup: str) -> list[str]:
     soup = BeautifulSoup(markup, "html.parser")
-    tags = soup.find_all("div", class_="list-group")[1].find_all("div", class_="media-body")
+    tags = soup.find_all("div", class_="list-group")[1].find_all(
+        "div", class_="media-body"
+    )
     return [str(tag) for tag in tags]
 
 

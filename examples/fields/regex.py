@@ -7,7 +7,9 @@ from scrape_schema.fields.regex import ReMatch, ReMatchList
 
 class Schema(BaseSchema):
     first_digit = ReMatch(r"(\d)")  # return string
-    first_digit_2 = ReMatch(r"(\d)", callback=int)  # return int, typing without annotation
+    first_digit_2 = ReMatch(
+        r"(\d)", callback=int
+    )  # return int, typing without annotation
 
     first_digit_int: Annotated[int, ReMatch(r"(\d)")]  # return int
     first_digit_float: Annotated[float, ReMatch(r"(\d)")]  # return float
@@ -26,7 +28,8 @@ class Schema(BaseSchema):
     less_3: Annotated[list[int], ReMatchList(r"(\d)", filter_=lambda s: int(s) <= 3)]
     # get digits, then less or equal 3 and sum
     sum_less_3: Annotated[
-        int, ReMatchList(r"(\d)", filter_=lambda s: int(s) <= 3, callback=int, factory=sum)
+        int,
+        ReMatchList(r"(\d)", filter_=lambda s: int(s) <= 3, callback=int, factory=sum),
     ]
     # get digits, then bigger than 3, convert to int
     bigger_3: Annotated[
@@ -34,7 +37,8 @@ class Schema(BaseSchema):
     ]
     # get digits, then bigger than 3 and sum
     sum_bigger_3: Annotated[
-        int, ReMatchList(r"(\d)", filter_=lambda s: int(s) > 3, callback=int, factory=sum)
+        int,
+        ReMatchList(r"(\d)", filter_=lambda s: int(s) > 3, callback=int, factory=sum),
     ]
     # get all digit and sum
     sum_digits: Annotated[int, ReMatchList(r"(\d)", callback=int, factory=sum)]

@@ -17,7 +17,9 @@ class Post(BaseSchema):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     id: Annotated[int, SoupFind('<tr class="athing">', callback=get_attr("id"))]
-    rank: Annotated[int, SoupFind('<span class="rank">', callback=replace_text(".", ""))]
+    rank: Annotated[
+        int, SoupFind('<span class="rank">', callback=replace_text(".", ""))
+    ]
     vote_up: Annotated[
         str,
         SoupFind(
@@ -32,11 +34,15 @@ class Post(BaseSchema):
     title: Annotated[str, SoupSelect("td.title > span.titleline > a")]
     source_netloc: Annotated[str, SoupFind('<span class="sitebit comhead">')]
     score: Annotated[
-        int, SoupFind('<span class="score">', callback=replace_text(" points", ""), default=0)
+        int,
+        SoupFind(
+            '<span class="score">', callback=replace_text(" points", ""), default=0
+        ),
     ]
     author: Annotated[str, SoupFind('<a class="hnuser">')]
     author_url: Annotated[
-        str, SoupFind('<a class="hnuser">', callback=get_attr("href"), factory=concat_href)
+        str,
+        SoupFind('<a class="hnuser">', callback=get_attr("href"), factory=concat_href),
     ]
     date: Annotated[str, SoupFind('<span class="age">', callback=get_attr("title"))]
     time_ago: Annotated[str, SoupSelect("span.age > a")]

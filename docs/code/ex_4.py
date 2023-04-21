@@ -139,7 +139,8 @@ class Schema(BaseSchema):
         ),
     ]
     div_dicts: Annotated[
-        list[DivDict], NestedList(DivDict, crop_rule=crop_by_selector_all("body > div.dict"))
+        list[DivDict],
+        NestedList(DivDict, crop_rule=crop_by_selector_all("body > div.dict")),
     ]
 
 

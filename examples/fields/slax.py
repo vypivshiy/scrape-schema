@@ -91,13 +91,17 @@ class Schema(BaseSchema):
 
     body_spam_list: Annotated[
         list[str],
-        SlaxSelectList("p", filter_=lambda node: not node.text(deep=False).startswith("spam")),
+        SlaxSelectList(
+            "p", filter_=lambda node: not node.text(deep=False).startswith("spam")
+        ),
     ]
     list_digit_less_100: Annotated[
-        list[int], SlaxSelectList("a", filter_=lambda node: int(node.text(deep=False)) < 100)
+        list[int],
+        SlaxSelectList("a", filter_=lambda node: int(node.text(deep=False)) < 100),
     ]
     list_digit_bigger_100: Annotated[
-        list[int], SlaxSelectList("a", filter_=lambda node: int(node.text(deep=False)) > 100)
+        list[int],
+        SlaxSelectList("a", filter_=lambda node: int(node.text(deep=False)) > 100),
     ]
     max_digit: Annotated[
         int, SlaxSelectList("a", callback=lambda node: int(node.text()), factory=max)

@@ -18,7 +18,8 @@ class MainEnPage(BaseSchema):
     articles_count: Annotated[
         int,
         SlaxSelect(
-            "#articlecount > a:nth-child(1)", callback=lambda el: el.text().replace(",", "")
+            "#articlecount > a:nth-child(1)",
+            callback=lambda el: el.text().replace(",", ""),
         ),
     ]
     language: Annotated[str, SlaxSelect("#articlecount > a:nth-child(2)")]
@@ -30,11 +31,13 @@ class MainEnPage(BaseSchema):
     today_feature_picture: Annotated[
         str,
         SlaxSelect(
-            "#mp-tfp > table > tbody > tr:nth-child(1) > td > a", callback=get_attr("href")
+            "#mp-tfp > table > tbody > tr:nth-child(1) > td > a",
+            callback=get_attr("href"),
         ),
     ]
     today_feature_picture_description: Annotated[
-        str, SlaxSelect("#mp-tfp > table > tbody > tr:nth-child(2) > td > p:nth-child(1)")
+        str,
+        SlaxSelect("#mp-tfp > table > tbody > tr:nth-child(2) > td > p:nth-child(1)"),
     ]
     footer_info: Annotated[str, SlaxSelect("#footer", callback=get_text(strip=True))]
 

@@ -7,7 +7,9 @@ from scrape_schema.fields.regex import ReMatch, ReMatchList
 class Device(BaseSchema):
     num: Annotated[int, ReMatch(r"^(\d+):")]
     name: Annotated[str, ReMatch(r"^\d+: (\w+):")]
-    interface: Annotated[list[str], ReMatch(r"<([\w,_]+)>", factory=lambda s: s.split(","))]
+    interface: Annotated[
+        list[str], ReMatch(r"<([\w,_]+)>", factory=lambda s: s.split(","))
+    ]
     mtu: Annotated[int, ReMatch(r"mtu (\d+)")]
     qdisc: Annotated[str, ReMatch(r"qdisc (\w+)")]
     state: Annotated[str, ReMatch(r"state ([A-Z]+)")]

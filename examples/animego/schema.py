@@ -27,7 +27,10 @@ class AnimeSeason(SchemaConfig):
     url: Annotated[str, SoupFind('<a class="text-nowrap">', callback=get_attr("href"))]
     name: Annotated[str, SoupFind('<a class="text-nowrap">')]
     image: Annotated[
-        str, SoupFind({"name": "div", "class_": "tns-lazy-img"}, callback=get_attr("data-src"))
+        str,
+        SoupFind(
+            {"name": "div", "class_": "tns-lazy-img"}, callback=get_attr("data-src")
+        ),
     ]
     rating: Annotated[
         float,
@@ -43,7 +46,8 @@ class ScheduleItem(SchemaConfig):
     # <div class="list-group">[1] -> <div class="media-body">
     title: Annotated[str, SoupFind('<span class="last-update-title">')]
     episode: Annotated[
-        int, SoupFind('<div class="font-weight-600">', callback=replace_text(" серия", ""))
+        int,
+        SoupFind('<div class="font-weight-600">', callback=replace_text(" серия", "")),
     ]
     time: Annotated[str, SoupFind('<div class="text-gray-dark-6">')]
 
@@ -52,20 +56,24 @@ class Ongoing(SchemaConfig):
     # <div class="list-group">[0] -> <div class="last-update-item">
     title: Annotated[str, SoupFind('<span class="last-update-title">')]
     episode: Annotated[
-        int, SoupFind('<div class="text-truncate">', callback=replace_text(" серия", ""))
+        int,
+        SoupFind('<div class="text-truncate">', callback=replace_text(" серия", "")),
     ]
     dub: Annotated[str, SoupFind('<div class="text-gray-dark-6">')]
 
 
 class NewAnime(SchemaConfig):
     image: Annotated[
-        str, SoupFind('<div class="anime-list-lazy">', callback=get_attr("data-original"))
+        str,
+        SoupFind('<div class="anime-list-lazy">', callback=get_attr("data-original")),
     ]
     url: Annotated[str, SoupSelect("div.h5 > a", callback=get_attr("href"))]
     rating: Annotated[
         float,
         SoupFind(
-            '<div class="p-rate-flag__text">', default="0", callback=replace_text(",", ".")
+            '<div class="p-rate-flag__text">',
+            default="0",
+            callback=replace_text(",", "."),
         ),
     ]
     title: Annotated[str, SoupFind('<div class="h5">')]
@@ -87,7 +95,9 @@ class AnimegoSchema(SchemaConfig):
         list[AnimeSeason],
         NestedList(AnimeSeason, crop_rule=crop_by_tag_all('<div class="item">')),
     ]
-    schedule: Annotated[list[ScheduleItem], NestedList(ScheduleItem, crop_rule=crop_schedule)]
+    schedule: Annotated[
+        list[ScheduleItem], NestedList(ScheduleItem, crop_rule=crop_schedule)
+    ]
     ongoings: Annotated[list[Ongoing], NestedList(Ongoing, crop_rule=crop_ongoing)]
     new_anime: Annotated[list[NewAnime], NestedList(NewAnime, crop_rule=crop_new_anime)]
 
