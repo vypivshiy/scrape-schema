@@ -414,7 +414,7 @@ class BaseSchema:
                 return value
         return value
 
-    def __init__(self, markup: str):
+    def _parse_markup_to_fields(self, markup: str) -> None:
         """
         :param str markup: text target
         """
@@ -474,13 +474,31 @@ class BaseSchema:
             "%s done! Fields fails: %i", self.__class__.__name__, _fails_counter
         )
 
+    def __init__(self, markup: str, *, parse_markup: bool = True, **kwargs):
+        """
+        :param markup: markup string target
+        :param parse_markup: parse field markups. Default True
+        :param kwargs: any kwargs attrs
+        """
+        # TODO rewrite init constructor
+        if parse_markup:
+            self._parse_markup_to_fields(markup)
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
     @classmethod
     def init_list(cls, markups: Iterable[str]) -> list[Self]:
         """Init list of schemas by markups sequence
 
         :param markups: - iterable markups sequence
         """
-        return [cls(markup) for markup in markups]
+        warnings.warn(
+            "This method deprecated, usage `from_list`",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return cls.from_list(markups)
 
     @classmethod
     def from_list(cls, markups: Iterable[str]) -> list[Self]:
@@ -488,7 +506,7 @@ class BaseSchema:
 
         :param markups: iterable markups sequence
         """
-        return cls.init_list(markups)
+        return [cls(markup) for markup in markups]
 
     @classmethod
     def from_crop_rule_list(
@@ -499,7 +517,7 @@ class BaseSchema:
         :param markup: markup string
         :param crop_rule: crop rule function to *parts*
         """
-        return cls.init_list(crop_rule(markup))
+        return cls.from_list(crop_rule(markup))
 
     @classmethod
     def from_crop_rule(cls, markup: str, *, crop_rule: Callable[[str], str]) -> Self:
@@ -509,6 +527,10 @@ class BaseSchema:
         :param crop_rule: crop rule function to *part*.
         """
         return cls(crop_rule(markup))
+
+    @classmethod
+    def from_markup(cls, markup: str) -> Self:
+        return cls(markup, parse_markup=True)
 
     @staticmethod
     def _to_dict(value: BaseSchema | list | dict):
