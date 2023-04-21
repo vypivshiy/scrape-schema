@@ -5,7 +5,7 @@ help:
 # Use poetry or activated venv
 interpreter := $(shell hatch env show --ascii > /dev/null 2>&1 && echo "hatch run")
 
-check: check ## Run tests and linters
+check: ## Run tests and linters
 	@echo "flake8"
 	@echo "------"
 	@$(interpreter) flake8 .
@@ -29,7 +29,3 @@ fix:  ## Fix code with black and isort
 	@echo ; echo "isort"
 	@echo "-----"
 	@$(interpreter) isort .
-
-build-docs:
-    @echo "start build docs"
-    @mkdocs build
