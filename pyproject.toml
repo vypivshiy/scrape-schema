@@ -38,6 +38,8 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 selectolax = ["selectolax"]
 bs4 = ["bs4"]
 all = ["selectolax", "bs4"]
+dev = ["bs4", "selectolax", "flake8", "black", "isort", "pytest", "mypy"]
+docs = ["mkdocs-material"]
 
 [tool.hatch.version]
 path = "scrape_schema/__init__.py"
@@ -91,7 +93,7 @@ exclude_lines = [
 [tool.mypy]
 pretty = true
 ignore_missing_imports = true
-exclude = ["env", ".env", "venv", "tests/*", "__pycache__"]
+exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples"]
 files = "scrape_schema/*.py,scrape_schema/fields/*.py,scrape_schema/callbacks/*.py"
 
 [tool.black]
