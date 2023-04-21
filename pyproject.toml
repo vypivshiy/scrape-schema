@@ -96,6 +96,12 @@ ignore_missing_imports = true
 exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples"]
 files = "scrape_schema/*.py,scrape_schema/fields/*.py,scrape_schema/callbacks/*.py"
 
-[tool.black]
+[tool.pytest.ini_options]
+filterwarnings = [
+    "error",
+    "ignore::RuntimeWarning",
+    # note the use of single quote below to denote "raw" strings in TOML
+    'ignore: Failed parse',
+]
 
 
