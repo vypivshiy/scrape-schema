@@ -17,12 +17,18 @@ class SoupSchema(BaseSchema):
     lang: Annotated[str, SoupFind("<html>", callback=get_attr("lang"))]
     charset: Annotated[
         str,
-        SoupFind("<meta>", callback=get_attr("charset"), factory=lambda s: s.replace("-", "")),
+        SoupFind(
+            "<meta>", callback=get_attr("charset"), factory=lambda s: s.replace("-", "")
+        ),
     ]
     title: Annotated[str, SoupFind({"name": "title"})]
-    title_lower: Annotated[str, SoupSelect("head > title", factory=lambda text: text.lower())]
+    title_lower: Annotated[
+        str, SoupSelect("head > title", factory=lambda text: text.lower())
+    ]
     body_string: Annotated[str, SoupFind('<p class="body-string>')]
-    body_string_chars: Annotated[list[str], SoupFind('<p class="body-string>', factory=list)]
+    body_string_chars: Annotated[
+        list[str], SoupFind('<p class="body-string>', factory=list)
+    ]
     body_string_flag: Annotated[bool, SoupSelect("body > p.body-string")]
     body_int: Annotated[int, SoupFind('<p class="body-int">')]
     body_float: Annotated[float, SoupSelect("body > p.body-int")]
@@ -40,7 +46,8 @@ class SoupSchema(BaseSchema):
     max_body_list: Annotated[
         int,
         SoupFindList(
-            {"name": "a", "class_": "body-list"}, factory=lambda els: max(int(i) for i in els)
+            {"name": "a", "class_": "body-list"},
+            factory=lambda els: max(int(i) for i in els),
         ),
     ]
     body_float_flag: Annotated[

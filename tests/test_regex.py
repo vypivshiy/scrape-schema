@@ -15,7 +15,9 @@ class MockSchema(BaseSchema):
     ipv4: Annotated[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
     digit: Annotated[int, ReMatch(r"(\d+)")]
     digit_float: Annotated[float, ReMatch(r"(\d+)", callback=lambda s: f"{s}.5")]
-    digit_x10: Annotated[int, ReMatch(r"(\d+)", factory=lambda result: int(result) * 10)]
+    digit_x10: Annotated[
+        int, ReMatch(r"(\d+)", factory=lambda result: int(result) * 10)
+    ]
     b_word: Annotated[str, ReMatch(r"(b\w+)")]
     b_word_chars: Annotated[list[str], ReMatch(r"(b\w+)", factory=list)]
     b_word_title: Annotated[str, ReMatch(r"(b\w+)", factory=lambda s: s.title())]
@@ -28,12 +30,16 @@ class MockSchema(BaseSchema):
     words_lower: Annotated[list[str], ReMatchList(r"([a-z]+)")]
     words_upper: Annotated[list[str], ReMatchList(r"([A-Z]+)")]
     digits: Annotated[list[int], ReMatchList(r"(\d+)")]
-    digits_float: Annotated[list[float], ReMatchList(r"(\d+)", callback=lambda s: f"{s}.5")]
+    digits_float: Annotated[
+        list[float], ReMatchList(r"(\d+)", callback=lambda s: f"{s}.5")
+    ]
     max_digit: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=max)]
     # auto typing is not stable works for more complex types, usage factory
     fail_list_1: Annotated[
         Optional[list[str]],
-        ReMatchList(r"(ora)", factory=lambda lst: [] if isinstance(lst, type(None)) else lst),
+        ReMatchList(
+            r"(ora)", factory=lambda lst: [] if isinstance(lst, type(None)) else lst
+        ),
     ]
 
     fail_list_2: Annotated[

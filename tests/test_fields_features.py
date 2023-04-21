@@ -100,12 +100,16 @@ def test_filter():
 
 def test_factory():
     assert isinstance(FEATURES_SCHEMA.sub_dict, dict)
-    assert FEATURES_SCHEMA.sub_dict == {"a_int": [1, 2, 3, 4, 5, 6, 7, 8, 9], "p": "test-1"}
+    assert FEATURES_SCHEMA.sub_dict == {
+        "a_int": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        "p": "test-1",
+    }
     assert is_dataclass(FEATURES_SCHEMA.sub_dataclass)
     assert FEATURES_SCHEMA.sub_dataclass == DictData(
         p="test-1", a_int=[1, 2, 3, 4, 5, 6, 7, 8, 9]
     )
     assert isinstance(FEATURES_SCHEMA.sub_json_str, str)
     assert (
-        FEATURES_SCHEMA.sub_json_str == '{"p": "test-1", "a_int": [1, 2, 3, 4, 5, 6, 7, 8, 9]}'
+        FEATURES_SCHEMA.sub_json_str
+        == '{"p": "test-1", "a_int": [1, 2, 3, 4, 5, 6, 7, 8, 9]}'
     )

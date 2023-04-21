@@ -57,15 +57,20 @@ class TypingSchema(BaseSchema):
         list[str], MockField("foobar", factory=list)
     ]  # str ignored typing, - cast manual
     # filter
-    f_val_1: Annotated[list[int], MockField([1, 10, 100, 2, 9, 5], filter_=lambda i: i <= 10)]
+    f_val_1: Annotated[
+        list[int], MockField([1, 10, 100, 2, 9, 5], filter_=lambda i: i <= 10)
+    ]
     f_val_2: Annotated[
         list[int],
-        MockField(["lorem", "3", "upsum", "dolor", "1", "2"], filter_=lambda s: s.isdigit()),
+        MockField(
+            ["lorem", "3", "upsum", "dolor", "1", "2"], filter_=lambda s: s.isdigit()
+        ),
     ]
     f_val_3: Annotated[
         list[str],
         MockField(
-            ["lorem", "3", "upsum", "dolor", "1", "2"], filter_=lambda s: not s.isdigit()
+            ["lorem", "3", "upsum", "dolor", "1", "2"],
+            filter_=lambda s: not s.isdigit(),
         ),
     ]
 

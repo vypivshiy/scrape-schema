@@ -23,7 +23,9 @@ class NestedSubMixSlax(BaseMixSchema):
 
 
 class NestedSubMixSoupFind(BaseMixSchema):
-    p: Annotated[str, SoupFind('<p class="sub-string">', factory=lambda text: text.strip())]
+    p: Annotated[
+        str, SoupFind('<p class="sub-string">', factory=lambda text: text.strip())
+    ]
     a: Annotated[list[int], SoupFindList('<a class="sub-list">')]
 
 
@@ -34,7 +36,8 @@ class NestedSubMixSoupSelect(BaseMixSchema):
 
 class NestedSubMixRe(BaseMixSchema):
     p: Annotated[
-        str, ReMatch(r'<p class="sub-string">(.*?)</p>', factory=lambda text: text.strip())
+        str,
+        ReMatch(r'<p class="sub-string">(.*?)</p>', factory=lambda text: text.strip()),
     ]
     a: Annotated[list[int], ReMatchList(r'<a class="sub-list">(\d+)</a>')]
 
@@ -43,10 +46,12 @@ class NestedDivSoupFind(BaseMixSchema):
     p: Annotated[str, SoupFind('<p class="string">')]
     a_int: Annotated[list[int], SoupFindList('<a class="list">')]
     sub_dict_slax: Annotated[
-        NestedSubMixSlax, Nested(NestedSubMixSlax, crop_rule=crop_by_slax("div.sub-dict"))
+        NestedSubMixSlax,
+        Nested(NestedSubMixSlax, crop_rule=crop_by_slax("div.sub-dict")),
     ]
     sub_dict_soup_find: Annotated[
-        NestedSubMixSlax, Nested(NestedSubMixSoupFind, crop_rule=crop_by_slax("div.sub-dict"))
+        NestedSubMixSlax,
+        Nested(NestedSubMixSoupFind, crop_rule=crop_by_slax("div.sub-dict")),
     ]
     sub_dict_soup_select: Annotated[
         NestedSubMixSlax,

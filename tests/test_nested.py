@@ -24,14 +24,19 @@ class DivDict(SLaxSchema):
     p: Annotated[str, SlaxSelect("p.string")]
     a_int: Annotated[list[int], SlaxSelectList("a.list")]
     a_float: Annotated[list[float], SlaxSelectList("a.list")]
-    sub_dict: Annotated[SubDict, Nested(SubDict, crop_rule=crop_by_slax("div.sub-dict"))]
+    sub_dict: Annotated[
+        SubDict, Nested(SubDict, crop_rule=crop_by_slax("div.sub-dict"))
+    ]
 
 
 class NestedSchema(SLaxSchema):
     title: Annotated[str, SlaxSelect("head > title")]
-    first_div: Annotated[DivDict, Nested(DivDict, crop_rule=crop_by_slax("body > div.dict"))]
+    first_div: Annotated[
+        DivDict, Nested(DivDict, crop_rule=crop_by_slax("body > div.dict"))
+    ]
     nested_list: Annotated[
-        list[DivDict], NestedList(DivDict, crop_rule=crop_by_slax_all("body > div.dict"))
+        list[DivDict],
+        NestedList(DivDict, crop_rule=crop_by_slax_all("body > div.dict")),
     ]
 
 

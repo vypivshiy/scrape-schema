@@ -17,13 +17,19 @@ class SlaxSchema(BaseSchema):
     charset: Annotated[
         str,
         SlaxSelect(
-            "head > meta", callback=get_attr("charset"), factory=lambda s: s.replace("-", "")
+            "head > meta",
+            callback=get_attr("charset"),
+            factory=lambda s: s.replace("-", ""),
         ),
     ]
     title: Annotated[str, SlaxSelect("head > title")]
-    title_lower: Annotated[str, SlaxSelect("head > title", factory=lambda text: text.lower())]
+    title_lower: Annotated[
+        str, SlaxSelect("head > title", factory=lambda text: text.lower())
+    ]
     body_string: Annotated[str, SlaxSelect("body > p.body-string")]
-    body_string_chars: Annotated[list[str], SlaxSelect("body > p.body-string", factory=list)]
+    body_string_chars: Annotated[
+        list[str], SlaxSelect("body > p.body-string", factory=list)
+    ]
     body_string_flag: Annotated[bool, SlaxSelect("body > p.body-string")]
     body_int: Annotated[int, SlaxSelect("body > p.body-int")]
     body_float: Annotated[float, SlaxSelect("body > p.body-int")]
