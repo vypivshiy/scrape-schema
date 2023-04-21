@@ -73,7 +73,9 @@ class SlaxSelectList(BaseSlax):
         :param callback: function eval result. default get text from element
         :param factory: function final cast result. If passed - ignore type-casting. Default None
         """
-        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
+        super().__init__(
+            default=default, callback=callback, factory=factory, filter_=filter_
+        )
         self.selector = selector
 
     def _parse(self, markup: HTMLParser) -> list[Node]:

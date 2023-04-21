@@ -82,7 +82,9 @@ class SoupFindList(BaseSoup):
         :param callback: function eval result. default get text from element
         :param factory: function final cast result. If passed - ignore type-casting. Default None
         """
-        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
+        super().__init__(
+            default=default, callback=callback, factory=factory, filter_=filter_
+        )
         self.element = element_to_dict(element) if isinstance(element, str) else element
 
     def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:
@@ -130,7 +132,9 @@ class SoupSelectList(BaseSoup):
         :param callback: function eval result. default get text from element
         :param factory: function final cast result. If passed - ignore type-casting. Default None
         """
-        super().__init__(default=default, callback=callback, factory=factory, filter_=filter_)
+        super().__init__(
+            default=default, callback=callback, factory=factory, filter_=filter_
+        )
         self.selector = selector
 
     def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:

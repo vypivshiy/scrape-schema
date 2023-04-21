@@ -30,7 +30,9 @@ class Nested(BaseNested):
         self._schema = schema
         self.crop_rule = crop_rule
 
-    def __call__(self, instance: BaseSchema, name: str, markup: str) -> BaseSchema | Any:
+    def __call__(
+        self, instance: BaseSchema, name: str, markup: str
+    ) -> BaseSchema | Any:
         markup = self._parse(markup)
         new_markup = self.crop_rule(markup)
         value = self._schema(new_markup)
@@ -56,7 +58,9 @@ class NestedList(BaseNested):
         self._schema = schema
         self.crop_rule = crop_rule
 
-    def __call__(self, instance: BaseSchema, name: str, markup: str) -> list[BaseSchema] | Any:
+    def __call__(
+        self, instance: BaseSchema, name: str, markup: str
+    ) -> list[BaseSchema] | Any:
         markup = self._parse(markup)
         new_markups = self.crop_rule(markup)
         value = self._schema.init_list(new_markups)
