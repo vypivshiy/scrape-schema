@@ -76,7 +76,9 @@ class TypeCaster:
 
     @staticmethod
     def _is_iterable_and_not_string_value(value: T) -> bool:
-        return isinstance(value, Iterable) and not (isinstance(value, (ByteString, str)))
+        return isinstance(value, Iterable) and not (
+            isinstance(value, (ByteString, str))
+        )
 
     def _cast_type(self, type_annotation: Type, value: Any) -> Any:
         value_type = type(value)
@@ -228,20 +230,28 @@ class BaseField(ABCField, TypeCaster):
             )
             value = self.default
         else:
-            logger.debug("`%s.%s = %s` raw value(s)", instance.__class__.__name__, name, value)
+            logger.debug(
+                "`%s.%s = %s` raw value(s)", instance.__class__.__name__, name, value
+            )
 
         if self._is_iterable_and_not_string_value(value):
             value = self._filter(value)
             if self.filter_:
-                logger.debug("filter_ `%s.%s = %s`", instance.__class__.__name__, name, value)
+                logger.debug(
+                    "filter_ `%s.%s = %s`", instance.__class__.__name__, name, value
+                )
 
         value = self._callback(value)
         if self.callback:
-            logger.debug("callback `%s.%s = %s`", instance.__class__.__name__, name, value)
+            logger.debug(
+                "callback `%s.%s = %s`", instance.__class__.__name__, name, value
+            )
 
         if self.factory:
             value = self._factory(value)
-            logger.debug("factory `%s.%s = %s`", instance.__class__.__name__, name, value)
+            logger.debug(
+                "factory `%s.%s = %s`", instance.__class__.__name__, name, value
+            )
         else:
             value = self._typing(instance, name, value)
         return value
@@ -325,7 +335,9 @@ class BaseSchema:
 
     @staticmethod
     def _is_annotated_field(attr: Type):
-        return get_origin(attr) is Annotated and isinstance(get_args(attr)[-1], BaseField)
+        return get_origin(attr) is Annotated and isinstance(
+            get_args(attr)[-1], BaseField
+        )
 
     @staticmethod
     def _is_annotated_tuple_fields(attr: Type):
@@ -447,7 +459,8 @@ class BaseSchema:
 
                 if _fails_counter > self.Config.fails_attempt:
                     raise ParseFailAttemptsError(
-                        f"{_fails_counter} of {len(_fields.keys())} " "fields failed parse."
+                        f"{_fails_counter} of {len(_fields.keys())} "
+                        "fields failed parse."
                     )
             logger.debug(
                 "`%s.%s[%s] = %s`",
@@ -457,11 +470,45 @@ class BaseSchema:
                 value,
             )
             setattr(self, name, value)
-        logger.debug("%s done! Fields fails: %i", self.__class__.__name__, _fails_counter)
+        logger.debug(
+            "%s done! Fields fails: %i", self.__class__.__name__, _fails_counter
+        )
 
     @classmethod
-    def init_list(cls, markups: list[str]) -> list[Self]:
+    def init_list(cls, markups: Iterable[str]) -> list[Self]:
+        """Init list of schemas by markups sequence
+
+        :param markups: - iterable markups sequence
+        """
         return [cls(markup) for markup in markups]
+
+    @classmethod
+    def from_list(cls, markups: Iterable[str]) -> list[Self]:
+        """Init list of schemas by markups sequence
+
+        :param markups: iterable markups sequence
+        """
+        return cls.init_list(markups)
+
+    @classmethod
+    def from_crop_rule_list(
+        cls, markup: str, *, crop_rule: Callable[[str], Iterable[str]]
+    ) -> list[Self]:
+        """Init list of schemas by crop_rule
+
+        :param markup: markup string
+        :param crop_rule: crop rule function to *parts*
+        """
+        return cls.init_list(crop_rule(markup))
+
+    @classmethod
+    def from_crop_rule(cls, markup: str, *, crop_rule: Callable[[str], str]) -> Self:
+        """Init single schema by crop_rule
+
+        :param markup: markup string
+        :param crop_rule: crop rule function to *part*.
+        """
+        return cls(crop_rule(markup))
 
     @staticmethod
     def _to_dict(value: BaseSchema | list | dict):
