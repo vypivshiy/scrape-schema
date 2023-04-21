@@ -8,8 +8,8 @@ __all__ = ["BaseNested", "Nested", "NestedList"]
 
 
 class BaseNested(BaseField):
-    def _parse(self, markup: str) -> str:
-        return markup
+    def _parse(self, _: str) -> str:
+        return _
 
 
 class Nested(BaseNested):
@@ -34,8 +34,7 @@ class Nested(BaseNested):
         self, instance: BaseSchema, name: str, markup: str
     ) -> BaseSchema | Any:
         markup = self._parse(markup)
-        new_markup = self.crop_rule(markup)
-        value = self._schema(new_markup)
+        value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)
         return self._factory(value)
 
 
@@ -62,6 +61,5 @@ class NestedList(BaseNested):
         self, instance: BaseSchema, name: str, markup: str
     ) -> list[BaseSchema] | Any:
         markup = self._parse(markup)
-        new_markups = self.crop_rule(markup)
-        value = self._schema.init_list(new_markups)
+        value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
         return self._factory(value)
