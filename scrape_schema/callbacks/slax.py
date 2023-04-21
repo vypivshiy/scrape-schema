@@ -36,7 +36,9 @@ def crop_by_slax_all(query: str, **slax_config) -> Callable[[str], list[str]]:
     return wrapper
 
 
-def get_attr(name: str, default: Optional[Any] = None) -> Callable[[Node | Any], str | Any]:
+def get_attr(
+    name: str, default: Optional[Any] = None
+) -> Callable[[Node | Any], str | Any]:
     """get attribute from Node object
 
     :param name: tag name

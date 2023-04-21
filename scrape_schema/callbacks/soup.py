@@ -24,7 +24,9 @@ def replace_text(
 ) -> Callable[[Tag | Any], str | Any]:
     def wrapper(tag: Tag | Any) -> str | Any:
         if isinstance(tag, Tag):
-            return tag.get_text(separator=separator, strip=strip).replace(old, new, count)
+            return tag.get_text(separator=separator, strip=strip).replace(
+                old, new, count
+            )
         return tag
 
     return wrapper
@@ -44,7 +46,9 @@ def element_to_dict(element: str) -> dict[str, str | dict]:
     return {"name": tag_name, "attrs": attrs}
 
 
-def get_text(separator: str = "", strip: bool = False) -> Callable[[Tag | Any], str | Any]:
+def get_text(
+    separator: str = "", strip: bool = False
+) -> Callable[[Tag | Any], str | Any]:
     """get text from bs4.Tag
 
     :param separator: separator. default ""
