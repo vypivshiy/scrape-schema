@@ -15,6 +15,7 @@ from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupSelectList
 
 class SchemaConfig(BaseSchema):
     """schema config"""
+
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
@@ -87,7 +88,6 @@ class NewAnime(SchemaConfig):
 
 
 class AnimegoSchema(SchemaConfig):
-
     @staticmethod
     def _crop_new_anime(markup: str) -> list[str]:
         soup = BeautifulSoup(markup, "html.parser")
@@ -122,7 +122,9 @@ class AnimegoSchema(SchemaConfig):
         list[ScheduleItem], NestedList(ScheduleItem, crop_rule=_crop_schedule)
     ]
     ongoings: Annotated[list[Ongoing], NestedList(Ongoing, crop_rule=_crop_ongoing)]
-    new_anime: Annotated[list[NewAnime], NestedList(NewAnime, crop_rule=_crop_new_anime)]
+    new_anime: Annotated[
+        list[NewAnime], NestedList(NewAnime, crop_rule=_crop_new_anime)
+    ]
 
     @property
     def ongoings_count(self):
