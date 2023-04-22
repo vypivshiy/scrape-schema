@@ -551,11 +551,17 @@ class BaseSchema:
         return {
             k: self._to_dict(v)
             for k, v in self.__dict__.items()
-            if not k.startswith("__") and k != "Config"
+            if not k.startswith("_") and k != "Config"
         }
 
+    def __repr_args__(self) -> list[str]:
+        return [
+            f"{k}={repr(v)}"
+            if isinstance(v, BaseSchema)
+            else f"{k}:{type(v).__name__}={repr(v)}"
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and k != "Config"
+        ]
+
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}("
-            f"{', '.join(f'{k}: {type(v).__name__} = {v}' for k, v in self.dict().items())})"
-        )
+        return f'{self.__class__.__name__}({", ".join(self.__repr_args__())})'
