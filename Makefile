@@ -20,7 +20,7 @@ check: ## Run tests and linters
 	@$(interpreter) mypy .
 	@echo ; echo "pytest"
 	@echo "------"
-	@$(interpreter) pytest
+	@$(interpreter) pytest .
 
 fix:  ## Fix code with black and isort
 	@echo "black"
