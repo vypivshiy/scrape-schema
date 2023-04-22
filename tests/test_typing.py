@@ -1,18 +1,10 @@
 import pprint
-from typing import Annotated, Any, Optional
+from typing import Annotated, Optional
 
 import pytest
 
-from scrape_schema.base import MARKUP_TYPE, BaseField, BaseSchema
-
-
-class MockField(BaseField):
-    def __init__(self, value: Any, **kwargs):
-        super().__init__(**kwargs)
-        self.value = value
-
-    def _parse(self, markup: MARKUP_TYPE) -> Any:
-        return self.value
+from scrape_schema import BaseSchema
+from tests.fixtures import MockField
 
 
 class TypingSchema(BaseSchema):
