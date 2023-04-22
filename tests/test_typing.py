@@ -2,9 +2,9 @@ import pprint
 from typing import Annotated, Optional
 
 import pytest
+from tests.fixtures import MockField
 
 from scrape_schema import BaseSchema
-from tests.fixtures import MockField
 
 
 class TypingSchema(BaseSchema):
