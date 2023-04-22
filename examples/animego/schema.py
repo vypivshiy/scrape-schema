@@ -2,7 +2,6 @@ from typing import Annotated
 
 from bs4 import BeautifulSoup
 
-from callbacks import crop_new_anime, crop_ongoing, crop_schedule
 from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.callbacks.soup import (
     crop_by_tag_all,
@@ -16,7 +15,6 @@ from scrape_schema.fields.soup import SoupFind, SoupSelect, SoupSelectList
 
 class SchemaConfig(BaseSchema):
     """schema config"""
-
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
@@ -89,6 +87,31 @@ class NewAnime(SchemaConfig):
 
 
 class AnimegoSchema(SchemaConfig):
+
+    @staticmethod
+    def _crop_new_anime(markup: str) -> list[str]:
+        soup = BeautifulSoup(markup, "html.parser")
+        tags = soup.select_one("#content > div:nth-child(2)").find_all(
+            "div", class_="animes-list-item media"
+        )
+        return [str(tag) for tag in tags]
+
+    @staticmethod
+    def _crop_ongoing(markup: str) -> list[str]:
+        soup = BeautifulSoup(markup, "html.parser")
+        tags = soup.find_all("div", class_="list-group")[0].find_all(
+            "div", class_="last-update-item"
+        )
+        return [str(tag) for tag in tags]
+
+    @staticmethod
+    def _crop_schedule(markup: str) -> list[str]:
+        soup = BeautifulSoup(markup, "html.parser")
+        tags = soup.find_all("div", class_="list-group")[1].find_all(
+            "div", class_="media-body"
+        )
+        return [str(tag) for tag in tags]
+
     title: Annotated[str, SoupFind("<title>")]
     lang: Annotated[str, SoupFind("<html>", callback=get_attr("lang"))]
     anime_seasons: Annotated[
@@ -96,10 +119,10 @@ class AnimegoSchema(SchemaConfig):
         NestedList(AnimeSeason, crop_rule=crop_by_tag_all('<div class="item">')),
     ]
     schedule: Annotated[
-        list[ScheduleItem], NestedList(ScheduleItem, crop_rule=crop_schedule)
+        list[ScheduleItem], NestedList(ScheduleItem, crop_rule=_crop_schedule)
     ]
-    ongoings: Annotated[list[Ongoing], NestedList(Ongoing, crop_rule=crop_ongoing)]
-    new_anime: Annotated[list[NewAnime], NestedList(NewAnime, crop_rule=crop_new_anime)]
+    ongoings: Annotated[list[Ongoing], NestedList(Ongoing, crop_rule=_crop_ongoing)]
+    new_anime: Annotated[list[NewAnime], NestedList(NewAnime, crop_rule=_crop_new_anime)]
 
     @property
     def ongoings_count(self):
