@@ -8,7 +8,7 @@ class Device(BaseSchema):
     num: Annotated[int, ReMatch(r"^(\d+):")]
     name: Annotated[str, ReMatch(r"^\d+: (\w+):")]
     interface: Annotated[
-        list[str], ReMatch(r"<([\w,_]+)>", factory=lambda s: s.split(","))
+        list[str], ReMatch(r"<([\w,_]+)>", factory=lambda s: s.split(",") if s else [])
     ]
     mtu: Annotated[int, ReMatch(r"mtu (\d+)")]
     qdisc: Annotated[str, ReMatch(r"qdisc (\w+)")]

@@ -34,10 +34,11 @@ else:
 
 if __name__ == "__main__":
     # split stdout to parts
-    interfaces = re.split(r"^\d+: ", STDOUT, flags=re.MULTILINE)
-    interfaces = [f"{i}: {face}" for i, face in enumerate(interfaces, 0) if face]
+    def crop_stdout(stdout: str) -> list[str]:
+        interfaces = re.split(r"^\d+: ", stdout, flags=re.MULTILINE)
+        return [f"{i}: {face}" for i, face in enumerate(interfaces, 0) if face]
 
-    devices = Device.init_list(interfaces)
+    devices = Device.from_crop_rule_list(STDOUT, crop_rule=crop_stdout)
     print(*devices, sep="\n")
     for device in devices:
         print(device.name, device.ipv4, device.ipv6)
