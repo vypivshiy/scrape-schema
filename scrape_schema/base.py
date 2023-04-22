@@ -501,36 +501,39 @@ class BaseSchema:
         return cls.from_list(markups)
 
     @classmethod
-    def from_list(cls, markups: Iterable[str]) -> list[Self]:
+    def from_list(cls, markups: Iterable[str], **kwargs) -> list[Self]:
         """Init list of schemas by markups sequence
 
         :param markups: iterable markups sequence
+        :param kwargs: any attrs
         """
-        return [cls(markup) for markup in markups]
+        return [cls(markup, parse_markup=True, **kwargs) for markup in markups]
 
     @classmethod
     def from_crop_rule_list(
-        cls, markup: str, *, crop_rule: Callable[[str], Iterable[str]]
+        cls, markup: str, *, crop_rule: Callable[[str], Iterable[str]], **kwargs
     ) -> list[Self]:
         """Init list of schemas by crop_rule
 
         :param markup: markup string
         :param crop_rule: crop rule function to *parts*
         """
-        return cls.from_list(crop_rule(markup))
+        return cls.from_list(crop_rule(markup), **kwargs)
 
     @classmethod
-    def from_crop_rule(cls, markup: str, *, crop_rule: Callable[[str], str]) -> Self:
+    def from_crop_rule(
+        cls, markup: str, *, crop_rule: Callable[[str], str], **kwargs
+    ) -> Self:
         """Init single schema by crop_rule
 
         :param markup: markup string
         :param crop_rule: crop rule function to *part*.
         """
-        return cls(crop_rule(markup))
+        return cls(crop_rule(markup), parse_markup=True, **kwargs)
 
     @classmethod
-    def from_markup(cls, markup: str) -> Self:
-        return cls(markup, parse_markup=True)
+    def from_markup(cls, markup: str, **kwargs) -> Self:
+        return cls(markup, parse_markup=True, **kwargs)
 
     @staticmethod
     def _to_dict(value: BaseSchema | list | dict):
