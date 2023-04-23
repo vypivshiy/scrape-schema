@@ -219,7 +219,7 @@ class BaseField(ABCField, TypeCaster):
         if self.Config.parser and not isinstance(markup, self.Config.parser):
             raise TypeError(
                 f"markup in `{self.__class__.__name__}` "
-                f"should be `{self.Config.parser.__class__.__name__}`,"
+                f"should be `{self.Config.parser.__name__}`,"
                 f"not {type(markup).__name__}"
             )
         value = self._parse(markup)
