@@ -209,15 +209,41 @@ class BaseField(ABCField, TypeCaster):
         """
         ...
 
+    def extract(self, markup: MARKUP_TYPE, *, type_: Optional[Type] = None) -> Any:
+        """parse markup without BaseSchema Instance
+
+        :param markup: string target
+        :param type_: optional type for type-casting
+        """
+        # TODO add logging
+        if self.Config.parser and not isinstance(markup, self.Config.parser):
+            raise TypeError(
+                f"markup in `{self.__class__.__name__}` "
+                f"should be `{self.Config.parser.__class__.__name__}`,"
+                f"not {type(markup).__name__}"
+            )
+        value = self._parse(markup)
+        if not value:
+            value = self.default
+        if self._is_iterable_and_not_string_value(value):
+            value = self._filter(value)
+        if self.callback:
+            value = self._callback(value)
+        if self.factory:
+            value = self._factory(value)
+        elif type_:
+            value = self._cast_type(type_, value)
+        return value
+
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
         logger.info(
             "`%s.%s[%s]`. Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
             instance.__class__.__name__,
             name,
             self.Config.parser or "str",
-            getattr(self.factory, "__name__", None),
-            getattr(self.callback, "__name__", None),
-            getattr(self.filter_, "__name__", None),
+            repr(self.factory),
+            repr(self.callback),
+            repr(self.filter_),
             self.default,
         )
         value = self._parse(markup)
