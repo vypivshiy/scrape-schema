@@ -548,6 +548,16 @@ class BaseSchema:
     def from_markup(cls, markup: str, **kwargs) -> Self:
         return cls(markup, parse_markup=True, **kwargs)
 
+    @classmethod
+    def from_kwargs(cls, **kwargs) -> Self:
+        """Create new class without parse markup and fields
+
+        :param kwargs: any keyword arguments
+        """
+        kwargs.pop("parse_markup")
+
+        return cls("", parse_markup=False, **kwargs)
+
     @staticmethod
     def _to_dict(value: BaseSchema | list | dict):
         if isinstance(value, BaseSchema):
