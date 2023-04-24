@@ -514,19 +514,6 @@ class BaseSchema:
             setattr(self, k, v)
 
     @classmethod
-    def init_list(cls, markups: Iterable[str]) -> list[Self]:
-        """Init list of schemas by markups sequence
-
-        :param markups: - iterable markups sequence
-        """
-        warnings.warn(
-            "This method deprecated, usage `from_list`",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return cls.from_list(markups)
-
-    @classmethod
     def from_list(cls, markups: Iterable[str], **kwargs) -> list[Self]:
         """Init list of schemas by markups sequence
 
