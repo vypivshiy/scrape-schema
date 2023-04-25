@@ -41,7 +41,7 @@ def element_to_dict(element: str) -> dict[str, str | dict[str, str | list[str]]]
         <a id="1", class="thing"> -> {"name": "a", "attrs": {"id": "1", "class": "thing"}}
     """
     if not (match := RE_TAG_NAME.search(element)):
-        raise TypeError(f"Element `{element}` is not HTML tag")
+        raise TypeError(f"Element `{element}` is not valid HTML tag")
     tag_name = match.group(1)
     attrs = dict(RE_TAG_ATTRS.findall(element))
     if (klass := attrs.get("class")) and len(klass.split(" ")) != 1:
