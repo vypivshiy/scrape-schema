@@ -1,4 +1,4 @@
-**Documentation for version 0.0.9**
+**Documentation for version 0.0.10**
 
 # Scrape-schema
 
