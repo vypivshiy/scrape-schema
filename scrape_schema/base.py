@@ -554,7 +554,8 @@ class BaseSchema:
 
         :param kwargs: any keyword arguments
         """
-        kwargs.pop("parse_markup")
+        if kwargs.get("parse_markup"):
+            kwargs.pop("parse_markup")
 
         return cls("", parse_markup=False, **kwargs)
 
