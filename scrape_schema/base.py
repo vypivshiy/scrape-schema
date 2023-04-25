@@ -12,7 +12,6 @@ from typing import (
     Iterable,
     Optional,
     Type,
-    TypeAlias,
     TypeVar,
     Union,
     get_args,
@@ -22,9 +21,9 @@ from typing import (
 
 # python < 3.9
 try:
-    from typing import Annotated  # type: ignore
+    from typing import Annotated, TypeAlias  # type: ignore
 except ImportError:
-    from typing_extensions import Annotated  # type: ignore
+    from typing_extensions import Annotated, TypeAlias  # type: ignore
 
 # python < 3.11
 try:
@@ -33,6 +32,7 @@ except ImportError:
     from typing_extensions import Self  # type: ignore
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
+
 
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
