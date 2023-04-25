@@ -28,6 +28,7 @@ References:
 * https://docs.python.org/3.11/library/re.html#re.Match.groupdict
 """
 from __future__ import annotations
+
 import re
 from typing import Any, Callable, Optional, Pattern
 
