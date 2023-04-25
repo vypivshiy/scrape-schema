@@ -1,5 +1,5 @@
 # nested
-Usage for generate complex schemas
+Usage for generate complex schemas structures
 
 * schema - type schema class 
 * crop_rule - split text rule 

@@ -2,7 +2,152 @@
 The primary means of defining objects in scrape_schema is via models 
 (classes inherited from `BaseSchema`).
 
+## Default init constructor
 * markup: str - target string for parsing
+* parse_markup: bool - parse fields object. Default True
+* kwargs - any keyword arguments for setattr in schema
+```python
+from typing import Annotated
+from scrape_schema import BaseSchema
+from scrape_schema.fields.regex import ReMatch
+
+markup = "100 lorem"
+
+
+class Schema(BaseSchema):
+    word: Annotated[str, ReMatch(r"([a-zA-Z]+)")]
+    digit: Annotated[int, ReMatch(r"(\d+)")]
+
+
+print(Schema(markup))
+# Schema(word:str='lorem', digit:int=100)
+```
+## from_markup
+Parse fields from markup. Alias for `BaseSchema(markup, parse_markup=True, **kwargs)`
+
+* markup: str - target string for parsing
+* kwargs - any keyword arguments for setattr in schema
+
+```python
+from typing import Annotated
+from scrape_schema import BaseSchema
+from scrape_schema.fields.regex import ReMatch
+
+markup = "100 lorem"
+
+
+class Schema(BaseSchema):
+    word: Annotated[str, ReMatch(r"([a-zA-Z]+)")]
+    digit: Annotated[int, ReMatch(r"(\d+)")]
+
+
+print(*Schema.from_markup(markup))
+# Schema(word:str='lorem', digit:int=100)
+```
+## from_list
+* markups: Iterable[str] - sequence of strings 
+* **kwargs - any keyword arguments for setattr in schema
+
+```python
+from typing import Annotated
+from scrape_schema import BaseSchema
+from scrape_schema.fields.regex import ReMatch
+
+markups = ["100 lorem", "200 dolor"]
+
+
+class Schema(BaseSchema):
+    word: Annotated[str, ReMatch(r"([a-zA-Z]+)")]
+    digit: Annotated[int, ReMatch(r"(\d+)")]
+
+
+print(*Schema.from_list(markups), sep="\n")
+# Schema(word:str='lorem', digit:int=100)
+# Schema(word:str='dolor', digit:int=200)
+```
+## from_crop_rule
+Split string by crop_rule method and return schema object
+* markup – target string for parsing
+* crop_rule – crop rule function to *part*.
+* **kwargs - any keyword arguments for setattr in schema
+
+```python
+from typing import Annotated
+from scrape_schema import BaseSchema
+from scrape_schema.fields.regex import ReMatch
+
+markup = "100 lorem; 200 dolor"
+
+
+class Schema(BaseSchema):
+    word: Annotated[str, ReMatch(r"([a-zA-Z]+)")]
+    digit: Annotated[int, ReMatch(r"(\d+)")]
+
+
+# get last string from split("; ") method
+# "100 lorem; 200 dolor".split("; ")
+# ["100 lorem", "200 dolor"]
+print(Schema.from_crop_rule(markup, crop_rule=lambda s: s.split("; ")[-1]))
+# Schema(word:str='dolor', digit:int=200)
+```
+## from_crop_rule_list
+
+* markup – target string for parsing
+* crop_rule – crop rule function to *part***S**.
+* **kwargs - any keyword arguments for setattr in schema
+
+```python
+from typing import Annotated
+from scrape_schema import BaseSchema
+from scrape_schema.fields.regex import ReMatch
+
+markup = "100 lorem; 200 dolor"
+
+
+class Schema(BaseSchema):
+    word: Annotated[str, ReMatch(r"([a-zA-Z]+)")]
+    digit: Annotated[int, ReMatch(r"(\d+)")]
+
+
+# get last string from split("; ") method
+# "100 lorem; 200 dolor".split("; ")
+# ["100 lorem", "200 dolor"]
+print(*Schema.from_crop_rule_list(markup, crop_rule=lambda s: s.split("; ")), sep="\n")
+# Schema(word:str='lorem', digit:int=100)
+# Schema(word:str='dolor', digit:int=200)
+
+```
+## from_kwargs
+Disable parse fields and set arguments manual. 
+
+Alias for `BaseSchema("", parse_markup=False, **kwargs)`
+* **kwargs - any keyword arguments for setattr in schema
+
+>> Note: 
+> This method doesn't validate types and does not automatically typecast!
+> 
+> This method is like a dataclass on minimal
+
+```python
+from typing import Annotated
+from scrape_schema import BaseSchema
+from scrape_schema.fields.regex import ReMatch
+
+markup = "100 lorem; 200 dolor"
+
+
+class Schema(BaseSchema):
+    word: Annotated[str, ReMatch(r"([a-zA-Z]+)")]
+    digit: Annotated[int, ReMatch(r"(\d+)")]
+
+
+print(Schema.from_kwargs(word="kwarg word", digit=0))
+# Schema(word:str='kwarg word', digit:int=0)
+print(Schema.from_kwargs(word={"spam": "egg"}, digit="lol", foo="bar"))
+# Schema(word:dict={'spam': 'egg'}, digit:str='lol', foo:str='bar')
+print(Schema.from_kwargs())
+# Schema()
+```
 
 # Config
 `Config` (inherited from `BaseConfig`) class contains configurations in `BaseSchema`.
@@ -97,11 +242,11 @@ The base class of the field for interacting with the `BaseSchema`
 
 * `factory` - convert result value to another type/struct avoid type-casting feature
 
-| name  | callback arg   | scope               | backend              |
-|-------|----------------|---------------------|----------------------|
-| regex | str            | any text            | re                   |
- | soup  | Tag            | BeautifulSoup, html | bs4                  |
-| slax  | Node           | HTMLParser, html    | selectolax(Modest)   |
+| name  | callback arg           | scope                                | backend            |
+|-------|------------------------|--------------------------------------|--------------------|
+| regex | str                    | any text                             | re                 |
+ | soup  | bs4.Tag                | bs4.BeautifulSoup, (html, xml)       | bs4                |
+| slax  | selectolax.parser.Node | selectolax.parser.HTMLParser, (html) | selectolax(Modest) |
 
 # type-casting
 If in `Config` class set `type_casting = True`, then the scheme will try auto cast in the simple types.

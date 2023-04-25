@@ -1,10 +1,10 @@
-**Documentation for version 0.0.1**
+**Documentation for version 0.0.9**
 
 # Scrape-schema
 
 This library is designed to write structured, readable, 
-reusable parsers for various text data (like html, stdout or any text) and
-is inspired by dataclasses
+reusable parsers for various text data (like html, stdout or any text) and 
+inspired by data class architecture
 
 # Motivation
 Simplifying parsers support, (mostly html, stdout output, unstructured text and unofficial APIs), 
@@ -14,8 +14,7 @@ Also structuring, data serialization and use as an intermediate layer
 for third-party serialization libraries: json, dataclasses, attrs, pydantic, etc
 
 # Install
-
-zero dependencies (regex, nested fields)
+zero dependencies (re, nested)
 ```shell
 pip install scrape-schema
 ```
@@ -33,6 +32,22 @@ add all fields
 pip install scrape-schema[all]
 ```
 ____
+# Project structure
+```
+scrape_schema
+├── base.py  # base schema, base fields classes 
+├── exceptions.py  # custom exception classes
+├── callbacks
+│    ├── slax.py # selectolax build-in common callbacks, crop_rules
+│    └── soup.py # bs4 build-in common callbacks, crop_rules
+├── factory
+│    └── __init__.py # TODO build-in common factory callbacks
+└── fields
+     ├── nested.py  # Nested fields
+     ├── regex.py  # re backend fields
+     ├── slax.py  # selectolax (Modest) backend fields
+     └── soup.py  # bs4 backend fields
+```
 
 # Fields
 ## How it works
@@ -54,10 +69,10 @@ Arguments eval steps:
 ## About typing.Annotated 
 
 This project usage [Annotated](https://docs.python.org/3/library/typing.html#typing.Annotated)
-[(PEP 593)](https://peps.python.org/pep-0593/) typehint for annotation fields 
+[(PEP 593)](https://peps.python.org/pep-0593/) typehint for annotation fields in runtime
 and make the static type checker happy 😀 and didn't need write a mypy plugin 🤯.
 
-if you have python <3.9 - import this type from `typing_extension`
+if you have python <3.9 - install `typing_extension`
 ```python
 from typing_extensions import Annotated
 ```
@@ -77,7 +92,7 @@ ____
 With **Annotated** - correct type, mypy OK
 ____
 
-## About backend parsers
+## About any parsers library
 This library is not designed to work with structured formats like:
 
 * cfg

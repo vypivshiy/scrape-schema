@@ -32,6 +32,12 @@ print(element_to_dict("<a>"))
 # {"name": "a"}
 print(element_to_dict('<div class="spam" id="100">'))
 # {"name": "div", "attrs": {"class": "spam", "id": "100"}}
+print(element_to_dict('<div class="spam egg foo">'))
+# {"name": "div", "attrs": {"class": ["spam", "egg", "foo"]}}
+print(element_to_dict('div class="spam"'))
+# TypeError: Element `div class="spam` is not valid HTML tag
+print(element_to_dict('scrape_schema'))
+# TypeError: Element `scrape_schema` is not valid HTML tag
 ```
 
 ```python
@@ -107,7 +113,58 @@ Nested_4 = NestedList(..., crop_rule=crop_by_selector_all('body > div'))
 ```
 
 ## Example
+Without usage schema:
+```python
+from bs4 import BeautifulSoup
+from scrape_schema.callbacks.soup import get_attr, get_text
+from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
 
+HTML = """
+<img src="/foo.png">foo</img>
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
+<div class="dict">
+  <p class="string">test-1</p>
+  <a class="list">1</a>
+  <a class="list">2</a>
+  <a class="list">3</a>
+  <div class="sub-dict">
+    <p class="sub-string">spam-1</p>
+    <a class="sub-list">10</a>
+    <a class="sub-list">20</a>
+    <a class="sub-list">30</a>
+  </div>
+</div>
+"""
+Image = SoupFind("<img>", callback=get_attr("src"))
+AllPText = SoupFindList("<p>", filter_=lambda t: not(get_text()(t).isdigit()))
+SubList = SoupFindList('<a class="sub-list">')
+SelectSubDictA = SoupSelectList("div.sub-dict > a")
+SelectSubString = SoupSelect("div.sub-dict > p.sub-string")
+
+soup = BeautifulSoup(HTML, "html.parser")
+
+img: str = Image.extract(soup)
+p_lst: list[str] = AllPText.extract(soup)
+sub_list: list[int] = SubList.extract(soup, type_=list[int])
+sub_list_2: list[float] = SelectSubDictA.extract(soup, type_=list[float])
+sub_str: str = SelectSubString.extract(soup)
+
+print(img, p_lst, sub_list, sub_list_2, sub_str, sep="\n__\n")
+# /foo.png
+# __
+# ['test-string', 'test-1', 'spam-1']
+# __
+# [10, 20, 30]
+# __
+# [10.0, 20.0, 30.0]
+# __
+# spam-1
+```
+With schema:
 ```python
 from typing import Annotated
 import pprint
@@ -115,7 +172,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from scrape_schema.fields.nested import NestedList, Nested
+from scrape_schema.fields.nested import NestedList
 from scrape_schema import BaseSchema, BaseSchemaConfig
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
 from scrape_schema.callbacks.soup import get_attr, crop_by_selector_all
@@ -198,11 +255,16 @@ class Schema(BaseSchema):
     lang: Annotated[str, SoupFind("<html>", callback=get_attr("lang"))]
     lang_select: Annotated[str, SoupSelect("html", callback=get_attr("lang"))]
     # you can use both fields: find or css!
-    body_list: Annotated[list[int], SoupFindList('<a class="body-list">')]
-    body_list_selector: Annotated[list[int], SoupSelectList("body > a.body-list")]
-    all_digits: Annotated[list[float], SoupFindList("<a>", filter_=lambda tag: tag.get_text().isdigit())]
+    body_list: Annotated[list[int], 
+                         SoupFindList('<a class="body-list">')]
+    body_list_selector: Annotated[list[int], 
+                                  SoupSelectList("body > a.body-list")]
+    all_digits: Annotated[list[float], 
+                          SoupFindList("<a>", 
+                                       filter_=lambda tag: tag.get_text().isdigit())]
     # soup find method features accept
-    body_list_re: Annotated[list[int], SoupFindList({"name": "a", "class_": re.compile("^list")})]
+    body_list_re: Annotated[list[int], 
+                            SoupFindList({"name": "a", "class_": re.compile("^list")})]
     p_and_a_tags: Annotated[list[str], SoupFindList({"name": ["p", "a"]})]
     # bool flags
     has_spam_tag: Annotated[bool, SoupFind("<spam>")]
@@ -211,22 +273,28 @@ class Schema(BaseSchema):
     has_a_tag_select: Annotated[bool, SoupSelect("body > a")]
 
     # filter, factory features
-    bigger_100: Annotated[list[int], SoupFindList("<a>",
-                                                  filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100)]
+    bigger_100: Annotated[list[int], 
+                          SoupFindList("<a>",
+                                       filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100)]
     # get all <a> tags, filter if text isdigit, bigger 100, and get max value
-    bigger_100_max: Annotated[int, SoupFindList("<a>",
-                                                filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
-                                                callback=lambda tag: int(tag.get_text(strip=True)),
-                                                factory=max)]
+    bigger_100_max: Annotated[int,
+                              SoupFindList("<a>",
+                                           filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
+                                           callback=lambda tag: int(tag.get_text(strip=True)),
+                                           factory=max)]
 
-    spam_text: Annotated[str, SoupFindList("<p>",
-                                           filter_=lambda s: s.get_text().startswith("spam"),
-                                           factory=lambda lst: ", ".join(lst))]
-    sum_all_digit: Annotated[int, SoupFindList("<a>",
-                                               filter_=lambda tag: tag.get_text().isdigit(),
-                                               callback=lambda tag: int(tag.get_text()),
-                                               factory=sum)]
-    div_dicts: Annotated[list[DivDict], NestedList(DivDict, crop_rule=crop_by_selector_all("body > div.dict"))]
+    spam_text: Annotated[str,
+                         SoupFindList("<p>",
+                                      filter_=lambda s: s.get_text().startswith("spam"),
+                                      factory=lambda lst: ", ".join(lst))]
+    sum_all_digit: Annotated[int,
+                             SoupFindList("<a>",
+                                          filter_=lambda tag: tag.get_text().isdigit(),
+                                          callback=lambda tag: int(tag.get_text()),
+                                          factory=sum)]
+    div_dicts: Annotated[list[DivDict],
+                         NestedList(DivDict, 
+                                    crop_rule=crop_by_selector_all("body > div.dict"))]
 
 
 if __name__ == '__main__':

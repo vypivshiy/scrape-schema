@@ -22,7 +22,8 @@ print(schema.dict()) # {"egg": "egg"}
 ```
 
 * element_to_dict - convert html tag to attrs. Automatically convert 
-in `SoupFind, SoupFindList` fields
+
+In `SoupFind, SoupFindList` fields
 ```python
 from scrape_schema.callbacks.soup import element_to_dict
 
