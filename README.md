@@ -14,24 +14,32 @@ for third-party serialization libraries: json, dataclasses, pydantic, etc
 
 _____
 # Features
-* Partial support type-casting from annotations (str, int, float, bool, list, dict)
-* Optional success-attempts parse values checker
-* Factory functions for convert values
-* Filter functions for filter a founded values
-* Optional checking the success of getting the value from the field
+* partial support type-casting from annotations (str, int, float, bool, list, dict, Optional)
+* converting parsed values using callbacks, filters, factories
+* logging to quickly find problems in getting values
+* optional success-attempts parse values checker from fields objects
+* decrease code lines for your parsers
+* standardization, modularity* of structures-parsers
+
+*If you usage schema-structures and they are separated from the logic of getting the text
+(stdout output, HTTP requests, etc)
 ____
-# Build-in backends parsers support:
-* re
-* bs4
-* selectolax(Modest)
-* parsel (TODO)
+# Build-in libraries parsers support:
+- [x] re
+- [x] bs4
+- [x] selectolax(Modest)
+- [ ] parsel
+- [ ] lxml
+- [ ] selenium
+- [ ] playwright
 ____
 # Install
 
-zero dependencies (regex, nested fields)
+zero dependencies: regex, nested fields (and typing_extension if python < 3.11)
 ```shell
 pip install scrape-schema
 ```
+
 add bs4 fields
 ```shell
 pip install scrape-schema[bs4]
@@ -41,6 +49,7 @@ add selectolax fields
 ```shell
 pip install scrape-schema[selectolax]
 ```
+
 add all fields
 ```shell
 pip install scrape-schema[all]
@@ -64,7 +73,6 @@ lorem upsum dolor
 
 
 class Schema(BaseSchema):
-    status: str = "OK"
     ipv4: Annotated[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
     max_digit: Annotated[int, ReMatchList(r"(\d+)",
                                           callback=int,                                      
@@ -100,7 +108,7 @@ To set up logger, you can get it by the name `"scrape_schema"`
 import logging
 
 logger = logging.getLogger("scrape_schema")
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.ERROR)
 ...
 ```
 
