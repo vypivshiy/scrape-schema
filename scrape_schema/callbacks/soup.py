@@ -1,4 +1,5 @@
 """build-in callbacks for fields.soup"""
+from __future__ import annotations
 import re
 from typing import Any, Callable, Optional
 
@@ -32,7 +33,7 @@ def replace_text(
     return wrapper
 
 
-def element_to_dict(element: str) -> dict[str, str | dict]:
+def element_to_dict(element: str) -> dict[str, str | dict[str, str | list[str]]]:
     """Convert string element to dict
 
     Example:
@@ -43,6 +44,8 @@ def element_to_dict(element: str) -> dict[str, str | dict]:
         raise TypeError(f"Element `{element}` is not HTML tag")
     tag_name = match.group(1)
     attrs = dict(RE_TAG_ATTRS.findall(element))
+    if (klass := attrs.get("class")) and len(klass.split(" ")) != 1:
+        attrs["class"] = klass.split(" ")
     return {"name": tag_name, "attrs": attrs}
 
 
