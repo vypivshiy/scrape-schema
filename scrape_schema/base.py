@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import warnings
 from abc import ABC, abstractmethod
-from types import NoneType
 from typing import (
     Any,
     ByteString,
@@ -18,6 +17,8 @@ from typing import (
     get_origin,
     get_type_hints,
 )
+
+NoneType = type(None)  # python 3.9
 
 # python < 3.9
 try:
