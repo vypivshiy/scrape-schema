@@ -1,5 +1,9 @@
-from scrape_schema.fields.regex import ReMatch, ReMatchList, ReMatchDict, ReMatchListDict
-
+from scrape_schema.fields.regex import (
+    ReMatch,
+    ReMatchDict,
+    ReMatchList,
+    ReMatchListDict,
+)
 
 ReDigit = ReMatch(r"(\d+)")
 ReWord = ReMatch(r"([a-zA-Z]+)")

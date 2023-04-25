@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+
 from scrape_schema.callbacks.soup import get_attr, get_text
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
 
@@ -23,7 +24,7 @@ HTML = """
 </div>
 """
 Image = SoupFind("<img>", callback=get_attr("src"))
-AllPText = SoupFindList("<p>", filter_=lambda t: not(get_text()(t).isdigit()))
+AllPText = SoupFindList("<p>", filter_=lambda t: not (get_text()(t).isdigit()))
 SubList = SoupFindList('<a class="sub-list">')
 SelectSubDictA = SoupSelectList("div.sub-dict > a")
 SelectSubString = SoupSelect("div.sub-dict > p.sub-string")

@@ -16,21 +16,31 @@ def test_default():
 
 
 def test_from_markup():
-    assert ConstructorSchema(MOCK_TEXT).dict() == ConstructorSchema.from_markup(MOCK_TEXT).dict()
+    assert (
+        ConstructorSchema(MOCK_TEXT).dict()
+        == ConstructorSchema.from_markup(MOCK_TEXT).dict()
+    )
 
 
 def test_from_list():
     lst = ConstructorSchema.from_list(MOCK_TEXT.split("; "))
-    assert [d.dict() for d in lst] == [{"word": "lorem", "digit": 100},
-                                       {"word": "dolor", "digit": 200}]
+    assert [d.dict() for d in lst] == [
+        {"word": "lorem", "digit": 100},
+        {"word": "dolor", "digit": 200},
+    ]
 
 
 def test_from_crop_rule():
-    assert ConstructorSchema.from_crop_rule(MOCK_TEXT, crop_rule=lambda s: s.split("; ")[-1]).dict() == \
-           {"word": "dolor", "digit": 200}
+    assert ConstructorSchema.from_crop_rule(
+        MOCK_TEXT, crop_rule=lambda s: s.split("; ")[-1]
+    ).dict() == {"word": "dolor", "digit": 200}
 
 
 def test_from_crop_rule_list():
-    lst = ConstructorSchema.from_crop_rule_list(MOCK_TEXT, crop_rule=lambda s: s.split("; "))
-    assert [d.dict() for d in lst] == [{"word": "lorem", "digit": 100},
-                                       {"word": "dolor", "digit": 200}]
+    lst = ConstructorSchema.from_crop_rule_list(
+        MOCK_TEXT, crop_rule=lambda s: s.split("; ")
+    )
+    assert [d.dict() for d in lst] == [
+        {"word": "lorem", "digit": 100},
+        {"word": "dolor", "digit": 200},
+    ]

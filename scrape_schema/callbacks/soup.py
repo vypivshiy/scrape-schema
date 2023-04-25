@@ -1,5 +1,6 @@
 """build-in callbacks for fields.soup"""
 from __future__ import annotations
+
 import re
 from typing import Any, Callable, Optional
 

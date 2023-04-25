@@ -23,7 +23,9 @@ HTML = """
 Select1 = SlaxSelect("div.dict > a.int")
 Select2 = SlaxSelect("div.dict > p.string")
 SelectList1 = SlaxSelectList("div.dict > a.int")
-SelectListSum = SlaxSelectList("div.dict > a.int", factory=lambda lst: sum(int(i) for i in lst))
+SelectListSum = SlaxSelectList(
+    "div.dict > a.int", factory=lambda lst: sum(int(i) for i in lst)
+)
 SelectList2 = SlaxSelectList("div.dict > p.string")
 
 parser = HTMLParser(HTML)

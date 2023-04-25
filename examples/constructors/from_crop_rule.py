@@ -1,4 +1,5 @@
 from typing import Annotated
+
 from scrape_schema import BaseSchema
 from scrape_schema.fields.regex import ReMatch
 

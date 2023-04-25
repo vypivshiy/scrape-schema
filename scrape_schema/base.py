@@ -235,24 +235,27 @@ class BaseField(ABCField, TypeCaster):
             logger.debug(
                 "%s.extract value not found, set default `%s` value",
                 self.__class__.__name__,
-                self.default)
+                self.default,
+            )
             value = self.default
         if self._is_iterable_and_not_string_value(value):
             if self.filter_:
-                logger.debug(
-                    "%s.extract `filter_(%s)`", self.__class__.__name__, value)
+                logger.debug("%s.extract `filter_(%s)`", self.__class__.__name__, value)
             value = self._filter(value)
         if self.callback:
-            logger.debug(
-                "%s.extract `callback(%s)`", self.__class__.__name__, value)
+            logger.debug("%s.extract `callback(%s)`", self.__class__.__name__, value)
             value = self._callback(value)
         if self.factory:
-            logger.debug(
-                "%s.extract `factory(%s)`", self.__class__.__name__, value)
+            logger.debug("%s.extract `factory(%s)`", self.__class__.__name__, value)
             value = self._factory(value)
         elif type_:
             value = self._cast_type(type_, value)
-        logger.info("%s.extract return `%s[%s]`", self.__class__.__name__, value, type(value).__name__)
+        logger.info(
+            "%s.extract return `%s[%s]`",
+            self.__class__.__name__,
+            value,
+            type(value).__name__,
+        )
         return value
 
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
