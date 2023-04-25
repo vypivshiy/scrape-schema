@@ -215,24 +215,44 @@ class BaseField(ABCField, TypeCaster):
         :param markup: string target
         :param type_: optional type for type-casting
         """
-        # TODO add logging
+        logger.info(
+            "%s[%s] start extract value. Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
+            self.__class__.__name__,
+            self.Config.parser or "str",
+            repr(self.factory),
+            repr(self.callback),
+            repr(self.filter_),
+            self.default,
+        )
         if self.Config.parser and not isinstance(markup, self.Config.parser):
             raise TypeError(
-                f"markup in `{self.__class__.__name__}` "
+                f"Markup in `{self.__class__.__name__}` "
                 f"should be `{self.Config.parser.__name__}`,"
                 f"not {type(markup).__name__}"
             )
         value = self._parse(markup)
         if not value:
+            logger.debug(
+                "%s.extract value not found, set default `%s` value",
+                self.__class__.__name__,
+                self.default)
             value = self.default
         if self._is_iterable_and_not_string_value(value):
+            if self.filter_:
+                logger.debug(
+                    "%s.extract `filter_(%s)`", self.__class__.__name__, value)
             value = self._filter(value)
         if self.callback:
+            logger.debug(
+                "%s.extract `callback(%s)`", self.__class__.__name__, value)
             value = self._callback(value)
         if self.factory:
+            logger.debug(
+                "%s.extract `factory(%s)`", self.__class__.__name__, value)
             value = self._factory(value)
         elif type_:
             value = self._cast_type(type_, value)
+        logger.info("%s.extract return `%s[%s]`", self.__class__.__name__, value, type(value).__name__)
         return value
 
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
@@ -280,6 +300,7 @@ class BaseField(ABCField, TypeCaster):
             )
         else:
             value = self._typing(instance, name, value)
+        logger.info(r"finish parse value %s.%s = %s")
         return value
 
     def _filter(self, value: T) -> Any:
