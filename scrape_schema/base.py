@@ -42,7 +42,7 @@ _stdout_handler.setFormatter(_formatter)
 logger.addHandler(_stdout_handler)
 
 T = TypeVar("T")
-MARKUP_TYPE: TypeAlias = str | Any
+MARKUP_TYPE: TypeAlias = Union[str, Any]
 
 
 class ABCField(ABC):
