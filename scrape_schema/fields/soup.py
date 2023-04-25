@@ -25,6 +25,7 @@ References:
 
 * https://beautiful-soup-4.readthedocs.io/en/latest/#css-selectors
 """
+from __future__ import annotations
 from abc import ABC
 from typing import Any, Callable, Optional
 

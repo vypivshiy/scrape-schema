@@ -1,4 +1,7 @@
-def _no_typing(_):
+from typing import Any
+
+
+def _no_typing(_) -> Any:
     return _
 
 

@@ -13,6 +13,7 @@ References:
 * https://selectolax.readthedocs.io/en/latest/parser.html#selectolax.parser.HTMLParser.css
 
 """
+from __future__ import annotations
 from abc import ABC
 from typing import Any, Callable, Optional
 

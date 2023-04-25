@@ -1,6 +1,7 @@
 """Build-in callbacks for fields.slax
 
 """
+from __future__ import annotations
 from typing import Any, Callable, Optional
 
 from selectolax.parser import HTMLParser, Node
