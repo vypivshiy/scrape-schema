@@ -61,6 +61,9 @@ jobs:
       - name: Install deps
         run: python -m pip install .[dev]
 
+      - name: Install hatch
+        run: pip install hatch
+
       - name: run flake8 linter
         run: flake8 .
 
@@ -68,4 +71,4 @@ jobs:
         run: mypy .
 
       - name: run pytest
-        run: pytest .
+        run: hatch run pytest .
