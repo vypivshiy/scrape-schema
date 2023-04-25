@@ -18,8 +18,6 @@ from typing import (
     get_type_hints,
 )
 
-NoneType = type(None)  # python 3.9
-
 # python < 3.9
 try:
     from typing import Annotated, TypeAlias  # type: ignore
@@ -35,6 +33,7 @@ except ImportError:
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
 
+NoneType = type(None)  # python 3.9
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
 _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
