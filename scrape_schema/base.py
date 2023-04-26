@@ -336,14 +336,14 @@ class BaseField(ABCField, TypeCaster):
             value = self.default
         else:
             logger.debug(
-                "%s.%s := %s` raw value(s)", instance.__class__.__name__, name, value
+                "%s.%s := %s raw value(s)", instance.__class__.__name__, name, value
             )
 
         if self._is_iterable_and_not_string_value(value):
             value = self._filter(value)
             if self.filter_:
                 logger.debug(
-                    "%s.%s := filter_(%s)`", instance.__class__.__name__, name, value
+                    "%s.%s := filter_(%s)", instance.__class__.__name__, name, value
                 )
 
         value = self._callback(value)
@@ -355,11 +355,11 @@ class BaseField(ABCField, TypeCaster):
         if self.factory:
             value = self._factory(value)
             logger.debug(
-                "%s.%s := factory(%s)`", instance.__class__.__name__, name, value
+                "%s.%s := factory(%s)", instance.__class__.__name__, name, value
             )
         else:
             value = self._typing(instance, name, value)
-        logger.info(r"finish parse value %s.%s = %s")
+        logger.info("%s.%s = `%s` Done", instance.__class__.__name__, name, value)
         # restore callbacks
         next(hooks_wrapper)
         return value
