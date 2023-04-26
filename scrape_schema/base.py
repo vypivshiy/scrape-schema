@@ -20,10 +20,15 @@ from typing import (
 
 # python < 3.9
 try:
-    from typing import Annotated, TypeAlias  # type: ignore
+    from typing import Annotated
 except ImportError:
-    from typing_extensions import Annotated, TypeAlias  # type: ignore
+    from typing_extensions import Annotated  # type: ignore
 
+# python < 3.9
+try:
+    from typing import TypeAlias
+except ImportError:
+    from typing_extensions import TypeAlias
 # python < 3.11
 try:
     from typing import Self  # type: ignore
@@ -32,8 +37,8 @@ except ImportError:
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
-
 NoneType = type(None)  # python 3.9
+
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
 _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
@@ -43,6 +48,7 @@ logger.addHandler(_stdout_handler)
 
 T = TypeVar("T")
 MARKUP_TYPE: TypeAlias = Union[str, Any]
+field = Annotated
 
 
 class ABCField(ABC):
@@ -165,7 +171,7 @@ class TypeCaster:
             return type_annotation(value)
 
 
-class BaseConfigField:
+class BaseFieldConfig:
     """BaseField configuration class:
 
     * parser: Optional[Type[Any]] - parser backend object. If value None - work with python str
@@ -175,7 +181,7 @@ class BaseConfigField:
 
 
 class BaseField(ABCField, TypeCaster):
-    class Config(BaseConfigField):
+    class Config(BaseFieldConfig):
         pass
 
     def __init__(
