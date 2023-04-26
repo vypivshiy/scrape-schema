@@ -1,12 +1,11 @@
 # required requests or any http lib
 import json
 from collections import Counter
-from typing import Annotated
 
 import requests
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.callbacks.soup import crop_by_tag_all, get_attr
 from scrape_schema.fields.nested import NestedList
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect
@@ -22,12 +21,12 @@ class Quote(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    text: Annotated[str, SoupFind('<span class="text">')]
-    author: Annotated[str, SoupFind('<small class="author">')]
-    about: Annotated[
+    text: ScField[str, SoupFind('<span class="text">')]
+    author: ScField[str, SoupFind('<small class="author">')]
+    about: ScField[
         str, SoupFind({"name": "a", "string": "(about)"}, callback=get_attr("href"))
     ]
-    tags: Annotated[list[str], SoupFindList('<a class="tag">')]
+    tags: ScField[list[str], SoupFindList('<a class="tag">')]
 
 
 class QuotePage(BaseSchema):
@@ -36,12 +35,12 @@ class QuotePage(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    title: Annotated[str, SoupSelect("head > title")]
+    title: ScField[str, SoupSelect("head > title")]
     # wrote just example, recommended write properties or methods in this class
-    title_len: Annotated[int, SoupFind("<title>", factory=len)]
-    title_upper: Annotated[str, SoupFind("<title>", factory=lambda t: t.upper())]
+    title_len: ScField[int, SoupFind("<title>", factory=len)]
+    title_upper: ScField[str, SoupFind("<title>", factory=lambda t: t.upper())]
 
-    quotes: Annotated[
+    quotes: ScField[
         list[Quote],
         NestedList(
             Quote,
@@ -50,8 +49,8 @@ class QuotePage(BaseSchema):
             ),
         ),
     ]
-    top_10_tags: Annotated[list[str], SoupFindList('<a class="tag">', factory=top_10)]
-    top_tags_5_len: Annotated[
+    top_10_tags: ScField[list[str], SoupFindList('<a class="tag">', factory=top_10)]
+    top_tags_5_len: ScField[
         list[str],
         SoupFindList(
             '<a class="tag">',
@@ -76,7 +75,7 @@ if __name__ == "__main__":
     responses = [
         requests.get(f"https://quotes.toscrape.com/page/{i}/").text for i in range(1, 3)
     ]
-    schemas = QuotePage.init_list(responses)
+    schemas = QuotePage.from_list(responses)
     print(*schemas, sep="\n---\n")
     # Quotes to Scrape
     # QUOTES TO SCRAPE

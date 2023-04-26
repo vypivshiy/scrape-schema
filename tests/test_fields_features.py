@@ -1,12 +1,18 @@
 import json
 import re
 from dataclasses import dataclass, is_dataclass
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
 
 from bs4 import BeautifulSoup
 from fixtures import HTML
 
-from scrape_schema import BaseConfigField, BaseField, BaseSchema, BaseSchemaConfig
+from scrape_schema import (
+    BaseField,
+    BaseFieldConfig,
+    BaseSchema,
+    BaseSchemaConfig,
+    ScField,
+)
 from scrape_schema.callbacks.soup import crop_by_tag
 from scrape_schema.fields.nested import Nested
 from scrape_schema.fields.soup import SoupFind, SoupFindList
@@ -20,7 +26,7 @@ class FieldTitle(BaseField):
 
 
 class FieldSoupImages(BaseField):
-    class Config(BaseConfigField):
+    class Config(BaseFieldConfig):
         parser = BeautifulSoup
 
     def _parse(self, markup: BeautifulSoup) -> list[str]:
@@ -39,8 +45,8 @@ class FeaturesNested(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    p: Annotated[str, SoupFind('<p class="string">')]
-    a_int: Annotated[list[int], SoupFindList('<a class="list">')]
+    p: ScField[str, SoupFind('<p class="string">')]
+    a_int: ScField[list[int], SoupFindList('<a class="list">')]
 
 
 class FeaturesSchema(BaseSchema):
@@ -48,7 +54,7 @@ class FeaturesSchema(BaseSchema):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     title = FieldTitle()
-    p_sub_strings: Annotated[
+    p_sub_strings: ScField[
         list[str],
         SoupFindList(
             "<p>",
@@ -58,7 +64,7 @@ class FeaturesSchema(BaseSchema):
     ]
     images = FieldSoupImages()
     # convert nested class to dict
-    sub_dict: Annotated[
+    sub_dict: ScField[
         dict[str, Any],
         Nested(
             FeaturesNested,
@@ -67,7 +73,7 @@ class FeaturesSchema(BaseSchema):
         ),
     ]
     # convert nested class to dataclass
-    sub_dataclass: Annotated[
+    sub_dataclass: ScField[
         DictData,
         Nested(
             FeaturesNested,
@@ -76,7 +82,7 @@ class FeaturesSchema(BaseSchema):
         ),
     ]
 
-    sub_json_str: Annotated[
+    sub_json_str: ScField[
         str,
         Nested(
             FeaturesNested,

@@ -1,10 +1,9 @@
 # A hackernews schema parser https://news.ycombinator.com
 import re
-from typing import Annotated
 
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.callbacks.soup import get_attr, replace_text
 from scrape_schema.fields.nested import NestedList
 from scrape_schema.fields.regex import ReMatch
@@ -20,11 +19,9 @@ class Post(BaseSchema):
         """custom factory for concatenate path url with netloc"""
         return f"https://news.ycombinator.com{path}"
 
-    id: Annotated[int, SoupFind('<tr class="athing">', callback=get_attr("id"))]
-    rank: Annotated[
-        int, SoupFind('<span class="rank">', callback=replace_text(".", ""))
-    ]
-    vote_up: Annotated[
+    id: ScField[int, SoupFind('<tr class="athing">', callback=get_attr("id"))]
+    rank: ScField[int, SoupFind('<span class="rank">', callback=replace_text(".", ""))]
+    vote_up: ScField[
         str,
         SoupFind(
             {"name": "a", "id": re.compile(r"^up_\d+")},
@@ -32,26 +29,26 @@ class Post(BaseSchema):
             factory=_concat_href,
         ),
     ]
-    source: Annotated[
+    source: ScField[
         str, SoupSelect("td.title > span.titleline > a", callback=get_attr("href"))
     ]
-    title: Annotated[str, SoupSelect("td.title > span.titleline > a")]
-    source_netloc: Annotated[str, SoupFind('<span class="sitebit comhead">')]
-    score: Annotated[
+    title: ScField[str, SoupSelect("td.title > span.titleline > a")]
+    source_netloc: ScField[str, SoupFind('<span class="sitebit comhead">')]
+    score: ScField[
         int,
         SoupFind(
             '<span class="score">', callback=replace_text(" points", ""), default=0
         ),
     ]
-    author: Annotated[str, SoupFind('<a class="hnuser">')]
-    author_url: Annotated[
+    author: ScField[str, SoupFind('<a class="hnuser">')]
+    author_url: ScField[
         str,
         SoupFind('<a class="hnuser">', callback=get_attr("href"), factory=_concat_href),
     ]
-    date: Annotated[str, SoupFind('<span class="age">', callback=get_attr("title"))]
-    time_ago: Annotated[str, SoupSelect("span.age > a")]
-    comments: Annotated[int, ReMatch(r"(\d+)\s+comments", default=0)]
-    post_url: Annotated[
+    date: ScField[str, SoupFind('<span class="age">', callback=get_attr("title"))]
+    time_ago: ScField[str, SoupSelect("span.age > a")]
+    comments: ScField[int, ReMatch(r"(\d+)\s+comments", default=0)]
+    post_url: ScField[
         str,
         SoupFind(
             {"name": "a", "href": re.compile(r"^item\?id=\d+")},
@@ -88,4 +85,4 @@ class HackerNewsSchema(BaseSchema):
                 break
         return elements
 
-    posts: Annotated[list[Post], NestedList(Post, crop_rule=_crop_posts)]
+    posts: ScField[list[Post], NestedList(Post, crop_rule=_crop_posts)]

@@ -20,14 +20,14 @@ from typing import Any, Callable, Optional
 
 from selectolax.parser import HTMLParser, Node
 
-from ..base import BaseConfigField, BaseField
+from ..base import BaseField, BaseFieldConfig
 from ..callbacks.slax import get_text
 
 __all__ = ["BaseSlax", "SlaxSelect", "SlaxSelectList"]
 
 
 class BaseSlax(BaseField, ABC):
-    class Config(BaseConfigField):
+    class Config(BaseFieldConfig):
         parser = HTMLParser
 
 

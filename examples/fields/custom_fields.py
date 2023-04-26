@@ -1,10 +1,10 @@
 import pprint
-from typing import Annotated, Any, Callable, Optional
+from typing import Any, Callable, Optional
 
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseConfigField, BaseSchema, BaseSchemaConfig
-from scrape_schema.base import BaseField
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
+from scrape_schema.base import BaseField, BaseFieldConfig
 from scrape_schema.fields.regex import ReMatch
 
 # example strings
@@ -49,7 +49,7 @@ class RawText(BaseField):
 
 class SoupImage(BaseField):
     # markup parser rule config
-    class Config(BaseConfigField):
+    class Config(BaseFieldConfig):
         parser = BeautifulSoup
 
     # base api provide filter_ (for iterable values), callback, factory and default
@@ -90,15 +90,13 @@ class Schema(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    raw: Annotated[str, RawText(foil_arg=object())]
-    email: Annotated[str, EmailField]
-    ipv4: Annotated[str, Ipv4]
-    image: Annotated[str, SoupImage()]
-    images: Annotated[list[str], SoupImageList()]
-    images_png: Annotated[
-        list[str], SoupImageList(filter_=lambda s: s.endswith(".png"))
-    ]
-    images_png_full: Annotated[
+    raw: ScField[str, RawText(foil_arg=object())]
+    email: ScField[str, EmailField]
+    ipv4: ScField[str, Ipv4]
+    image: ScField[str, SoupImage()]
+    images: ScField[list[str], SoupImageList()]
+    images_png: ScField[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"))]
+    images_png_full: ScField[
         list[str],
         SoupImageList(
             filter_=lambda s: s.endswith(".png"),

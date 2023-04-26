@@ -1,9 +1,8 @@
 import pprint
-from typing import Annotated
 
 from selectolax.parser import HTMLParser
 
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all, get_attr
 from scrape_schema.fields.nested import Nested, NestedList
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
@@ -71,15 +70,15 @@ class SchemaConfig(BaseSchema):
 
 
 class SchemaDivSubDict(SchemaConfig):
-    p: Annotated[str, SlaxSelect("p.sub-string")]
-    a: Annotated[list[float], SlaxSelectList("a.sub-list")]
+    p: ScField[str, SlaxSelect("p.sub-string")]
+    a: ScField[list[float], SlaxSelectList("a.sub-list")]
 
 
 class SchemaDivDict(SchemaConfig):
-    p: Annotated[str, SlaxSelect("p.string")]
-    a: Annotated[list[int], SlaxSelectList("a.list")]
+    p: ScField[str, SlaxSelect("p.string")]
+    a: ScField[list[int], SlaxSelectList("a.list")]
     # crop <div class="sub-dict">...</div>
-    sub_div: Annotated[
+    sub_div: ScField[
         SchemaDivSubDict,
         Nested(SchemaDivSubDict, crop_rule=crop_by_slax("div.sub-dict")),
     ]
@@ -91,11 +90,11 @@ class Schema(SchemaConfig):
     lang = SlaxSelect("html", callback=get_attr("lang"))
     # you can be found build-in crop rules in tools directory package or write manual
     # crop <div class="dict">...</div>
-    first_div: Annotated[
+    first_div: ScField[
         SchemaDivDict, Nested(SchemaDivDict, crop_rule=crop_by_slax("body > div.dict"))
     ]
     # crop <div class="dict">...</div>
-    all_divs: Annotated[
+    all_divs: ScField[
         list[SchemaDivDict],
         NestedList(SchemaDivDict, crop_rule=crop_by_slax_all("body > div.dict")),
     ]

@@ -1,14 +1,12 @@
-from typing import Annotated
-
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
 
 MOCK_TEXT = "lorem 100; dolor 200"
 
 
 class ConstructorSchema(BaseSchema):
-    word: Annotated[str, ReMatch(r"([a-zA-Z]+)")]
-    digit: Annotated[int, ReMatch(r"(\d+)")]
+    word: ScField[str, ReMatch(r"([a-zA-Z]+)")]
+    digit: ScField[int, ReMatch(r"(\d+)")]
 
 
 def test_default():
