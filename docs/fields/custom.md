@@ -7,10 +7,8 @@ There are several ways to create a field
 To improve readability and field reuse, you can create field aliases
 
 ```python
-from typing import Annotated
-
 from bs4 import BeautifulSoup
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 
 from scrape_schema.fields.regex import ReMatch
 from scrape_schema.fields.soup import SoupFind, SoupFindList
@@ -42,11 +40,11 @@ class Schema(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    email: Annotated[str, ReEmail]
-    ip_v4: Annotated[str, ReIpv4]
-    image: Annotated[str, SoupImage]
-    images: Annotated[list[str], SoupImages]
-    p_list: Annotated[list[str]: SoupFindList("<p>")]
+    email: ScField[str, ReEmail]
+    ip_v4: ScField[str, ReIpv4]
+    image: ScField[str, SoupImage]
+    images: ScField[list[str], SoupImages]
+    p_list: ScField[list[str]: SoupFindList("<p>")]
 ```
 
 ## Create new field
@@ -61,10 +59,10 @@ Optionally, to use the library features, pass the following parameters to the co
 * `default: Optional[Any] = None`
 
 ```python
-from typing import Optional, Any, Annotated, Callable
+from typing import Optional, Any, Callable
 from bs4 import BeautifulSoup
 
-from scrape_schema import BaseSchema, BaseConfigField, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseFieldConfig, BaseSchemaConfig, ScField
 from scrape_schema.base import BaseField
 
 HTML = """
@@ -98,7 +96,7 @@ class RawText(BaseField):
 
 
 class SoupImage(BaseField):
-    class Meta(BaseConfigField):
+    class Meta(BaseFieldConfig):
         # markup parser rule config
         parser = BeautifulSoup
 
@@ -133,11 +131,11 @@ class Schema(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    raw: Annotated[str, RawText(foil_arg=object())]
-    image: Annotated[str, SoupImage()]
-    images: Annotated[list[str], SoupImageList()]
-    images_png: Annotated[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"))]
-    images_png_full: Annotated[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"),
+    raw: ScField[str, RawText(foil_arg=object())]
+    image: ScField[str, SoupImage()]
+    images: ScField[list[str], SoupImageList()]
+    images_png: ScField[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"))]
+    images_png_full: ScField[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"),
                                                         callback=lambda s: "https://example.com" + s)]
 
 

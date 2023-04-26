@@ -27,7 +27,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - BaseSchema: fields/schema.md
+  - BaseSchema: schema.md
   - Fields:
       - regex: fields/regex.md
       - nested: fields/nested.md
@@ -35,4 +35,3 @@ nav:
       - slax: fields/slax.md
       - custom: fields/custom.md
   - Callbacks: callbacks.md
-  - Examples: examples.md

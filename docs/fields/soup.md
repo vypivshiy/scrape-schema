@@ -166,14 +166,13 @@ print(img, p_lst, sub_list, sub_list_2, sub_str, sep="\n__\n")
 ```
 With schema:
 ```python
-from typing import Annotated
 import pprint
 import re
 
 from bs4 import BeautifulSoup
 
 from scrape_schema.fields.nested import NestedList
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
 from scrape_schema.callbacks.soup import get_attr, crop_by_selector_all
 
@@ -239,8 +238,8 @@ class DivDict(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    string: Annotated[str, SoupFind('<p class="string">')]
-    a_list: Annotated[list[int], SoupFindList('<a class="list">')]
+    string: ScField[str, SoupFind('<p class="string">')]
+    a_list: ScField[list[int], SoupFindList('<a class="list">')]
 
 
 class Schema(BaseSchema):
@@ -252,47 +251,47 @@ class Schema(BaseSchema):
     title = SoupFind("<title>")
     title_select = SoupSelect("head > title")
     # usage build-in callback for get attribute
-    lang: Annotated[str, SoupFind("<html>", callback=get_attr("lang"))]
-    lang_select: Annotated[str, SoupSelect("html", callback=get_attr("lang"))]
+    lang: ScField[str, SoupFind("<html>", callback=get_attr("lang"))]
+    lang_select: ScField[str, SoupSelect("html", callback=get_attr("lang"))]
     # you can use both fields: find or css!
-    body_list: Annotated[list[int], 
+    body_list: ScField[list[int], 
                          SoupFindList('<a class="body-list">')]
-    body_list_selector: Annotated[list[int], 
+    body_list_selector: ScField[list[int], 
                                   SoupSelectList("body > a.body-list")]
-    all_digits: Annotated[list[float], 
+    all_digits: ScField[list[float], 
                           SoupFindList("<a>", 
                                        filter_=lambda tag: tag.get_text().isdigit())]
     # soup find method features accept
-    body_list_re: Annotated[list[int], 
+    body_list_re: ScField[list[int], 
                             SoupFindList({"name": "a", "class_": re.compile("^list")})]
-    p_and_a_tags: Annotated[list[str], SoupFindList({"name": ["p", "a"]})]
+    p_and_a_tags: ScField[list[str], SoupFindList({"name": ["p", "a"]})]
     # bool flags
-    has_spam_tag: Annotated[bool, SoupFind("<spam>")]
-    has_spam_tag_select: Annotated[bool, SoupSelect("body > spam")]
-    has_a_tag: Annotated[bool, SoupFind("<a>")]
-    has_a_tag_select: Annotated[bool, SoupSelect("body > a")]
+    has_spam_tag: ScField[bool, SoupFind("<spam>")]
+    has_spam_tag_select: ScField[bool, SoupSelect("body > spam")]
+    has_a_tag: ScField[bool, SoupFind("<a>")]
+    has_a_tag_select: ScField[bool, SoupSelect("body > a")]
 
     # filter, factory features
-    bigger_100: Annotated[list[int], 
+    bigger_100: ScField[list[int], 
                           SoupFindList("<a>",
                                        filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100)]
     # get all <a> tags, filter if text isdigit, bigger 100, and get max value
-    bigger_100_max: Annotated[int,
+    bigger_100_max: ScField[int,
                               SoupFindList("<a>",
                                            filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
                                            callback=lambda tag: int(tag.get_text(strip=True)),
                                            factory=max)]
 
-    spam_text: Annotated[str,
+    spam_text: ScField[str,
                          SoupFindList("<p>",
                                       filter_=lambda s: s.get_text().startswith("spam"),
                                       factory=lambda lst: ", ".join(lst))]
-    sum_all_digit: Annotated[int,
+    sum_all_digit: ScField[int,
                              SoupFindList("<a>",
                                           filter_=lambda tag: tag.get_text().isdigit(),
                                           callback=lambda tag: int(tag.get_text()),
                                           factory=sum)]
-    div_dicts: Annotated[list[DivDict],
+    div_dicts: ScField[list[DivDict],
                          NestedList(DivDict, 
                                     crop_rule=crop_by_selector_all("body > div.dict"))]
 

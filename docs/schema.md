@@ -2,6 +2,8 @@
 The primary means of defining objects in scrape_schema is via models 
 (classes inherited from `BaseSchema`).
 
+# Constructors
+
 ## Default init constructor
 * markup: str - target string for parsing
 * parse_markup: bool - parse fields object. Default True
@@ -260,9 +262,8 @@ If in `Config` class set `type_casting = True`, then the scheme will try auto ca
 ```python
 # Error
 from dataclasses import dataclass
-from typing import Annotated
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatchDict
 
 @dataclass
@@ -272,7 +273,7 @@ class MyStruct:
 
     
 class Schema(BaseSchema):
-    foo: Annotated[MyStruct, ReMatchDict(r'spam:(?P<spam>\w+) egg:(?P<egg>\d+)')]
+    foo: ScField[MyStruct, ReMatchDict(r'spam:(?P<spam>\w+) egg:(?P<egg>\d+)')]
 
 ...
 ```
@@ -282,9 +283,8 @@ If you need complex structures - convert them manually using the `factory` param
 ```python
 # OK
 from dataclasses import dataclass
-from typing import Annotated
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatchDict
 
 @dataclass
@@ -294,7 +294,7 @@ class MyStruct:
 
     
 class Schema(BaseSchema):
-    foo: Annotated[MyStruct, ReMatchDict(r'spam:(?P<spam>\w+) egg:(?P<egg>\d+)',
+    foo: ScField[MyStruct, ReMatchDict(r'spam:(?P<spam>\w+) egg:(?P<egg>\d+)',
                                          factory=lambda dct: MyStruct(**dct))]
 
 ...
@@ -304,14 +304,13 @@ class Schema(BaseSchema):
 change type-casting to this enchant function param. if this param None, try type-casting
 
 ```python
-from typing import Annotated
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
 
 
 class Schema(BaseSchema):
     # convert 'hello' to 'hello' with usage type-casting
-    hello = Annotated[list[str], ReMatch(r'(hello)')]
+    hello = ScField[list[str], ReMatch(r'(hello)')]
     
 
 print(Schema('hello world ').dict())  # {'hello': 'hello'} incorrect output type
@@ -320,14 +319,13 @@ print(Schema('hello world ').dict())  # {'hello': 'hello'} incorrect output type
 with factory:
 
 ```python
-from typing import Annotated
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
 
 
 class Schema(BaseSchema):
     # convert 'hello' to ['h', 'e', 'l', 'l', 'o'], without usage type-casting
-    hello = Annotated[list[str], ReMatch(r'(hello)', factory=list)]
+    hello = ScField[list[str], ReMatch(r'(hello)', factory=list)]
     
     
 print(Schema('hello world').dict())  # {'hello': ['h', 'e', 'l', 'l', 'o']} OK

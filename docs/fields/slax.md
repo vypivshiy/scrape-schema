@@ -95,11 +95,10 @@ print(digit, word, digits_sum, digits, words, sep="\n--\n")
 With schema:
 ```python
 import pprint
-from typing import Annotated
 
 from selectolax.parser import HTMLParser
 
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
 from scrape_schema.callbacks.slax import get_attr
 
@@ -169,28 +168,28 @@ class Schema(BaseSchema):
     # build-in callback for get attribute
     lang = SlaxSelect("html", callback=get_attr("lang"))
 
-    body_list_content: Annotated[list[str], SlaxSelectList("body > p")]
-    list_int: Annotated[list[int], SlaxSelectList("body > p.body-int")]
+    body_list_content: ScField[list[str], SlaxSelectList("body > p")]
+    list_int: ScField[list[int], SlaxSelectList("body > p.body-int")]
 
-    has_spam_tag: Annotated[bool, SlaxSelect("body > spam.egg")]
-    has_a_tag: Annotated[bool, SlaxSelect("body > a")]
-    body_list_float: Annotated[list[float], SlaxSelectList("a")]
+    has_spam_tag: ScField[bool, SlaxSelect("body > spam.egg")]
+    has_a_tag: ScField[bool, SlaxSelect("body > a")]
+    body_list_float: ScField[list[float], SlaxSelectList("a")]
     # filters, factory features
-    body_list_int_filter: Annotated[list[int], SlaxSelectList("p",
+    body_list_int_filter: ScField[list[int], SlaxSelectList("p",
                                                               filter_=lambda node: node.text(deep=False).isdigit(),
                                                               callback=lambda node: int(node.text()))]
 
-    body_spam_list: Annotated[list[str], SlaxSelectList("p",
+    body_spam_list: ScField[list[str], SlaxSelectList("p",
                                                         filter_=lambda node: not node.text(deep=False).startswith(
                                                             "spam"))]
-    list_digit_less_100: Annotated[list[int], SlaxSelectList("a",
+    list_digit_less_100: ScField[list[int], SlaxSelectList("a",
                                                              filter_=lambda node: int(node.text(deep=False)) < 100)]
-    list_digit_bigger_100: Annotated[list[int], SlaxSelectList("a",
+    list_digit_bigger_100: ScField[list[int], SlaxSelectList("a",
                                                                filter_=lambda node: int(node.text(deep=False)) > 100)]
-    max_digit: Annotated[int, SlaxSelectList("a",
+    max_digit: ScField[int, SlaxSelectList("a",
                                              callback=lambda node: int(node.text()),
                                              factory=max)]
-    min_digit: Annotated[int, SlaxSelectList("a",
+    min_digit: ScField[int, SlaxSelectList("a",
                                              callback=lambda node: int(node.text()),
                                              factory=min)]
 

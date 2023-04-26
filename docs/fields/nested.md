@@ -11,9 +11,9 @@ Usage for generate complex schemas structures
 import pprint
 import json
 from dataclasses import dataclass
-from typing import Annotated, Optional
+from typing import Optional
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 from scrape_schema.fields.nested import Nested, NestedList
 
@@ -25,29 +25,29 @@ class WordData:
 
 
 class Digits(BaseSchema):
-    digits: Annotated[list[int], ReMatchList(r'(\d+)')]
-    odd_digits: Annotated[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 != 0)]
-    even_digits: Annotated[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 == 0)]
-    sum: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=sum)]
-    max: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=max)]
-    min: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=min)]
+    digits: ScField[list[int], ReMatchList(r'(\d+)')]
+    odd_digits: ScField[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 != 0)]
+    even_digits: ScField[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 == 0)]
+    sum: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=sum)]
+    max: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=max)]
+    min: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=min)]
 
 
 class Word(BaseSchema):
-    digit: Annotated[Optional[int], ReMatch(r"(\d+)")]
-    word: Annotated[Optional[str], ReMatch(r"([a-z]+)")]
+    digit: ScField[Optional[int], ReMatch(r"(\d+)")]
+    word: ScField[Optional[str], ReMatch(r"([a-z]+)")]
 
 
 class HelloWorld(BaseSchema):
-    hello: Annotated[str, ReMatch(r"(hello) world")]
-    world: Annotated[list[str], ReMatch(r"(hello) (world)", group=2, factory=list)]
-    digits: Annotated[str, Nested(Digits,
+    hello: ScField[str, ReMatch(r"(hello) world")]
+    world: ScField[list[str], ReMatch(r"(hello) (world)", group=2, factory=list)]
+    digits: ScField[str, Nested(Digits,
                                   crop_rule=lambda s: s,
                                   factory=lambda sc: json.dumps(sc.dict()))]
-    words: Annotated[list[WordData], NestedList(Word,
+    words: ScField[list[WordData], NestedList(Word,
                                                 crop_rule=lambda s: s.split(),
                                                 factory=lambda scs: [WordData(**sc.dict()) for sc in scs])]
-    sample_string: Annotated[str, Nested(Word,
+    sample_string: ScField[str, Nested(Word,
                                          crop_rule=lambda s: s,
                                          factory=lambda sc: " ".join([str(_) for _ in sc.dict().values()]))]
 
@@ -74,9 +74,9 @@ Usage Nested factory param example:
 import pprint
 import json
 from dataclasses import dataclass
-from typing import Annotated, Optional
+from typing import Optional
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 from scrape_schema.fields.nested import Nested, NestedList
 
@@ -88,26 +88,26 @@ class WordData:
 
 
 class Digits(BaseSchema):
-    digits: Annotated[list[int], ReMatchList(r'(\d+)')]
-    odd_digits: Annotated[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 != 0)]
-    even_digits: Annotated[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 == 0)]
-    sum: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=sum)]
-    max: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=max)]
-    min: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=min)]
+    digits: ScField[list[int], ReMatchList(r'(\d+)')]
+    odd_digits: ScField[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 != 0)]
+    even_digits: ScField[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 == 0)]
+    sum: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=sum)]
+    max: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=max)]
+    min: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=min)]
 
 
 class Word(BaseSchema):
-    digit: Annotated[Optional[int], ReMatch(r"(\d+)")]
-    word: Annotated[Optional[str], ReMatch(r"([a-z]+)")]
+    digit: ScField[Optional[int], ReMatch(r"(\d+)")]
+    word: ScField[Optional[str], ReMatch(r"([a-z]+)")]
 
 
 class HelloWorld(BaseSchema):
-    hello: Annotated[str, ReMatch(r"(hello) world")]
-    world: Annotated[list[str], ReMatch(r"(hello) (world)", group=2, factory=list)]
-    digits: Annotated[str, Nested(Digits,
+    hello: ScField[str, ReMatch(r"(hello) world")]
+    world: ScField[list[str], ReMatch(r"(hello) (world)", group=2, factory=list)]
+    digits: ScField[str, Nested(Digits,
                                   crop_rule=lambda s: s,
                                   factory=lambda sc: json.dumps(sc.dict()))]
-    words: Annotated[list[WordData], NestedList(Word,
+    words: ScField[list[WordData], NestedList(Word,
                                                 crop_rule=lambda s: s.split(),
                                                 factory=lambda scs: [WordData(**sc.dict()) for sc in scs])]
 
@@ -133,33 +133,33 @@ pprint.pprint(schema.dict(), compact=True)
 > converting it into a dictionary
 
 ```python
-from typing import Annotated, Optional
+from typing import Optional
 import json
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 from scrape_schema.fields.nested import Nested, NestedList
 
 
 class Digits(BaseSchema):
-    digits: Annotated[list[int], ReMatchList(r'(\d+)')]
-    odd_digits: Annotated[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 != 0)]
-    even_digits: Annotated[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 == 0)]
-    sum: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=sum)]
-    max: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=max)]
-    min: Annotated[int, ReMatchList(r'(\d+)', callback=int, factory=min)]
+    digits: ScField[list[int], ReMatchList(r'(\d+)')]
+    odd_digits: ScField[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 != 0)]
+    even_digits: ScField[list[int], ReMatchList(r'(\d+)', filter_=lambda i: int(i) % 2 == 0)]
+    sum: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=sum)]
+    max: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=max)]
+    min: ScField[int, ReMatchList(r'(\d+)', callback=int, factory=min)]
 
     
 class Word(BaseSchema):
-    digit: Annotated[Optional[int], ReMatch(r"(\d+)")]
-    word: Annotated[Optional[str], ReMatch(r"([a-z]+)")]
+    digit: ScField[Optional[int], ReMatch(r"(\d+)")]
+    word: ScField[Optional[str], ReMatch(r"([a-z]+)")]
 
     
 class HelloWorld(BaseSchema):
-    hello: Annotated[str, ReMatch(r"(hello) world")]
-    world: Annotated[list[str], ReMatch(r"(hello) (world)", group=2, factory=list)]
-    digits: Annotated[Digits, Nested(Digits, crop_rule=lambda s: s)]
-    words: Annotated[list[Word], NestedList(Word, crop_rule=lambda s: s.split())]
+    hello: ScField[str, ReMatch(r"(hello) world")]
+    world: ScField[list[str], ReMatch(r"(hello) (world)", group=2, factory=list)]
+    digits: ScField[Digits, Nested(Digits, crop_rule=lambda s: s)]
+    words: ScField[list[Word], NestedList(Word, crop_rule=lambda s: s.split())]
 
 
 schema = HelloWorld('1 2 3 hello world 4 5 6 7 8 9 0')

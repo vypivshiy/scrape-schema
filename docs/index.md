@@ -92,6 +92,10 @@ ____
 With **Annotated** - correct type, mypy OK
 ____
 
+>>> Note: After 0.0.11 and higher versions this library have Annotated alias `ScField`:
+```python
+from scrape_schema import ScField  # Annotated alias
+```
 ## About any parsers library
 This library is not designed to work with structured formats like:
 
