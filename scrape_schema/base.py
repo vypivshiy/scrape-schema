@@ -9,6 +9,7 @@ from typing import (
     Callable,
     ClassVar,
     Iterable,
+    Literal,
     Optional,
     Type,
     TypeVar,
@@ -29,6 +30,7 @@ try:
     from typing import TypeAlias
 except ImportError:
     from typing_extensions import TypeAlias
+
 # python < 3.11
 try:
     from typing import Self  # type: ignore
@@ -48,7 +50,6 @@ logger.addHandler(_stdout_handler)
 
 T = TypeVar("T")
 MARKUP_TYPE: TypeAlias = Union[str, Any]
-field = Annotated
 
 
 class ABCField(ABC):
@@ -93,14 +94,14 @@ class TypeCaster:
 
         # skip if value type is annotated correct or is missing
         if value_type is type_annotation:
-            logger.debug(
+            logger.info(
                 "`%s` value `%s` has same type, skip cast",
                 self.__class__.__name__,
                 value,
             )
             return value
 
-        logger.debug(
+        logger.info(
             "`%s` Cast type start. `value[%s]=%s`, type_annotation=%s, `type_origin=%s`, `args=%s`",
             self.__class__.__name__,
             value_type.__name__,
@@ -264,9 +265,58 @@ class BaseField(ABCField, TypeCaster):
         )
         return value
 
+    @staticmethod
+    def _hook_name(
+        attr_name: str, hook_type: Literal["callback", "filter", "factory", "crop_rule"]
+    ) -> str:
+        return (
+            f"{attr_name}_{hook_type}"
+            if attr_name.startswith("_")
+            else f"_{attr_name}_{hook_type}"
+        )
+
+    def _get_hook(
+        self,
+        instance: BaseSchema,
+        attr_name: str,
+        hook_type: Literal["callback", "filter", "factory", "crop_rule"],
+    ) -> Optional[Callable[[T], T]]:
+        """get functions hooks from scrape schema instance"""
+        hook_name = self._hook_name(attr_name, hook_type)
+        if hook := getattr(instance, hook_name, None):
+            logger.debug(
+                "%s.%s: GET HOOK `%s.%s`",
+                instance.__class__.__name__,
+                attr_name,
+                instance.__class__.__name__,
+                hook_name,
+            )
+            return hook
+        return None
+
+    def _set_hooks(self, instance: BaseSchema, attr_name: str):
+        store_callback = self.callback
+        store_filter_ = self.filter_
+        store_factory = self.factory
+
+        # swap callback functions from BaseSchema instance
+        self.callback = self.callback or self._get_hook(instance, attr_name, "callback")
+        self.factory = self.factory or self._get_hook(instance, attr_name, "factory")
+        self.filter_ = self.filter_ or self._get_hook(instance, attr_name, "filter")  # type: ignore
+        yield
+        # restore default callback functions
+        self.callback = store_callback
+        self.filter_ = store_filter_
+        self.factory = store_factory
+        yield
+
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
+        hooks_wrapper = self._set_hooks(instance, name)
+        # init hook
+        next(hooks_wrapper)
+
         logger.info(
-            "`%s.%s[%s]`. Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
+            "%s.%s[%s]: Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
             instance.__class__.__name__,
             name,
             self.Config.parser or "str",
@@ -278,7 +328,7 @@ class BaseField(ABCField, TypeCaster):
         value = self._parse(markup)
         if not value:
             logger.debug(
-                "`%s.%s` value not found, set default `%s` value",
+                "%s.%s: value not found, set default `%s` value",
                 instance.__class__.__name__,
                 name,
                 self.default,
@@ -286,30 +336,32 @@ class BaseField(ABCField, TypeCaster):
             value = self.default
         else:
             logger.debug(
-                "`%s.%s = %s` raw value(s)", instance.__class__.__name__, name, value
+                "%s.%s := %s` raw value(s)", instance.__class__.__name__, name, value
             )
 
         if self._is_iterable_and_not_string_value(value):
             value = self._filter(value)
             if self.filter_:
                 logger.debug(
-                    "filter_ `%s.%s = %s`", instance.__class__.__name__, name, value
+                    "%s.%s := filter_(%s)`", instance.__class__.__name__, name, value
                 )
 
         value = self._callback(value)
         if self.callback:
             logger.debug(
-                "callback `%s.%s = %s`", instance.__class__.__name__, name, value
+                "%s.%s := callback(%s)", instance.__class__.__name__, name, value
             )
 
         if self.factory:
             value = self._factory(value)
             logger.debug(
-                "factory `%s.%s = %s`", instance.__class__.__name__, name, value
+                "%s.%s := factory(%s)`", instance.__class__.__name__, name, value
             )
         else:
             value = self._typing(instance, name, value)
         logger.info(r"finish parse value %s.%s = %s")
+        # restore callbacks
+        next(hooks_wrapper)
         return value
 
     def _filter(self, value: T) -> Any:

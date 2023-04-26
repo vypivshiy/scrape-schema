@@ -69,6 +69,30 @@ class Schema(BaseSchema):
         # BeautifulSoup configuration. You can change parser to lxml. html5.parser, xml, add any kwargs, etc
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
+    @staticmethod
+    def _bigger_100_filter(tag):
+        return tag.get_text().isdigit() and int(tag.get_text()) > 100
+
+    @staticmethod
+    def _spam_text_factory(lst: list[str]) -> str:
+        return " ".join(lst)
+
+    @staticmethod
+    def _all_digits_filter(tag) -> bool:
+        return tag.get_text().isdigit()
+
+    @staticmethod
+    def _bigger_100_max_filter(tag) -> bool:
+        return tag.get_text().isdigit() and int(tag.get_text()) > 100
+
+    @staticmethod
+    def _bigger_100_max_factory(lst: list[str]) -> int:
+        return max(int(i) for i in lst)
+
+    @staticmethod
+    def _sum_all_digit_factory(lst: list[str]) -> int:
+        return sum(int(i) for i in lst)
+
     # <title> param auto converts to {"name": "title"} params
     title = SoupFind("<title>")
     title_select = SoupSelect("head > title")
@@ -78,9 +102,7 @@ class Schema(BaseSchema):
     # you can use both fields: find or css!
     body_list: ScField[list[int], SoupFindList('<a class="body-list">')]
     body_list_selector: ScField[list[int], SoupSelectList("body > a.body-list")]
-    all_digits: ScField[
-        list[float], SoupFindList("<a>", filter_=lambda tag: tag.get_text().isdigit())
-    ]
+    all_digits: ScField[list[float], SoupFindList("<a>")]
     # soup find method features accept
     body_list_re: ScField[
         list[int], SoupFindList({"name": "a", "class_": re.compile("^list")})
@@ -93,40 +115,24 @@ class Schema(BaseSchema):
     has_a_tag_select: ScField[bool, SoupSelect("body > a")]
 
     # filter, factory features
-    bigger_100: ScField[
-        list[int],
-        SoupFindList(
-            "<a>", filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100
-        ),
-    ]
+    #
+    bigger_100: ScField[list[int], SoupFindList("<a>")]
     # get all <a> tags, filter if text isdigit, bigger 100, and get max value
     bigger_100_max: ScField[
         int,
         SoupFindList(
             "<a>",
-            filter_=lambda s: s.get_text().isdigit() and int(s.get_text()) > 100,
-            callback=lambda tag: int(tag.get_text(strip=True)),
-            factory=max,
         ),
     ]
-
     spam_text: ScField[
         str,
         SoupFindList(
             "<p>",
             filter_=lambda s: s.get_text().startswith("spam"),
-            factory=lambda lst: ", ".join(lst),
+            # factory=lambda lst: ", ".join(lst),
         ),
     ]
-    sum_all_digit: ScField[
-        int,
-        SoupFindList(
-            "<a>",
-            filter_=lambda tag: tag.get_text().isdigit(),
-            callback=lambda tag: int(tag.get_text()),
-            factory=sum,
-        ),
-    ]
+    sum_all_digit: ScField[int, SoupFindList("<a>")]
 
 
 if __name__ == "__main__":
