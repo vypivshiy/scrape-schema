@@ -10,7 +10,6 @@ from typing import (
     Callable,
     ClassVar,
     Iterable,
-    Literal,
     Optional,
     Type,
     TypeVar,
@@ -20,11 +19,13 @@ from typing import (
 if sys.version_info >= (3, 9):
     from typing import Annotated
 else:
-    from typing_extensions import Annotated, get_args, get_origin, get_type_hints
+    from typing_extensions import Annotated
+
 if sys.version_info >= (3, 10):
     from typing import TypeAlias, get_args, get_origin, get_type_hints
 else:
     from typing_extensions import TypeAlias, get_args, get_origin, get_type_hints
+
 if sys.version_info >= (3, 11):
     from typing import Self
 else:
