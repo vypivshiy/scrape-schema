@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 import warnings
 from abc import ABC, abstractmethod
 from typing import (
@@ -14,28 +15,20 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    get_args,
-    get_origin,
-    get_type_hints,
 )
 
-# python < 3.9
-try:
+if sys.version_info >= (3, 9):
     from typing import Annotated
-except ImportError:
-    from typing_extensions import Annotated  # type: ignore
-
-# python < 3.9
-try:
-    from typing import TypeAlias
-except ImportError:
-    from typing_extensions import TypeAlias
-
-# python < 3.11
-try:
-    from typing import Self  # type: ignore
-except ImportError:
-    from typing_extensions import Self  # type: ignore
+else:
+    from typing_extensions import Annotated, get_args, get_origin, get_type_hints
+if sys.version_info >= (3, 10):
+    from typing import TypeAlias, get_args, get_origin, get_type_hints
+else:
+    from typing_extensions import TypeAlias, get_args, get_origin, get_type_hints
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 

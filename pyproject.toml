@@ -91,6 +91,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
+python_version = 3.8
 pretty = true
 ignore_missing_imports = true
 exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples"]
