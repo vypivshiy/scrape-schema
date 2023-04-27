@@ -31,23 +31,11 @@ class Nested(BaseNested):
         self._schema = schema
         self.crop_rule = crop_rule
 
-    def _set_hooks(self, instance: BaseSchema, attr_name: str):
-        stored_crop_rule = self.crop_rule
-        self.crop_rule = self.crop_rule or self._get_hook(
-            instance, attr_name, "crop_rule"
-        )
-        yield
-        self.crop_rule = stored_crop_rule
-        yield
-
     def __call__(
         self, instance: BaseSchema, name: str, markup: str
     ) -> BaseSchema | Any:
         markup = self._parse(markup)
-        hook_wrapper = self._set_hooks(instance, name)
-        next(hook_wrapper)
         value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)  # type: ignore
-        next(hook_wrapper)
         return self._factory(value)
 
 
@@ -74,13 +62,10 @@ class NestedList(BaseNested):
         self, instance: BaseSchema, name: str, markup: str
     ) -> list[BaseSchema] | Any:
         markup = self._parse(markup)
-        hook_wrapper = self._set_hooks(instance, name)
-        next(hook_wrapper)
         if not callable(self.crop_rule):
             raise TypeError(
                 f"Add `{instance.__class__.__name__}.{self._hook_name(name, 'crop_rule')}` "
                 f"method or add crop_rule argument"
             )
         value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
-        next(hook_wrapper)
         return self._factory(value)

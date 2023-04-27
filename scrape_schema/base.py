@@ -156,6 +156,8 @@ class TypeCaster:
 
         else:
             # single type
+            if value is None and not issubclass(type_annotation, bool):
+                return value
             logger.debug(
                 "Cast `%s` `%s(%s)`",
                 self.__class__.__name__,
@@ -258,56 +260,7 @@ class BaseField(ABCField, TypeCaster):
         )
         return value
 
-    @staticmethod
-    def _hook_name(
-        attr_name: str, hook_type: Literal["callback", "filter", "factory", "crop_rule"]
-    ) -> str:
-        return (
-            f"{attr_name}_{hook_type}"
-            if attr_name.startswith("_")
-            else f"_{attr_name}_{hook_type}"
-        )
-
-    def _get_hook(
-        self,
-        instance: BaseSchema,
-        attr_name: str,
-        hook_type: Literal["callback", "filter", "factory", "crop_rule"],
-    ) -> Optional[Callable[[T], T]]:
-        """get functions hooks from scrape schema instance"""
-        hook_name = self._hook_name(attr_name, hook_type)
-        if hook := getattr(instance, hook_name, None):
-            logger.debug(
-                "%s.%s: GET HOOK `%s.%s`",
-                instance.__class__.__name__,
-                attr_name,
-                instance.__class__.__name__,
-                hook_name,
-            )
-            return hook
-        return None
-
-    def _set_hooks(self, instance: BaseSchema, attr_name: str):
-        store_callback = self.callback
-        store_filter_ = self.filter_
-        store_factory = self.factory
-
-        # swap callback functions from BaseSchema instance
-        self.callback = self.callback or self._get_hook(instance, attr_name, "callback")
-        self.factory = self.factory or self._get_hook(instance, attr_name, "factory")
-        self.filter_ = self.filter_ or self._get_hook(instance, attr_name, "filter")  # type: ignore
-        yield
-        # restore default callback functions
-        self.callback = store_callback
-        self.filter_ = store_filter_
-        self.factory = store_factory
-        yield
-
     def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
-        hooks_wrapper = self._set_hooks(instance, name)
-        # init hook
-        next(hooks_wrapper)
-
         logger.info(
             "%s.%s[%s]: Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
             instance.__class__.__name__,
@@ -353,8 +306,6 @@ class BaseField(ABCField, TypeCaster):
         else:
             value = self._typing(instance, name, value)
         logger.info("%s.%s = `%s` Done", instance.__class__.__name__, name, value)
-        # restore callbacks
-        next(hooks_wrapper)
         return value
 
     def _filter(self, value: T) -> Any:
@@ -403,7 +354,7 @@ class BaseField(ABCField, TypeCaster):
         :return: typed value
         """
         if instance.Config.type_cast:
-            if type_annotation := instance.__fields_annotations__.get(name):
+            if type_annotation := instance.__schema_annotations__.get(name):
                 value = self._cast_type(type_annotation, value)
         return value
 
@@ -430,145 +381,176 @@ class BaseSchemaConfig:
     fails_attempt: ClassVar[int] = -1
 
 
-class BaseSchema:
+class SchemaMetaClass(type):
+    @staticmethod
+    def _is_type_field(attr: Type) -> bool:
+        return get_origin(attr) is Annotated and all(
+            isinstance(arg, BaseField) for arg in get_args(attr)[1:]
+        )
+
+    @staticmethod
+    def _extract_annotated(attr: Type) -> tuple[Type, tuple[BaseField, ...]]:
+        args = get_args(attr)
+        return args[0], tuple(arg for arg in args[1:] if isinstance(arg, BaseField))
+
+    def __new__(mcs, name, bases, attrs):
+        __schema_fields__: dict[str, tuple[BaseField, ...]] = {}  # type: ignore
+        __schema_annotations__: dict[str, Type] = {}  # type: ignore
+        cls_schema = super().__new__(mcs, name, bases, attrs)
+        if cls_schema.__name__ == "BaseSchema":
+            return cls_schema
+
+        # localns={} kwarg avoid TypeError 'function' object is not subscriptable
+        for name, value in get_type_hints(
+            cls_schema, localns={}, include_extras=True
+        ).items():
+            if name in ("__schema_fields__", "__schema_annotations__"):
+                continue
+            if mcs._is_type_field(value):
+                field_type, fields = mcs._extract_annotated(value)
+                __schema_fields__[name] = fields
+                __schema_annotations__[name] = field_type
+        setattr(cls_schema, "__schema_fields__", __schema_fields__)
+        setattr(cls_schema, "__schema_annotations__", __schema_annotations__)
+
+        return cls_schema
+
+
+class BaseSchema(metaclass=SchemaMetaClass):
+    __schema_fields__: dict[str, tuple[BaseField, ...]] = {}
+    __schema_annotations__: dict[str, Type] = {}
+
     class Config(BaseSchemaConfig):
         pass
 
-    @staticmethod
-    def _is_annotated_field(attr: Type):
-        return get_origin(attr) is Annotated and isinstance(
-            get_args(attr)[-1], BaseField
-        )
+    def _get_parser(self, field_parser_class: Type) -> Optional[dict[str, Any]]:
+        return self.Config.parsers_config.get(field_parser_class, None)
+
+    def _check_parser_config(self, field: BaseField, field_parser: Type) -> bool:
+        if self._get_parser(field_parser) is None:
+            try:
+                raise MarkupNotFoundError(
+                    f"{field.__class__.__name__} required "
+                    f"{field_parser.__class__.__name__} configuration"
+                )
+            except MarkupNotFoundError as e:
+                logger.exception(e)
+                raise e
+        return True
 
     @staticmethod
-    def _is_annotated_tuple_fields(attr: Type):
+    def _success_field_parse(field: BaseField, value) -> bool:
         return (
-            get_origin(attr) is Annotated
-            and isinstance(get_args(attr)[-1], tuple)
-            and all(isinstance(fld, BaseField) for fld in get_args(attr)[-1])
+            hasattr(field, "default")
+            and value != field.default
+            or value == field.default
+            or not value
         )
 
-    def _get_fields(self) -> dict[str, BaseField | tuple[BaseField, ...]]:
-        _fields: dict[str, BaseField | tuple[BaseField, ...]] = {}
-
-        for name, attr in get_type_hints(self.__class__, include_extras=True).items():
-            # get fields from Annotated[Type, Field(..) ]
-            if self._is_annotated_field(attr):
-                _type, _field = get_args(attr)
-                self.__fields_annotations__[name] = _type
-                _fields[name] = _field
-            # get field from Annotated[Type, (Field(..), Field(..), ...)]
-            elif self._is_annotated_tuple_fields(attr):
-                _type, _tuple_fields = get_args(attr)
-                self.__fields_annotations__[name] = _type
-                _fields[name] = _tuple_fields
-
-        # get non-typed fields
-        for name, attr in self.__class__.__dict__.items():
-            if not name.startswith("__") and isinstance(attr, BaseField):
-                _fields[name] = attr
-        return _fields
+    def _cache_parser(
+        self,
+        *,
+        markup: str,
+        field_parser: Type[Any],
+        cached_parsers: dict[Type[Any], Any],
+    ) -> dict[Type[Any], Any]:
+        if not cached_parsers.get(field_parser):
+            parser_kwargs = self.Config.parsers_config.get(field_parser)
+            cached_parsers[field_parser] = field_parser(markup, **parser_kwargs)
+        return cached_parsers
 
     def _parse_field_value(
         self,
         cached_parsers: dict[Type[Any], Any],
         name: str,
-        fields: BaseField | tuple[BaseField, ...],
+        _fields: tuple[BaseField, ...],
         markup: str,
-    ) -> Any:
+    ) -> tuple[BaseField, Any]:
         value: Any = None
-        if not isinstance(fields, tuple):
-            fields = (fields,)
-
-        for field in fields:
-            field_parser = field.Config.parser
-            # parser is not defined in field.Config.parser
-            if not field_parser:
-                value = field(self, name, markup)
-
-            elif self.Config.parsers_config.get(field_parser, None) is None:
-                try:
-                    raise MarkupNotFoundError(
-                        f"{field.__class__.__name__} required "
-                        f"{field_parser.__class__.__name__} configuration"
-                    )
-                except MarkupNotFoundError as e:
-                    logger.exception(e)
-                    raise e
-
-            else:
-                # cache markup parser like BeautifulSoup, HTMLParser, and thing instances
-                if not cached_parsers.get(field_parser):
-                    parser_kwargs = self.Config.parsers_config.get(field_parser)
-                    cached_parsers[field_parser] = field_parser(markup, **parser_kwargs)
-
+        for field in _fields:
+            if field_parser := field.Config.parser:
+                self._check_parser_config(field=field, field_parser=field_parser)
+                cached_parsers = self._cache_parser(
+                    markup=markup,
+                    field_parser=field_parser,
+                    cached_parsers=cached_parsers,
+                )
                 value = field(self, name, cached_parsers[field_parser])
-
-            if (
-                hasattr(field, "default")
-                and value != field.default
-                or value == field.default
-                or not value
-            ):
+            else:
+                value = field(self, name, markup)
+            # get next field if this return default value
+            if self._success_field_parse(field, value):
                 continue
             else:
-                return value
-        return value
+                return field, value
+        return _fields[-1], value
 
-    def _parse_markup_to_fields(self, markup: str) -> None:
+    def _is_attempt_fail(self, field: BaseField, value: Any) -> bool:
+        return (
+            self.Config.fails_attempt >= 0
+            and hasattr(field, "default")
+            and value == field.default
+        )
+
+    def _calculate_attempt_parse_errors(
+        self,
+        *,
+        fails_counter: int,
+        field: BaseField,
+        attr_name: str,
+        value: Any,
+    ) -> int:
+        # calculate fails - compare by default value
+        if self._is_attempt_fail(field, value):
+            fails_counter += 1
+            warnings.warn(
+                f"[{fails_counter}] Failed parse `{self.__class__.__name__}.{attr_name}` "
+                f"by {field.__class__.__name__} field, set `{value}`.",
+                stacklevel=2,
+                category=RuntimeWarning,
+            )
+
+            logger.warning(
+                "[%i] Failed parse `%s.%s` by `%s`, set `%s`",
+                fails_counter,
+                self.__class__.__name__,
+                attr_name,
+                field.__class__.__name__,
+                value,
+            )
+
+            if fails_counter > self.Config.fails_attempt:
+                raise ParseFailAttemptsError(
+                    f"{fails_counter} of {len(self.__schema_fields__.keys())} "
+                    "fields failed parse."
+                )
+        logger.debug(
+            "`%s.%s[%s] = %s`",
+            self.__class__.__name__,
+            attr_name,
+            field.__class__.__name__,
+            value,
+        )
+        return fails_counter
+
+    def __init_fields__(self, markup: str) -> None:
         """
         :param str markup: text target
         """
-        self.__fields_annotations__: dict[str, Type] = {}
-
-        _fields = self._get_fields()
         _parsers: dict[Type[Any], Any] = {}
         _fails_counter = 0
         logger.info(
             "Start parse `%s`. Fields count: %i",
             self.__class__.__name__,
-            len(_fields.keys()),
+            len(self.__schema_fields__.keys()),
         )
 
-        for name, field in _fields.items():
-            value = self._parse_field_value(
-                cached_parsers=_parsers, name=name, fields=field, markup=markup
+        for name, fields in self.__schema_fields__.items():
+            field, value = self._parse_field_value(
+                cached_parsers=_parsers, name=name, _fields=fields, markup=markup
             )
-
-            # calculate fails - compare by default value
-            if (
-                self.Config.fails_attempt >= 0
-                and hasattr(field, "default")
-                and value == field.default
-            ):
-                _fails_counter += 1
-                warnings.warn(
-                    f"[{_fails_counter}] Failed parse `{self.__class__.__name__}.{name}` "
-                    f"by {field.__class__.__name__} field, set `{value}`.",
-                    stacklevel=2,
-                    category=RuntimeWarning,
-                )
-
-                logger.warning(
-                    "[%i] Failed parse `%s.%s` by `%s`, set `%s`",
-                    _fails_counter,
-                    self.__class__.__name__,
-                    name,
-                    field.__class__.__name__,
-                    value,
-                )
-
-                if _fails_counter > self.Config.fails_attempt:
-                    raise ParseFailAttemptsError(
-                        f"{_fails_counter} of {len(_fields.keys())} "
-                        "fields failed parse."
-                    )
-            logger.debug(
-                "`%s.%s[%s] = %s`",
-                self.__class__.__name__,
-                name,
-                field.__class__.__name__,
-                value,
+            _fails_counter = self._calculate_attempt_parse_errors(
+                fails_counter=_fails_counter, field=field, attr_name=name, value=value
             )
             setattr(self, name, value)
         logger.debug(
@@ -583,7 +565,7 @@ class BaseSchema:
         """
         # TODO rewrite init constructor
         if parse_markup:
-            self._parse_markup_to_fields(markup)
+            self.__init_fields__(markup)
 
         for k, v in kwargs.items():
             setattr(self, k, v)
