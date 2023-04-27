@@ -19,14 +19,6 @@ class TypingSchema(BaseSchema):
     t_def_2: str = "egg"
     t_def_3: list[int] = [4, 5, 6]
     t_def_4: bool = False
-    # no typing
-    val_1 = MockField(1)
-    val_2 = MockField("2")
-    val_3 = MockField({"spam": "egg"})
-    val_4 = MockField([1, 2, 3, "a"])
-    val_5 = MockField([1, 2, 3, "a"], filter_=lambda i: isinstance(i, int), factory=sum)
-    val_6 = MockField("200", callback=int)
-    # typing
     a_val_1: Annotated[int, MockField("1")]
     a_val_2: Annotated[str, MockField(100)]
     a_val_3: Annotated[float, MockField(1.5)]
@@ -102,12 +94,6 @@ CAST_SCHEMA = TypingSchema(":)")
         ("t_def_2", "egg"),
         ("t_def_3", [4, 5, 6]),
         ("t_def_4", False),
-        ("val_1", 1),
-        ("val_2", "2"),
-        ("val_3", {"spam": "egg"}),
-        ("val_4", [1, 2, 3, "a"]),
-        ("val_5", 6),
-        ("val_6", 200),
     ],
 )
 def test_cast(attr, result):

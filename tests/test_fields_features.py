@@ -1,7 +1,7 @@
 import json
 import re
 from dataclasses import dataclass, is_dataclass
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from bs4 import BeautifulSoup
 from fixtures import HTML
@@ -29,7 +29,7 @@ class FieldSoupImages(BaseField):
     class Config(BaseFieldConfig):
         parser = BeautifulSoup
 
-    def _parse(self, markup: BeautifulSoup) -> list[str]:
+    def _parse(self, markup: BeautifulSoup) -> List[str]:
         if results := markup.find_all("img"):
             return [element["src"] for element in results if element.get("src")]
         return []
@@ -38,7 +38,7 @@ class FieldSoupImages(BaseField):
 @dataclass
 class DictData:
     p: str
-    a_int: list[int]
+    a_int: List[int]
 
 
 class FeaturesNested(BaseSchema):
@@ -46,26 +46,26 @@ class FeaturesNested(BaseSchema):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     p: ScField[str, SoupFind('<p class="string">')]
-    a_int: ScField[list[int], SoupFindList('<a class="list">')]
+    a_int: ScField[List[int], SoupFindList('<a class="list">')]
 
 
 class FeaturesSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    title = FieldTitle()
+    title: ScField[str, FieldTitle()]
     p_sub_strings: ScField[
-        list[str],
+        List[str],
         SoupFindList(
             "<p>",
             # soup get return list names
             filter_=lambda el: el.get("class", [None])[0] == "sub-string",
         ),
     ]
-    images = FieldSoupImages()
+    images: ScField[List[str], FieldSoupImages()]
     # convert nested class to dict
     sub_dict: ScField[
-        dict[str, Any],
+        Dict[str, Any],
         Nested(
             FeaturesNested,
             crop_rule=crop_by_tag({"name": "div", "class_": "dict"}),

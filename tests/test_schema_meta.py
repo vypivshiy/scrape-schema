@@ -12,8 +12,8 @@ class FailedSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         fails_attempt = 0
 
-    foo = ReMatch(r"(lorem)")
-    fail = ReMatch(r"(\d+)")
+    foo: Annotated[str, ReMatch(r"(lorem)")]
+    fail: Annotated[str, ReMatch(r"(\d+)")]
 
 
 # print RuntimeWarning message
@@ -21,8 +21,8 @@ class WarningSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         fails_attempt = 1
 
-    foo = ReMatch(r"(lorem)")
-    fail = ReMatch(r"(\d+)")
+    foo: Annotated[str, ReMatch(r"(lorem)")]
+    fail: Annotated[str, ReMatch(r"(\d+)")]
 
 
 class DisabledTypingSchema(BaseSchema):
@@ -38,7 +38,7 @@ def test_raise_attempts():
 
 
 def test_warning_attempts():
-    with pytest.warns(RuntimeWarning):
+    with pytest.warns(RuntimeWarning, match="Failed parse"):
         WarningSchema("lorem upsum dolor")
 
 
