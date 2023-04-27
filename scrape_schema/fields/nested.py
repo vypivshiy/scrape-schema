@@ -1,11 +1,12 @@
 """Nested fields for create BaseSchema objects"""
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Union
 
-from typing import Any, Callable, Optional, Type
-
-from ..base import BaseField, BaseSchema  # type: ignore
+from ..base import BaseField  # type: ignore
 
 __all__ = ["BaseNested", "Nested", "NestedList"]
+
+if TYPE_CHECKING:
+    from ..base import BaseSchema  # type: ignore
 
 
 class BaseNested(BaseField):
@@ -33,7 +34,7 @@ class Nested(BaseNested):
 
     def __call__(
         self, instance: BaseSchema, name: str, markup: str
-    ) -> BaseSchema | Any:
+    ) -> Union[BaseSchema, Any]:
         markup = self._parse(markup)
         value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)  # type: ignore
         return self._factory(value)
@@ -44,8 +45,8 @@ class NestedList(BaseNested):
         self,
         schema: Type[BaseSchema],
         *,
-        crop_rule: Optional[Callable[[str], list[str]]] = None,
-        factory: Optional[Callable[[list[BaseSchema]], Any]] = None,
+        crop_rule: Optional[Callable[[str], List[str]]] = None,
+        factory: Optional[Callable[[List[BaseSchema]], Any]] = None,
     ):
         """NestedList - convert markup parts to list of `schema` objects
 
@@ -60,7 +61,7 @@ class NestedList(BaseNested):
 
     def __call__(
         self, instance: BaseSchema, name: str, markup: str
-    ) -> list[BaseSchema] | Any:
+    ) -> Union[List[BaseSchema], Any]:
         markup = self._parse(markup)
         value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)  # type: ignore
         return self._factory(value)

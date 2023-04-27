@@ -27,10 +27,9 @@ References:
 
 * https://docs.python.org/3.11/library/re.html#re.Match.groupdict
 """
-from __future__ import annotations
 
 import re
-from typing import Any, Callable, Optional, Pattern
+from typing import Any, Callable, Dict, List, Optional, Pattern, Union
 
 from ..base import BaseField
 
@@ -40,13 +39,13 @@ __all__ = ["ReMatch", "ReMatchList", "ReMatchDict", "ReMatchListDict"]
 class ReMatch(BaseField):
     def __init__(
         self,
-        pattern: str | Pattern,
+        pattern: Union[str, Pattern],
         group: int = 1,
-        flags: int | re.RegexFlag = 0,
+        flags: Union[int, re.RegexFlag] = 0,
         *,
         default: Optional[Any] = None,
         callback: Optional[Callable[[str], Any]] = None,
-        factory: Optional[Callable[[str | Any], Any]] = None,
+        factory: Optional[Callable[[Union[str, Any]], Any]] = None,
     ):
         """get first match by `re.search`
 
@@ -72,14 +71,14 @@ class ReMatch(BaseField):
 class ReMatchList(BaseField):
     def __init__(
         self,
-        pattern: str | Pattern,
+        pattern: Union[str, Pattern],
         group: int = 1,
-        flags: int | re.RegexFlag = 0,
+        flags: Union[int, re.RegexFlag] = 0,
         *,
         default: Optional[Any] = None,
         filter_: Optional[Callable[[str], bool]] = None,
         callback: Optional[Callable[[str], Any]] = None,
-        factory: Optional[Callable[[list[str] | Any], Any]] = None,
+        factory: Optional[Callable[[Union[List[str], Any]], Any]] = None,
     ):
         """get all matches by `re.finditer`
 
@@ -99,7 +98,7 @@ class ReMatchList(BaseField):
         )
         self.group = group
 
-    def _parse(self, markup: str) -> list[str]:
+    def _parse(self, markup: str) -> List[str]:
         if matches := self.pattern.finditer(markup):
             return [m.group(self.group) for m in matches]
         return []
@@ -108,12 +107,12 @@ class ReMatchList(BaseField):
 class ReMatchDict(BaseField):
     def __init__(
         self,
-        pattern: str | Pattern,
-        flags: int | re.RegexFlag = 0,
+        pattern: Union[str, Pattern],
+        flags: Union[int, re.RegexFlag] = 0,
         *,
         default: Optional[Any] = None,
-        callback: Optional[Callable[[dict[str, str]], Any]] = None,
-        factory: Optional[Callable[[dict[str, str] | Any], Any]] = None,
+        callback: Optional[Callable[[Dict[str, str]], Any]] = None,
+        factory: Optional[Callable[[Union[Dict[str, str], Any]], Any]] = None,
     ):
         """get first match by `re.search(...).groupdict()`. Pattern required named groups
 
@@ -130,20 +129,20 @@ class ReMatchDict(BaseField):
         if not self.pattern.groupindex:
             raise AttributeError(f"{pattern.pattern} required named groups")  # type: ignore
 
-    def _parse(self, markup: str) -> dict[str, str]:
+    def _parse(self, markup: str) -> Dict[str, str]:
         return result.groupdict() if (result := self.pattern.search(markup)) else {}
 
 
 class ReMatchListDict(BaseField):
     def __init__(
         self,
-        pattern: str | Pattern,
-        flags: int | re.RegexFlag = 0,
+        pattern: Union[str, Pattern],
+        flags: Union[int, re.RegexFlag] = 0,
         *,
         default: Optional[Any] = None,
-        filter_: Optional[Callable[[dict[str, str]], bool]] = None,
-        callback: Optional[Callable[[dict[str, str]], Any]] = None,
-        factory: Optional[Callable[[dict[str, str] | Any], Any]] = None,
+        filter_: Optional[Callable[[Dict[str, str]], bool]] = None,
+        callback: Optional[Callable[[Dict[str, str]], Any]] = None,
+        factory: Optional[Callable[[Union[Dict[str, str], Any]], Any]] = None,
     ):
         """get all matches by `re.finditer` and `re.search(...).groupdict()`. Pattern required named groups
 
@@ -163,7 +162,7 @@ class ReMatchListDict(BaseField):
         if not self.pattern.groupindex:
             raise AttributeError(f"{pattern.pattern} required named groups")  # type: ignore
 
-    def _parse(self, markup: str) -> list[dict[str, str]]:
+    def _parse(self, markup: str) -> List[Dict[str, str]]:
         if results := self.pattern.finditer(markup):
             return [result.groupdict() for result in results]
         return []

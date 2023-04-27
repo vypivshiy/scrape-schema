@@ -1,8 +1,6 @@
 """build-in callbacks for fields.soup"""
-from __future__ import annotations
-
 import re
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from bs4 import BeautifulSoup, Tag
 
@@ -23,8 +21,8 @@ __all__ = [
 
 def replace_text(
     old: str, new: str, count: int = -1, *, separator: str = "", strip: bool = False
-) -> Callable[[Tag | Any], str | Any]:
-    def wrapper(tag: Tag | Any) -> str | Any:
+) -> Callable[[Union[Tag, Any]], Union[str, Any]]:
+    def wrapper(tag: Union[Tag, Any]) -> Union[str, Any]:
         if isinstance(tag, Tag):
             return tag.get_text(separator=separator, strip=strip).replace(
                 old, new, count
@@ -34,7 +32,9 @@ def replace_text(
     return wrapper
 
 
-def element_to_dict(element: str) -> dict[str, str | dict[str, str | list[str]]]:
+def element_to_dict(
+    element: str,
+) -> Dict[str, Union[str, Dict[str, Union[Union[str, List[str]]]]]]:
     """Convert string element to dict
 
     Example:
@@ -52,7 +52,7 @@ def element_to_dict(element: str) -> dict[str, str | dict[str, str | list[str]]]
 
 def get_text(
     separator: str = "", strip: bool = False
-) -> Callable[[Tag | Any], str | Any]:
+) -> Callable[[Union[Tag, Any]], Union[str, Any]]:
     """get text from bs4.Tag
 
     :param separator: separator. default ""
@@ -60,7 +60,7 @@ def get_text(
     :return:
     """
 
-    def wrapper(tag: Tag | Any) -> str | Any:
+    def wrapper(tag: Union[Tag, Any]) -> Union[str, Any]:
         if isinstance(tag, Tag):
             return tag.get_text(separator=separator, strip=strip)
         return tag
@@ -68,7 +68,9 @@ def get_text(
     return wrapper
 
 
-def get_attr(tag_name: str, default: Any = ...) -> Callable[[Tag | Any], str | Any]:
+def get_attr(
+    tag_name: str, default: Any = ...
+) -> Callable[[Union[Tag, Any]], Union[str, Any]]:
     """get tag from element
 
     :param tag_name: tag name
@@ -76,7 +78,7 @@ def get_attr(tag_name: str, default: Any = ...) -> Callable[[Tag | Any], str | A
     :return:
     """
 
-    def wrapper(tag: Tag | Any) -> str | Any:
+    def wrapper(tag: Union[Tag, Any]) -> Union[str, Any]:
         if isinstance(tag, Tag):
             if default == Ellipsis:
                 return tag.get(tag_name)
@@ -87,8 +89,8 @@ def get_attr(tag_name: str, default: Any = ...) -> Callable[[Tag | Any], str | A
 
 
 def crop_by_tag_all(
-    element: str | dict[str, Any], features: str = "html.parser", **soup_config
-) -> Callable[[str], list[str]]:
+    element: Union[str, Dict[str, Any]], features: str = "html.parser", **soup_config
+) -> Callable[[str], List[str]]:
     """crop markup document to string chunks by soup element
 
     :param element: html element or any dict of kwargs for soup.find_all method
@@ -98,7 +100,7 @@ def crop_by_tag_all(
     if isinstance(element, str):
         element = element_to_dict(element)
 
-    def wrapper(markup: str) -> list[str]:
+    def wrapper(markup: str) -> List[str]:
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return [str(tag) for tag in soup.find_all(**element)]
 
@@ -106,7 +108,7 @@ def crop_by_tag_all(
 
 
 def crop_by_tag(
-    element: str | dict[str, Any], features: str = "html.parser", **soup_config
+    element: Union[str, Dict[str, Any]], features: str = "html.parser", **soup_config
 ) -> Callable[[str], str]:
     """crop markup document to string chunk by soup element
 
@@ -126,7 +128,7 @@ def crop_by_tag(
 
 def crop_by_selector(
     selector: str,
-    namespaces: Optional[dict[str, Any]] = None,
+    namespaces: Optional[Dict[str, Any]] = None,
     features: str = "html.parser",
     **soup_config,
 ) -> Callable[[str], str]:
@@ -149,10 +151,10 @@ def crop_by_selector(
 
 def crop_by_selector_all(
     selector: str,
-    namespaces: Optional[dict[str, Any]] = None,
+    namespaces: Optional[Dict[str, Any]] = None,
     features: str = "html.parser",
     **soup_config,
-) -> Callable[[str], list[str]]:
+) -> Callable[[str], List[str]]:
     """crop markup document to string chunks by soup selector
 
     :param selector: css selector for soup.select method
@@ -163,7 +165,7 @@ def crop_by_selector_all(
     :param soup_config: any BeautifulSoup kwargs config
     """
 
-    def wrapper(markup: str) -> list[str]:
+    def wrapper(markup: str) -> List[str]:
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return [str(tag) for tag in soup.select(selector, namespaces)]
 

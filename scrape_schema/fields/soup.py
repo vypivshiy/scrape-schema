@@ -25,10 +25,9 @@ References:
 
 * https://beautiful-soup-4.readthedocs.io/en/latest/#css-selectors
 """
-from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from bs4 import BeautifulSoup, ResultSet, Tag
 
@@ -46,11 +45,11 @@ class BaseSoup(BaseField, ABC):
 class SoupFind(BaseSoup):
     def __init__(
         self,
-        element: str | dict[str, Any],
+        element: Union[str, Dict[str, Any]],
         *,
         default: Optional[Any] = None,
-        callback: Optional[Callable[[Tag], str | Any]] = get_text(),
-        factory: Optional[Callable[[str | Any], Any]] = None,
+        callback: Optional[Callable[[Tag], Union[str, Any]]] = get_text(),
+        factory: Optional[Callable[[Union[str, Any]], Any]] = None,
     ):
         """get Tag by BeautifulSoup(...).find method
 
@@ -62,19 +61,19 @@ class SoupFind(BaseSoup):
         super().__init__(default=default, callback=callback, factory=factory)
         self.element = element_to_dict(element) if isinstance(element, str) else element
 
-    def _parse(self, markup: BeautifulSoup | Tag) -> Optional[Tag]:
+    def _parse(self, markup: Union[BeautifulSoup, Tag]) -> Optional[Tag]:
         return markup.find(**self.element)
 
 
 class SoupFindList(BaseSoup):
     def __init__(
         self,
-        element: str | dict[str, Any],
+        element: Union[str, Dict[str, Any]],
         *,
         default: Optional[Any] = None,
         filter_: Optional[Callable[[Tag], bool]] = None,
-        callback: Optional[Callable[[Tag], str | Any]] = get_text(),
-        factory: Optional[Callable[[list[str | Any] | Any], Any]] = None,
+        callback: Optional[Callable[[Tag], Union[str, Any]]] = get_text(),
+        factory: Optional[Callable[[Union[List[Union[str, Any]], Any]], Any]] = None,
     ):
         """get Tags by BeautifulSoup(...).find_all method
 
@@ -89,7 +88,7 @@ class SoupFindList(BaseSoup):
         )
         self.element = element_to_dict(element) if isinstance(element, str) else element
 
-    def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:
+    def _parse(self, markup: Union[BeautifulSoup, Tag]) -> ResultSet:
         return markup.find_all(**self.element)
 
 
@@ -100,7 +99,7 @@ class SoupSelect(BaseSoup):
         *,
         default: Optional[Any] = None,
         callback: Optional[Callable[[Tag], Any]] = get_text(),
-        factory: Optional[Callable[[str | Any], Any]] = None,
+        factory: Optional[Callable[[Union[str, Any]], Any]] = None,
     ):
         """Get tag by BeautifulSoup(...).select_one method
 
@@ -112,7 +111,7 @@ class SoupSelect(BaseSoup):
         super().__init__(default=default, callback=callback, factory=factory)
         self.selector = selector
 
-    def _parse(self, markup: BeautifulSoup | Tag) -> Tag:
+    def _parse(self, markup: Union[BeautifulSoup, Tag]) -> Tag:
         return markup.select_one(self.selector)
 
 
@@ -124,7 +123,7 @@ class SoupSelectList(BaseSoup):
         default: Optional[Any] = None,
         filter_: Optional[Callable[[Tag], bool]] = None,
         callback: Optional[Callable[[Tag], Any]] = get_text(),
-        factory: Optional[Callable[[list[str | Any]], Any]] = None,
+        factory: Optional[Callable[[List[Union[str, Any]]], Any]] = None,
     ):
         """Get tags by BeautifulSoup(...).select method
 
@@ -139,5 +138,5 @@ class SoupSelectList(BaseSoup):
         )
         self.selector = selector
 
-    def _parse(self, markup: BeautifulSoup | Tag) -> ResultSet:
+    def _parse(self, markup: Union[BeautifulSoup, Tag]) -> ResultSet:
         return markup.select(self.selector)

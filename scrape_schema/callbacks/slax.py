@@ -1,9 +1,7 @@
 """Build-in callbacks for fields.slax
 
 """
-from __future__ import annotations
-
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional, Union
 
 from selectolax.parser import HTMLParser, Node
 
@@ -24,14 +22,14 @@ def crop_by_slax(query: str, **slax_config) -> Callable[[str], str]:
     return wrapper
 
 
-def crop_by_slax_all(query: str, **slax_config) -> Callable[[str], list[str]]:
+def crop_by_slax_all(query: str, **slax_config) -> Callable[[str], List[str]]:
     """crop markup document to string chunks by selectolax selector
 
     :param query: css path
     :param slax_config: any selectolax.parser.HTMLParser kwargs
     """
 
-    def wrapper(markup: str) -> list[str]:
+    def wrapper(markup: str) -> List[str]:
         parser = HTMLParser(markup, **slax_config)
         return [m.html for m in parser.css(query)]
 
@@ -40,14 +38,14 @@ def crop_by_slax_all(query: str, **slax_config) -> Callable[[str], list[str]]:
 
 def get_attr(
     name: str, default: Optional[Any] = None
-) -> Callable[[Node | Any], str | Any]:
+) -> Callable[[Union[Node, Any]], Union[str, Any]]:
     """get attribute from Node object
 
     :param name: tag name
     :param default: default value, if tag is not founded. default None
     """
 
-    def wrapper(node: Node | Any) -> str:
+    def wrapper(node: Union[Node, Any]) -> str:
         if isinstance(node, Node):
             return node.attrs.get(name, default=default)
         return node
@@ -63,7 +61,7 @@ def replace_text(
     deep: bool = True,
     separator: str = "",
     strip: bool = False,
-) -> Callable[[Node | Any], str | Any]:
+) -> Callable[[Union[Node, Any]], Union[str, Any]]:
     """replace text in Node element
 
     :param old: replace text target
@@ -75,7 +73,7 @@ def replace_text(
     :return:
     """
 
-    def wrapper(element: Node | Any) -> str | Node:
+    def wrapper(element: Union[Node, Any]) -> Union[str, Node]:
         if isinstance(element, Node):
             return element.text(deep=deep, separator=separator, strip=strip).replace(
                 old, new, count
@@ -87,7 +85,7 @@ def replace_text(
 
 def get_text(
     deep: bool = True, separator: str = "", strip: bool = False
-) -> Callable[[Node | Any], str | Any]:
+) -> Callable[[Union[Node, Any]], Union[str, Any]]:
     """get text from Node object
 
     :param deep: If True, includes text from all child nodes.
@@ -95,7 +93,7 @@ def get_text(
     :param strip: If true, calls str.strip() on each text part to remove extra white spaces.
     """
 
-    def wrapper(element: Node | Any) -> str | Any:
+    def wrapper(element: Union[Node, Any]) -> Union[str, Any]:
         if isinstance(element, Node):
             return element.text(deep=deep, separator=separator, strip=strip)
         return element

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 import sys
 import warnings
@@ -9,8 +7,11 @@ from typing import (
     ByteString,
     Callable,
     ClassVar,
+    Dict,
     Iterable,
+    List,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -33,7 +34,7 @@ else:
 
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
-NoneType = type(None)  # python 3.9
+NoneType = type(None)
 
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
@@ -64,7 +65,7 @@ class ABCField(ABC):
         ...
 
     @abstractmethod
-    def _typing(self, instance: BaseSchema, name: str, value: T) -> T:
+    def _typing(self, instance: "BaseSchema", name: str, value: T) -> T:
         ...
 
 
@@ -261,7 +262,7 @@ class BaseField(ABCField, TypeCaster):
         )
         return value
 
-    def __call__(self, instance: BaseSchema, name: str, markup: MARKUP_TYPE) -> Any:
+    def __call__(self, instance: "BaseSchema", name: str, markup: MARKUP_TYPE) -> Any:
         logger.info(
             "%s.%s[%s]: Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
             instance.__class__.__name__,
@@ -346,7 +347,7 @@ class BaseField(ABCField, TypeCaster):
             return {k: self.callback(v) for k, v in value}
         return self.callback(value)
 
-    def _typing(self, instance: BaseSchema, name: str, value: T) -> Any:
+    def _typing(self, instance: "BaseSchema", name: str, value: T) -> Any:
         """auto type-cast method
 
         :param instance: BaseSchema instance
@@ -377,7 +378,7 @@ class BaseSchemaConfig:
     if `n` msgs - throw `ParseFailAttemptsError`
     """
 
-    parsers_config: ClassVar[dict[Type[Any], dict[str, Any]]] = {}
+    parsers_config: ClassVar[Dict[Type[Any], Dict[str, Any]]] = {}
     type_cast: ClassVar[bool] = True
     fails_attempt: ClassVar[int] = -1
 
@@ -390,13 +391,13 @@ class SchemaMetaClass(type):
         )
 
     @staticmethod
-    def _extract_annotated(attr: Type) -> tuple[Type, tuple[BaseField, ...]]:
+    def _extract_annotated(attr: Type) -> Tuple[Type, Tuple[BaseField, ...]]:
         args = get_args(attr)
         return args[0], tuple(arg for arg in args[1:] if isinstance(arg, BaseField))
 
     def __new__(mcs, name, bases, attrs):
-        __schema_fields__: dict[str, tuple[BaseField, ...]] = {}  # type: ignore
-        __schema_annotations__: dict[str, Type] = {}  # type: ignore
+        __schema_fields__: Dict[str, Tuple[BaseField, ...]] = {}  # type: ignore
+        __schema_annotations__: Dict[str, Type] = {}  # type: ignore
         cls_schema = super().__new__(mcs, name, bases, attrs)
         if cls_schema.__name__ == "BaseSchema":
             return cls_schema
@@ -418,13 +419,13 @@ class SchemaMetaClass(type):
 
 
 class BaseSchema(metaclass=SchemaMetaClass):
-    __schema_fields__: dict[str, tuple[BaseField, ...]] = {}
-    __schema_annotations__: dict[str, Type] = {}
+    __schema_fields__: Dict[str, Tuple[BaseField, ...]] = {}
+    __schema_annotations__: Dict[str, Type] = {}
 
     class Config(BaseSchemaConfig):
         pass
 
-    def _get_parser(self, field_parser_class: Type) -> Optional[dict[str, Any]]:
+    def _get_parser(self, field_parser_class: Type) -> Optional[Dict[str, Any]]:
         return self.Config.parsers_config.get(field_parser_class, None)
 
     def _check_parser_config(self, field: BaseField, field_parser: Type) -> bool:
@@ -453,8 +454,8 @@ class BaseSchema(metaclass=SchemaMetaClass):
         *,
         markup: str,
         field_parser: Type[Any],
-        cached_parsers: dict[Type[Any], Any],
-    ) -> dict[Type[Any], Any]:
+        cached_parsers: Dict[Type[Any], Any],
+    ) -> Dict[Type[Any], Any]:
         if not cached_parsers.get(field_parser):
             parser_kwargs = self.Config.parsers_config.get(field_parser)
             cached_parsers[field_parser] = field_parser(markup, **parser_kwargs)
@@ -462,11 +463,11 @@ class BaseSchema(metaclass=SchemaMetaClass):
 
     def _parse_field_value(
         self,
-        cached_parsers: dict[Type[Any], Any],
+        cached_parsers: Dict[Type[Any], Any],
         name: str,
-        _fields: tuple[BaseField, ...],
+        _fields: Tuple[BaseField, ...],
         markup: str,
-    ) -> tuple[BaseField, Any]:
+    ) -> Tuple[BaseField, Any]:
         value: Any = None
         for field in _fields:
             if field_parser := field.Config.parser:
@@ -538,7 +539,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
         """
         :param str markup: text target
         """
-        _parsers: dict[Type[Any], Any] = {}
+        _parsers: Dict[Type[Any], Any] = {}
         _fails_counter = 0
         logger.info(
             "Start parse `%s`. Fields count: %i",
@@ -572,7 +573,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
             setattr(self, k, v)
 
     @classmethod
-    def from_list(cls, markups: Iterable[str], **kwargs) -> list[Self]:
+    def from_list(cls, markups: Iterable[str], **kwargs) -> List[Self]:
         """Init list of schemas by markups sequence
 
         :param markups: iterable markups sequence
@@ -583,7 +584,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
     @classmethod
     def from_crop_rule_list(
         cls, markup: str, *, crop_rule: Callable[[str], Iterable[str]], **kwargs
-    ) -> list[Self]:
+    ) -> List[Self]:
         """Init list of schemas by crop_rule
 
         :param markup: markup string
@@ -618,7 +619,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
         return cls("", parse_markup=False, **kwargs)
 
     @staticmethod
-    def _to_dict(value: BaseSchema | list | dict):
+    def _to_dict(value: Union["BaseSchema", list, Dict]):
         if isinstance(value, BaseSchema):
             return value.dict()
 
@@ -631,7 +632,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
                 return {k: v.dict() for k, v in value.items()}
         return value
 
-    def dict(self) -> dict[str, Any]:
+    def dict(self) -> Dict[str, Any]:
         """convert schema object to python dict"""
         return {
             k: self._to_dict(v)
@@ -639,7 +640,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
             if not k.startswith("_") and k != "Config"
         }
 
-    def __repr_args__(self) -> list[str]:
+    def __repr_args__(self) -> List[str]:
         return [
             f"{k}={repr(v)}"
             if isinstance(v, BaseSchema)

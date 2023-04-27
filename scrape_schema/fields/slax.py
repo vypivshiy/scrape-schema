@@ -13,10 +13,9 @@ References:
 * https://selectolax.readthedocs.io/en/latest/parser.html#selectolax.parser.HTMLParser.css
 
 """
-from __future__ import annotations
 
 from abc import ABC
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional, Union
 
 from selectolax.parser import HTMLParser, Node
 
@@ -38,8 +37,8 @@ class SlaxSelect(BaseSlax):
         strict: bool = False,
         *,
         default: Optional[Any] = None,
-        callback: Optional[Callable[[Node], str | Any]] = get_text(),
-        factory: Optional[Callable[[str | Any], Any]] = None,
+        callback: Optional[Callable[[Node], Union[str, Any]]] = get_text(),
+        factory: Optional[Callable[[Union[str, Any]], Any]] = None,
     ):
         """Get Node by HTMLParser(...).css_first
 
@@ -64,8 +63,8 @@ class SlaxSelectList(BaseSlax):
         *,
         default: Optional[Any] = None,
         filter_: Optional[Callable[[Node], bool]] = None,
-        callback: Optional[Callable[[Node], str | Any]] = get_text(),
-        factory: Optional[Callable[[list[str | Any]], Any]] = None,
+        callback: Optional[Callable[[Node], Union[str, Any]]] = get_text(),
+        factory: Optional[Callable[[List[Union[str, Any]]], Any]] = None,
     ):
         """get all Nodes by HTMLParser(...).css
 
@@ -80,5 +79,5 @@ class SlaxSelectList(BaseSlax):
         )
         self.selector = selector
 
-    def _parse(self, markup: HTMLParser) -> list[Node]:
+    def _parse(self, markup: HTMLParser) -> List[Node]:
         return markup.css(self.selector)
