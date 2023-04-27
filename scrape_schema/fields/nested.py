@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Optional, Type
 
-from ..base import BaseField, BaseSchema
+from ..base import BaseField, BaseSchema  # type: ignore
 
 __all__ = ["BaseNested", "Nested", "NestedList"]
 
@@ -62,10 +62,5 @@ class NestedList(BaseNested):
         self, instance: BaseSchema, name: str, markup: str
     ) -> list[BaseSchema] | Any:
         markup = self._parse(markup)
-        if not callable(self.crop_rule):
-            raise TypeError(
-                f"Add `{instance.__class__.__name__}.{self._hook_name(name, 'crop_rule')}` "
-                f"method or add crop_rule argument"
-            )
-        value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
+        value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)  # type: ignore
         return self._factory(value)
