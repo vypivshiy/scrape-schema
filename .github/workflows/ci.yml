@@ -15,8 +15,8 @@ jobs:
         os:
           - ubuntu-latest
         python-version:
-          # TODO document write callbacks, filters in 3.9 version outside schema classes
-          # - "3.9"
+          - "3.8"
+          - "3.9"
           - "3.10"
           - "3.11"
 
