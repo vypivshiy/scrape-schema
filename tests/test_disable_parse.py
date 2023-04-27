@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchDict, ReMatchList
 

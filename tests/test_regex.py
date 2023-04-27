@@ -1,9 +1,11 @@
-from typing import Annotated, Optional
+from __future__ import annotations
+
+from typing import Optional
 
 import pytest
 from tests.fixtures import TEXT
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 
 
@@ -12,40 +14,38 @@ class MockSchema(BaseSchema):
     default_2: int = 100
 
     # ReMatch
-    ipv4: Annotated[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
-    digit: Annotated[int, ReMatch(r"(\d+)")]
-    digit_float: Annotated[float, ReMatch(r"(\d+)", callback=lambda s: f"{s}.5")]
-    digit_x10: Annotated[
-        int, ReMatch(r"(\d+)", factory=lambda result: int(result) * 10)
-    ]
-    b_word: Annotated[str, ReMatch(r"(b\w+)")]
-    b_word_chars: Annotated[list[str], ReMatch(r"(b\w+)", factory=list)]
-    b_word_title: Annotated[str, ReMatch(r"(b\w+)", factory=lambda s: s.title())]
-    has_b_word: Annotated[bool, ReMatch(r"(b\w+)")]
-    has_y_word: Annotated[bool, ReMatch(r"(y\w+)")]
+    ipv4: ScField[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
+    digit: ScField[int, ReMatch(r"(\d+)")]
+    digit_float: ScField[float, ReMatch(r"(\d+)", callback=lambda s: f"{s}.5")]
+    digit_x10: ScField[int, ReMatch(r"(\d+)", factory=lambda result: int(result) * 10)]
+    b_word: ScField[str, ReMatch(r"(b\w+)")]
+    b_word_chars: ScField[list[str], ReMatch(r"(b\w+)", factory=list)]
+    b_word_title: ScField[str, ReMatch(r"(b\w+)", factory=lambda s: s.title())]
+    has_b_word: ScField[bool, ReMatch(r"(b\w+)")]
+    has_y_word: ScField[bool, ReMatch(r"(y\w+)")]
 
-    fail_value_none: Annotated[Optional[str], ReMatch(r"(ololo)")]
-    fail_value: Annotated[bool, ReMatch(r"(ololo)")]
+    fail_value_none: ScField[Optional[str], ReMatch(r"(ololo)")]
+    fail_value: ScField[bool, ReMatch(r"(ololo)")]
     # ReMatchList
-    words_lower: Annotated[list[str], ReMatchList(r"([a-z]+)")]
-    words_upper: Annotated[list[str], ReMatchList(r"([A-Z]+)")]
-    digits: Annotated[list[int], ReMatchList(r"(\d+)")]
-    digits_float: Annotated[
+    words_lower: ScField[list[str], ReMatchList(r"([a-z]+)")]
+    words_upper: ScField[list[str], ReMatchList(r"([A-Z]+)")]
+    digits: ScField[list[int], ReMatchList(r"(\d+)")]
+    digits_float: ScField[
         list[float], ReMatchList(r"(\d+)", callback=lambda s: f"{s}.5")
     ]
-    max_digit: Annotated[int, ReMatchList(r"(\d+)", callback=int, factory=max)]
+    max_digit: ScField[int, ReMatchList(r"(\d+)", callback=int, factory=max)]
     # auto typing is not stable works for more complex types, usage factory
-    fail_list_1: Annotated[
+    fail_list_1: ScField[
         Optional[list[str]],
         ReMatchList(
             r"(ora)", factory=lambda lst: [] if isinstance(lst, type(None)) else lst
         ),
     ]
 
-    fail_list_2: Annotated[
+    fail_list_2: ScField[
         list[str], ReMatchList(r"(ora)", default=[], factory=lambda lst: lst)
     ]
-    fail_list_3: Annotated[bool, ReMatchList(r"(ora)", default=False)]
+    fail_list_3: ScField[bool, ReMatchList(r"(ora)", default=False)]
 
 
 re_schema = MockSchema(TEXT)

@@ -1,8 +1,6 @@
-from typing import Annotated
-
 import pytest
 
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.exceptions import ParseFailAttemptsError
 from scrape_schema.fields.regex import ReMatch
 
@@ -12,8 +10,8 @@ class FailedSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         fails_attempt = 0
 
-    foo: Annotated[str, ReMatch(r"(lorem)")]
-    fail: Annotated[str, ReMatch(r"(\d+)")]
+    foo: ScField[str, ReMatch(r"(lorem)")]
+    fail: ScField[str, ReMatch(r"(\d+)")]
 
 
 # print RuntimeWarning message
@@ -21,15 +19,15 @@ class WarningSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         fails_attempt = 1
 
-    foo: Annotated[str, ReMatch(r"(lorem)")]
-    fail: Annotated[str, ReMatch(r"(\d+)")]
+    foo: ScField[str, ReMatch(r"(lorem)")]
+    fail: ScField[str, ReMatch(r"(\d+)")]
 
 
 class DisabledTypingSchema(BaseSchema):
     class Config(BaseSchemaConfig):
         type_cast = False
 
-    foo: Annotated[int, ReMatch(r"(\d+)")]
+    foo: ScField[int, ReMatch(r"(\d+)")]
 
 
 def test_raise_attempts():

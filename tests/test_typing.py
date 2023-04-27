@@ -1,10 +1,10 @@
-import pprint
-from typing import Annotated, Optional
+from __future__ import annotations
 
 import pytest
 from tests.fixtures import MockField
 
 from scrape_schema import BaseSchema
+from scrape_schema.base import Annotated, Optional
 
 
 class TypingSchema(BaseSchema):
@@ -98,4 +98,3 @@ CAST_SCHEMA = TypingSchema(":)")
 )
 def test_cast(attr, result):
     assert getattr(CAST_SCHEMA, attr) == result
-    pprint.pprint(CAST_SCHEMA.dict(), width=60, compact=True)

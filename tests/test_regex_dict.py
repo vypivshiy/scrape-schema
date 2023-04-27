@@ -1,20 +1,20 @@
-from typing import Annotated
+from __future__ import annotations
 
 from tests.fixtures import TEXT
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatchDict, ReMatchListDict
 
 
-class RegexSchemaDicts(BaseSchema):
-    @staticmethod
-    def _lst_dict_1_callback(dct: dict[str, str]) -> dict[str, int]:
-        dct["digit"] = int(dct.get("digit"))  # type: ignore
-        return dct  # type: ignore
+def _lst_dict_1_callback(dct: dict[str, str]) -> dict[str, int]:
+    dct["digit"] = int(dct.get("digit"))  # type: ignore
+    return dct  # type: ignore
 
-    dict_1: Annotated[dict[str, str], ReMatchDict(r"\-(?P<key>\w+):(?P<value>\d+)")]
-    dict_2: Annotated[dict[str, int], ReMatchDict(r":(?P<value>\d+)")]
-    lst_dict_1: Annotated[
+
+class RegexSchemaDicts(BaseSchema):
+    dict_1: ScField[dict[str, str], ReMatchDict(r"\-(?P<key>\w+):(?P<value>\d+)")]
+    dict_2: ScField[dict[str, int], ReMatchDict(r":(?P<value>\d+)")]
+    lst_dict_1: ScField[
         list[dict[str, int]],
         ReMatchListDict(r":(?P<digit>\d+)", callback=_lst_dict_1_callback),
     ]

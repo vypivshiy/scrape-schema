@@ -1,10 +1,10 @@
-from typing import Annotated
+from __future__ import annotations
 
 from bs4 import BeautifulSoup
 from selectolax.parser import HTMLParser
 from tests.fixtures import HTML
 
-from scrape_schema import BaseSchema, BaseSchemaConfig
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all
 from scrape_schema.fields.nested import Nested, NestedList
 from scrape_schema.fields.regex import ReMatch, ReMatchList
@@ -18,67 +18,67 @@ class BaseMixSchema(BaseSchema):
 
 
 class NestedSubMixSlax(BaseMixSchema):
-    p: Annotated[str, SlaxSelect("p.sub-string", factory=lambda text: text.strip())]
-    a: Annotated[list[int], SoupSelectList("a.sub-list")]
+    p: ScField[str, SlaxSelect("p.sub-string", factory=lambda text: text.strip())]
+    a: ScField[list[int], SoupSelectList("a.sub-list")]
 
 
 class NestedSubMixSoupFind(BaseMixSchema):
-    p: Annotated[
+    p: ScField[
         str, SoupFind('<p class="sub-string">', factory=lambda text: text.strip())
     ]
-    a: Annotated[list[int], SoupFindList('<a class="sub-list">')]
+    a: ScField[list[int], SoupFindList('<a class="sub-list">')]
 
 
 class NestedSubMixSoupSelect(BaseMixSchema):
-    p: Annotated[str, SoupSelect("p.sub-string", factory=lambda text: text.strip())]
-    a: Annotated[list[int], SlaxSelectList("a.sub-list")]
+    p: ScField[str, SoupSelect("p.sub-string", factory=lambda text: text.strip())]
+    a: ScField[list[int], SlaxSelectList("a.sub-list")]
 
 
 class NestedSubMixRe(BaseMixSchema):
-    p: Annotated[
+    p: ScField[
         str,
         ReMatch(r'<p class="sub-string">(.*?)</p>', factory=lambda text: text.strip()),
     ]
-    a: Annotated[list[int], ReMatchList(r'<a class="sub-list">(\d+)</a>')]
+    a: ScField[list[int], ReMatchList(r'<a class="sub-list">(\d+)</a>')]
 
 
 class NestedDivSoupFind(BaseMixSchema):
-    p: Annotated[str, SoupFind('<p class="string">')]
-    a_int: Annotated[list[int], SoupFindList('<a class="list">')]
-    sub_dict_slax: Annotated[
+    p: ScField[str, SoupFind('<p class="string">')]
+    a_int: ScField[list[int], SoupFindList('<a class="list">')]
+    sub_dict_slax: ScField[
         NestedSubMixSlax,
         Nested(NestedSubMixSlax, crop_rule=crop_by_slax("div.sub-dict")),
     ]
-    sub_dict_soup_find: Annotated[
+    sub_dict_soup_find: ScField[
         NestedSubMixSlax,
         Nested(NestedSubMixSoupFind, crop_rule=crop_by_slax("div.sub-dict")),
     ]
-    sub_dict_soup_select: Annotated[
+    sub_dict_soup_select: ScField[
         NestedSubMixSlax,
         Nested(NestedSubMixSoupSelect, crop_rule=crop_by_slax("div.sub-dict")),
     ]
-    sub_dict_re: Annotated[
+    sub_dict_re: ScField[
         NestedSubMixSlax, Nested(NestedSubMixRe, crop_rule=crop_by_slax("div.sub-dict"))
     ]
 
 
 class MixSchema(BaseMixSchema):
-    title_soup_find: Annotated[str, SoupFind("<title>")]
-    title_soup_select: Annotated[str, SoupSelect("head > title")]
-    title_slax: Annotated[str, SlaxSelect("head > title")]
-    title_re: Annotated[str, ReMatch(R"<title>(.*?)</title>")]
+    title_soup_find: ScField[str, SoupFind("<title>")]
+    title_soup_select: ScField[str, SoupSelect("head > title")]
+    title_slax: ScField[str, SlaxSelect("head > title")]
+    title_re: ScField[str, ReMatch(R"<title>(.*?)</title>")]
 
-    float_soup_find: Annotated[float, SoupFind('<p class="body-int">555</p>')]
-    float_soup_select: Annotated[float, SoupSelect("body > p.body-int")]
-    float_slax: Annotated[float, SlaxSelect("body > p.body-int")]
-    float_re: Annotated[float, ReMatch(r'<p class="body-int">(\d+)</p>')]
+    float_soup_find: ScField[float, SoupFind('<p class="body-int">555</p>')]
+    float_soup_select: ScField[float, SoupSelect("body > p.body-int")]
+    float_slax: ScField[float, SlaxSelect("body > p.body-int")]
+    float_re: ScField[float, ReMatch(r'<p class="body-int">(\d+)</p>')]
 
-    list_int_soup_find: Annotated[list[int], SoupFindList('<a class="body-list">')]
-    list_int_soup_select: Annotated[list[int], SoupSelectList("body > a.body-list")]
-    list_int_slax: Annotated[list[int], SlaxSelectList("body > a.body-list")]
-    list_int_re: Annotated[list[int], ReMatchList(r'<a class="body-list">(\d+)</a>')]
+    list_int_soup_find: ScField[list[int], SoupFindList('<a class="body-list">')]
+    list_int_soup_select: ScField[list[int], SoupSelectList("body > a.body-list")]
+    list_int_slax: ScField[list[int], SlaxSelectList("body > a.body-list")]
+    list_int_re: ScField[list[int], ReMatchList(r'<a class="body-list">(\d+)</a>')]
 
-    nested_list: Annotated[
+    nested_list: ScField[
         list[NestedDivSoupFind],
         NestedList(NestedDivSoupFind, crop_rule=crop_by_slax_all("body > div.dict")),
     ]

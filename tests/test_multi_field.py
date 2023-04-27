@@ -1,13 +1,11 @@
-from typing import Annotated
-
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
 
 
 class OrSchema(BaseSchema):
-    span_or_spam: Annotated[str, ReMatch(r"foo=(span)"), ReMatch(r"foo=(spam)")]
+    span_or_spam: ScField[str, ReMatch(r"foo=(span)"), ReMatch(r"foo=(spam)")]
     # all defaults required or this construction raise error
-    digit: Annotated[
+    digit: ScField[
         int,
         ReMatch(r"bar=(\d)", default=1),
         ReMatch(r"bar=(\d\d)", default=2),
