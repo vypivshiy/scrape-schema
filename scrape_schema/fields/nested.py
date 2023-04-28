@@ -1,12 +1,9 @@
 """Nested fields for create BaseSchema objects"""
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, Union
+from typing import Any, Callable, List, Optional, Type, Union
 
-from ..base import BaseField  # type: ignore
+from ..base import BaseField, BaseSchema  # type: ignore
 
 __all__ = ["BaseNested", "Nested", "NestedList"]
-
-if TYPE_CHECKING:
-    from ..base import BaseSchema  # type: ignore
 
 
 class BaseNested(BaseField):
