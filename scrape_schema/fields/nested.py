@@ -16,7 +16,7 @@ class Nested(BaseNested):
         self,
         schema: Type[BaseSchema],
         *,
-        crop_rule: Optional[Callable[[str], str]] = None,
+        crop_rule: Callable[[str], str],
         factory: Optional[Callable[[BaseSchema], Any]] = None,
     ):
         """Nested - serialise markup part to `schema` object
@@ -33,7 +33,7 @@ class Nested(BaseNested):
         self, instance: BaseSchema, name: str, markup: str
     ) -> Union[BaseSchema, Any]:
         markup = self._parse(markup)
-        value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)  # type: ignore
+        value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)
         return self._factory(value)
 
 
@@ -42,7 +42,7 @@ class NestedList(BaseNested):
         self,
         schema: Type[BaseSchema],
         *,
-        crop_rule: Optional[Callable[[str], List[str]]] = None,
+        crop_rule: Callable[[str], List[str]],
         factory: Optional[Callable[[List[BaseSchema]], Any]] = None,
     ):
         """NestedList - convert markup parts to list of `schema` objects
@@ -60,5 +60,5 @@ class NestedList(BaseNested):
         self, instance: BaseSchema, name: str, markup: str
     ) -> Union[List[BaseSchema], Any]:
         markup = self._parse(markup)
-        value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)  # type: ignore
+        value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
         return self._factory(value)
