@@ -107,11 +107,13 @@ class TypeCaster:
             origin,
             args,
         )
+        # None
         if value is None and type_hint is not bool:
             return value
 
         if origin is not None and args:
-            if origin in (list, List):
+            # list
+            if origin is list:
                 logger.debug(
                     "List cast %s -> arg=%s, value=%s",
                     self.__class__.__name__,
@@ -119,7 +121,8 @@ class TypeCaster:
                     value,
                 )
                 return [self._cast_type(type_hint=args[0], value=v) for v in value]
-            elif origin in (dict, Dict):
+            # dict
+            elif origin is dict:
                 key_type, value_type = args
                 logger.debug(
                     "Dict cast %s -> key=%s, value=%s  `%s`",
@@ -134,19 +137,24 @@ class TypeCaster:
                     )
                     for k, v in value.items()
                 }
+            # Optional
             elif origin is Union:
                 if value is None and NoneType in args:
                     logger.debug(
                         "Optional cast %s -> %s", self.__class__.__name__, value
                     )
                     return None
-                non_none_args = [arg for arg in args if not issubclass(arg, NoneType)]  # type: ignore
+                # in python3.8 raise TypeError: issubclass() arg 1 must be a class
+                # example _cast_type(Optional[List[int]], [])
+                non_none_args = [arg for arg in args if arg is not NoneType]
                 if len(non_none_args) == 1:
                     return self._cast_type(type_hint=non_none_args[0], value=value)
+        # bool cast
         elif type_hint is bool:
             logger.debug("Cast %s `%s()` -> bool", self.__class__.__name__, value)
             return bool(value)
         else:
+            # direct cast
             logger.debug(
                 "Cast `%s` := `%s(%s)`", self.__class__.__name__, type_hint, value
             )
