@@ -110,7 +110,25 @@ print(schema.dict())
 ```
 
 * crop_by_tag - crop html document to one element for Nested Field
+### custom callback
+```python
+from bs4 import Tag, BeautifulSoup
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
+from scrape_schema.fields.soup import SoupFind
 
+def get_text_and_href(tag: Tag) -> str:
+    text = tag.get_text()
+    url = tag.get("href", "")
+    return f"{text} {url}"
+
+class Schema(BaseSchema):
+    class Config(BaseSchemaConfig):
+        parsers_config = {BeautifulSoup: {"features": "html.parser"}}
+    field: ScField[str, SoupFind("<a>", callback=get_text_and_href)]
+
+print(Schema('<a href="example.com">text</a>').dict())
+# {"field": "text example.com"
+```
 ```python
 from bs4 import BeautifulSoup
 from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
@@ -368,4 +386,26 @@ print(schema.dict())
 # {"sub_schemas": [
 # {"a": "example.com", "p": "sample text"}
 # {"a": "github.com", "p": "github"}]}
+```
+### custom callback
+```python
+from selectolax.parser import HTMLParser, Node
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
+from scrape_schema.fields.slax import SlaxSelect
+
+
+def get_text_and_href(node: Node):
+    url = node.attrs.get("href")
+    text = node.text()
+    return f"{text} {url}"
+
+
+class Schema(BaseSchema):
+    class Config(BaseSchemaConfig):
+        parsers_config = {HTMLParser: {}}
+    field: ScField[str, SlaxSelect("a", callback=get_text_and_href)]
+
+    
+schema = Schema("<a href=example.com>text</a>")
+print(schema.dict()) # {"field": "text example.com"}
 ```

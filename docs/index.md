@@ -1,4 +1,4 @@
-**Documentation for version 0.0.10**
+**Documentation for version 0.1.0**
 
 # Scrape-schema
 
@@ -72,11 +72,6 @@ This project usage [Annotated](https://docs.python.org/3/library/typing.html#typ
 [(PEP 593)](https://peps.python.org/pep-0593/) typehint for annotation fields in runtime
 and make the static type checker happy 😀 and didn't need write a mypy plugin 🤯.
 
-if you have python <3.9 - install `typing_extension`
-```python
-from typing_extensions import Annotated
-```
-
 ![img_2.png](imgs/img_2.png)
 
 **No annotation** - IDE marks attribute as "ReMatch" object (it's wrong)
@@ -92,10 +87,40 @@ ____
 With **Annotated** - correct type, mypy OK
 ____
 
->>> Note: After 0.0.11 and higher versions this library have Annotated alias `ScField`:
+This project, `Annotated` type have alias `ScField`
 ```python
-from scrape_schema import ScField  # Annotated alias
+from typing import Annotated  # or from typing_extensions import Annotated
+from scrape_schema import ScField
+assert ScField is Annotated  # True
 ```
+## About python 3.8 support
+
+if you need to support python 3.8 verison, you should be usa generics aliases from `typing` module for type-cast feature
+
+Error
+```python
+# python 3.8
+from scrape_schema import ScField, BaseSchema
+from scrape_schema.fields.regex import ReMatchDict
+
+class Schema(BaseSchema):
+    digit: ScField[dict[str, int], ReMatchDict(r"(?P<digit>\d+)")]
+
+Schema("100").dict()  # TypeError: 'type' object is not subscriptable
+```
+Ok
+```python
+# python 3.8
+from typing import Dict # List, ...
+from scrape_schema import ScField, BaseSchema
+from scrape_schema.fields.regex import ReMatchDict
+
+class Schema(BaseSchema):
+    digit: ScField[Dict[str, int], ReMatchDict(r"(?P<digit>\d+)")]
+
+Schema("100").dict()  # {"digit": 100}
+```
+
 ## About any parsers library
 This library is not designed to work with structured formats like:
 
