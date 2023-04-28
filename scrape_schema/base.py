@@ -82,91 +82,73 @@ class TypeCaster:
             isinstance(value, (ByteString, str))
         )
 
-    def _cast_type(self, type_annotation: Type, value: Any) -> Any:
-        value_type = type(value)
-        type_origin = get_origin(type_annotation)
-        type_args = get_args(type_annotation)
+    def _typing_to_builtin(self, type_hint: Type) -> Type:
+        origin = get_origin(type_hint)
+        args = get_args(type_hint)
 
-        # skip if value type is annotated correct or is missing
-        if value_type is type_annotation:
-            logger.info(
-                "`%s` value `%s` has same type, skip cast",
-                self.__class__.__name__,
-                value,
-            )
+        if origin is not None and args:
+            # Recursively convert the nested generic types
+            converted_args = tuple(self._typing_to_builtin(arg) for arg in args)
+            return origin[converted_args]
+        else:
+            return type_hint
+
+    def _cast_type(self, type_hint: Type, value: Any) -> Any:
+        type_hint = self._typing_to_builtin(type_hint)
+        origin = get_origin(type_hint)
+        args = get_args(type_hint)
+        logger.info(
+            "`%s` Cast type start. `value=%s`, type_annotation=%s, `origin=%s`, `args=%s`",
+            self.__class__.__name__,
+            value,
+            type_hint,
+            origin,
+            args,
+        )
+        if value is None and type_hint is not bool:
             return value
 
-        logger.info(
-            "`%s` Cast type start. `value[%s]=%s`, type_annotation=%s, `type_origin=%s`, `args=%s`",
-            self.__class__.__name__,
-            value_type.__name__,
-            value,
-            type_annotation,
-            type_origin,
-            type_args,
-        )
-
-        # Optional
-        if type_origin is Union and NoneType in type_args:
-            # get optional type, set
-            if value:
+        if origin is not None and args:
+            if origin is list:
                 logger.debug(
-                    "`%s` Cast Optional type `%s(%s)`",
+                    "List cast %s -> arg=%s, value=%s",
                     self.__class__.__name__,
-                    value,
-                    type_args[0],
-                )
-                if optional_args := get_args(type_args[0]):
-                    # Optional[list[T]]
-                    if isinstance(value, list):
-                        return [optional_args[0](v) for v in value]
-                    # Optional[dict[K, V]]
-                    elif isinstance(value, dict):
-                        k_type, v_type = optional_args
-                        return {k_type(k): v_type(v) for k, v in value.items()}
-                return type_args[0](value)
-            else:
-                logger.debug(
-                    "`%s` Cast Optional type, value `%s` is False",
-                    self.__class__.__name__,
+                    args[0],
                     value,
                 )
-                return value
-
-        # dict, list
-        elif type_origin:
-            if issubclass(type_origin, dict) and isinstance(value, dict):
+                return [self._cast_type(type_hint=args[0], value=v) for v in value]
+            elif origin is dict:
+                key_type, value_type = args
                 logger.debug(
-                    "`%s` Cast dict type: `%s(key)`, `%s(value)`",
+                    "Dict cast %s -> key=%s, value=%s  `%s`",
                     self.__class__.__name__,
-                    type_args[0],
-                    type_args[1],
+                    key_type.__name__,
+                    value_type.__name__,
+                    value,
                 )
-                # get dict set
-                return {type_args[0](k): type_args[1](v) for k, v in value.items()}
-
-            elif self._is_iterable_and_not_string_type(type_origin) and isinstance(
-                value, list
-            ):
-                logger.debug(
-                    "`%s` Cast list items to `%s(item)`",
-                    self.__class__.__name__,
-                    type_args[0],
-                )
-                # get list, set
-                return [type_args[0](i) for i in value]
-
+                return {
+                    self._cast_type(type_hint=key_type, value=k): self._cast_type(
+                        type_hint=value_type, value=v
+                    )
+                    for k, v in value.items()
+                }
+            elif origin is Union:
+                if value is None and NoneType in args:
+                    logger.debug(
+                        "Optional cast %s -> %s", self.__class__.__name__, value
+                    )
+                    return None
+                non_none_args = [arg for arg in args if not issubclass(arg, NoneType)]  # type: ignore
+                if len(non_none_args) == 1:
+                    return self._cast_type(type_hint=non_none_args[0], value=value)
+        elif type_hint is bool:
+            logger.debug("Cast %s `%s()` -> bool", self.__class__.__name__, value)
+            return bool(value)
         else:
-            # single type
-            if value is None and not issubclass(type_annotation, bool):
-                return value
             logger.debug(
-                "Cast `%s` `%s(%s)`",
-                self.__class__.__name__,
-                type_annotation.__name__,
-                value,
+                "Cast `%s` := `%s(%s)`", self.__class__.__name__, type_hint, value
             )
-            return type_annotation(value)
+            return type_hint(value)
 
 
 class BaseFieldConfig:
