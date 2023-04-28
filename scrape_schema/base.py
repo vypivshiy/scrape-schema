@@ -94,7 +94,9 @@ class TypeCaster:
             return type_hint
 
     def _cast_type(self, type_hint: Type, value: Any) -> Any:
-        type_hint = self._typing_to_builtin(type_hint)
+        if sys.version_info >= (3, 9):
+            type_hint = self._typing_to_builtin(type_hint)
+            
         origin = get_origin(type_hint)
         args = get_args(type_hint)
         logger.info(
@@ -109,7 +111,7 @@ class TypeCaster:
             return value
 
         if origin is not None and args:
-            if origin is list:
+            if origin in (list, List):
                 logger.debug(
                     "List cast %s -> arg=%s, value=%s",
                     self.__class__.__name__,
@@ -117,7 +119,7 @@ class TypeCaster:
                     value,
                 )
                 return [self._cast_type(type_hint=args[0], value=v) for v in value]
-            elif origin is dict:
+            elif origin in (dict, Dict):
                 key_type, value_type = args
                 logger.debug(
                     "Dict cast %s -> key=%s, value=%s  `%s`",
