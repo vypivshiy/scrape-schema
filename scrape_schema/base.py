@@ -47,6 +47,10 @@ T = TypeVar("T")
 MARKUP_TYPE: TypeAlias = Union[str, Any]
 
 
+def extract_fields(markup: MARKUP_TYPE, **fields: "BaseField") -> Dict[str, Any]:
+    return {key: field.extract(markup) for key, field in fields.items()}
+
+
 class ABCField(ABC):
     @abstractmethod
     def _parse(self, markup: MARKUP_TYPE) -> Any:
