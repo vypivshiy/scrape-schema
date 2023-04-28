@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Type
+from typing import List, Type
 
 import pytest
 from bs4 import BeautifulSoup
@@ -18,7 +18,7 @@ from scrape_schema.fields.soup import SoupFind, SoupFindList
         (ReMatch(r"(\d+)", callback=lambda s: f"{s}.5"), "100", float, 100.5),
         (ReMatch(r"(\d+)", callback=lambda s: f"{s}.5", default=0), "NaN", float, 0.5),
         (ReMatchList(r"(\d+)", callback=int, factory=sum), "1 2 3 4 5", None, 15),
-        (ReMatchList(r"(\d+)"), "1 2 3 5", list[int], [1, 2, 3, 5]),
+        (ReMatchList(r"(\d+)"), "1 2 3 5", List[int], [1, 2, 3, 5]),
         (ReMatchList(r"(\d+)"), "1 2 3 5", None, ["1", "2", "3", "5"]),
     ],
 )
@@ -37,7 +37,7 @@ def test_extract_regex(field: BaseField, string: str, type_: Type, result):
         ),
         (SoupFind("<a>"), '<a href="spam">egg</a>', None, "egg"),
         (SoupFind("<p>"), "<p>100</p>", int, 100),
-        (SoupFindList("<p>"), "<p>1</p>\n<p>2</p>\n<p>3</p>\n", list[int], [1, 2, 3]),
+        (SoupFindList("<p>"), "<p>1</p>\n<p>2</p>\n<p>3</p>\n", List[int], [1, 2, 3]),
         (
             SoupFindList("<p>", factory=lambda lst: sum(int(i) for i in lst)),
             "<p>1</p>\n<p>2</p>\n<p>3</p>\n",

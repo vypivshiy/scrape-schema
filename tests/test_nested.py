@@ -1,6 +1,5 @@
-from __future__ import annotations
+from typing import List
 
-import pytest
 from fixtures import HTML
 from selectolax.parser import HTMLParser
 
@@ -17,13 +16,13 @@ class SLaxSchema(BaseSchema):
 
 class SubDict(SLaxSchema):
     p: ScField[str, SlaxSelect("p.sub-string", factory=lambda text: text.strip())]
-    a: ScField[list[int], SlaxSelectList("a.sub-list")]
+    a: ScField[List[int], SlaxSelectList("a.sub-list")]
 
 
 class DivDict(SLaxSchema):
     p: ScField[str, SlaxSelect("p.string")]
-    a_int: ScField[list[int], SlaxSelectList("a.list")]
-    a_float: ScField[list[float], SlaxSelectList("a.list")]
+    a_int: ScField[List[int], SlaxSelectList("a.list")]
+    a_float: ScField[List[float], SlaxSelectList("a.list")]
     sub_dict: ScField[SubDict, Nested(SubDict, crop_rule=crop_by_slax("div.sub-dict"))]
 
 
@@ -33,7 +32,7 @@ class NestedSchema(SLaxSchema):
         DivDict, Nested(DivDict, crop_rule=crop_by_slax("body > div.dict"))
     ]
     nested_list: ScField[
-        list[DivDict],
+        List[DivDict],
         NestedList(DivDict, crop_rule=crop_by_slax_all("body > div.dict")),
     ]
 

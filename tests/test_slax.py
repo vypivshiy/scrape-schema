@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 from selectolax.parser import HTMLParser
@@ -30,7 +28,7 @@ class SlaxSchema(BaseSchema):
     ]
     body_string: ScField[str, SlaxSelect("body > p.body-string")]
     body_string_chars: ScField[
-        list[str], SlaxSelect("body > p.body-string", factory=list)
+        List[str], SlaxSelect("body > p.body-string", factory=list)
     ]
     body_string_flag: ScField[bool, SlaxSelect("body > p.body-string")]
     body_int: ScField[int, SlaxSelect("body > p.body-int")]
@@ -43,8 +41,8 @@ class SlaxSchema(BaseSchema):
     fail_value_2: ScField[bool, SlaxSelect("body > spam.egg")]
     fail_value_3: ScField[str, SlaxSelect("body > spam.egg", default="spam")]
 
-    body_int_list: ScField[list[int], SlaxSelectList("body > a.body-list")]
-    body_float_list: ScField[list[float], SlaxSelectList("body > a.body-list")]
+    body_int_list: ScField[List[int], SlaxSelectList("body > a.body-list")]
+    body_float_list: ScField[List[float], SlaxSelectList("body > a.body-list")]
     max_body_list: ScField[
         int,
         SlaxSelectList(
@@ -53,10 +51,10 @@ class SlaxSchema(BaseSchema):
     ]
     body_float_flag: ScField[bool, SlaxSelectList("body > a.body-list", factory=bool)]
 
-    fail_list_1: ScField[Optional[list[int]], SlaxSelectList("body > spam.egg")]
+    fail_list_1: ScField[Optional[List[int]], SlaxSelectList("body > spam.egg")]
     fail_list_2: ScField[bool, SlaxSelectList("body > spam.egg")]
     fail_list_3: ScField[
-        list[str], SlaxSelectList("body > spam.egg", default=["spam", "egg"])
+        List[str], SlaxSelectList("body > spam.egg", default=["spam", "egg"])
     ]
 
 

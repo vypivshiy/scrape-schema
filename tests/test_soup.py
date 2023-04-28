@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 from bs4 import BeautifulSoup
@@ -27,7 +27,7 @@ class SoupSchema(BaseSchema):
     ]
     body_string: ScField[str, SoupFind('<p class="body-string>')]
     body_string_chars: ScField[
-        list[str], SoupFind('<p class="body-string>', factory=list)
+        List[str], SoupFind('<p class="body-string>', factory=list)
     ]
     body_string_flag: ScField[bool, SoupSelect("body > p.body-string")]
     body_int: ScField[int, SoupFind('<p class="body-int">')]
@@ -41,8 +41,8 @@ class SoupSchema(BaseSchema):
     fail_value_3: ScField[str, SoupSelect("body > spam.egg", default="spam")]
 
     # SoupList
-    body_int_list: ScField[list[int], SoupFindList('<a class="body-list">')]
-    body_float_list: ScField[list[float], SoupSelectList("body > a.body-list")]
+    body_int_list: ScField[List[int], SoupFindList('<a class="body-list">')]
+    body_float_list: ScField[List[float], SoupSelectList("body > a.body-list")]
     max_body_list: ScField[
         int,
         SoupFindList(
@@ -54,10 +54,10 @@ class SoupSchema(BaseSchema):
         bool, SoupFindList({"name": "a", "class_": "body-list"}, factory=bool)
     ]
 
-    fail_list_1: ScField[Optional[list[int]], SoupFindList({"name": "spam"})]
+    fail_list_1: ScField[Optional[List[int]], SoupFindList({"name": "spam"})]
     fail_list_2: ScField[bool, SoupSelectList("body > spam.egg")]
     fail_list_3: ScField[
-        list[str], SoupFindList('<spam class="egg">', default=["spam", "egg"])
+        List[str], SoupFindList('<spam class="egg">', default=["spam", "egg"])
     ]
 
 

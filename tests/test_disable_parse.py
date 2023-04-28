@@ -1,4 +1,4 @@
-from __future__ import annotations
+from typing import Dict, List
 
 from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchDict, ReMatchList
@@ -7,8 +7,8 @@ from scrape_schema.fields.regex import ReMatch, ReMatchDict, ReMatchList
 class DisableParseSchema(BaseSchema):
     digit: ScField[int, ReMatch(r"(\d+)")]
     string: ScField[str, ReMatch(r"(\w+)")]
-    lst: ScField[list[int], ReMatchList(r"(\d+)")]
-    dct: ScField[dict[str, int], ReMatchDict(r"(?P<key>):(?P<digit>)")]
+    lst: ScField[List[int], ReMatchList(r"(\d+)")]
+    dct: ScField[Dict[str, int], ReMatchDict(r"(?P<key>):(?P<digit>)")]
 
 
 NO_PARSED_SCHEMA = DisableParseSchema(

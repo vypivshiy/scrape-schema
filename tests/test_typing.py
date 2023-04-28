@@ -1,4 +1,4 @@
-from __future__ import annotations
+from typing import Dict, List
 
 import pytest
 from tests.fixtures import MockField
@@ -17,7 +17,7 @@ class TypingSchema(BaseSchema):
     # default typing
     t_def_1: int = 10
     t_def_2: str = "egg"
-    t_def_3: list[int] = [4, 5, 6]
+    t_def_3: List[int] = [4, 5, 6]
     t_def_4: bool = False
     a_val_1: Annotated[int, MockField("1")]
     a_val_2: Annotated[str, MockField(100)]
@@ -26,32 +26,32 @@ class TypingSchema(BaseSchema):
     a_val_5: Annotated[str, MockField(999)]
     a_val_6: Annotated[bool, MockField("ok")]
     a_val_7: Annotated[bool, MockField(None)]
-    a_val_8: Annotated[list[int], MockField([1, 2, 3, 4])]
-    a_val_9: Annotated[list[int], MockField([1, 2, 3, 4], factory=sum)]
-    a_val_10: Annotated[dict[str, int], MockField({"a": "1", "b": "2"})]
+    a_val_8: Annotated[List[int], MockField([1, 2, 3, 4])]
+    a_val_9: Annotated[List[int], MockField([1, 2, 3, 4], factory=sum)]
+    a_val_10: Annotated[Dict[str, int], MockField({"a": "1", "b": "2"})]
     a_val_11: Annotated[Optional[str], MockField(None)]
     a_val_12: Annotated[Optional[str], MockField("yes")]
     a_val_13: Annotated[Optional[int], MockField(None)]
     a_val_14: Annotated[Optional[int], MockField("10")]
-    a_val_15: Annotated[Optional[list[str]], MockField([])]
-    a_val_16: Annotated[Optional[list[str]], MockField([], default=[])]
-    a_val_17: Annotated[list[str], MockField([], default=[])]
-    a_val_18: Annotated[Optional[list[int]], MockField(["1", "2"])]
+    a_val_15: Annotated[Optional[List[str]], MockField([])]
+    a_val_16: Annotated[Optional[List[str]], MockField([], default=[])]
+    a_val_17: Annotated[List[str], MockField([], default=[])]
+    a_val_18: Annotated[Optional[List[int]], MockField(["1", "2"])]
     a_val_19: Annotated[
-        list[str], MockField("foobar", factory=list)
+        List[str], MockField("foobar", factory=list)
     ]  # str ignored typing, - cast manual
     # filter
     f_val_1: Annotated[
-        list[int], MockField([1, 10, 100, 2, 9, 5], filter_=lambda i: i <= 10)
+        List[int], MockField([1, 10, 100, 2, 9, 5], filter_=lambda i: i <= 10)
     ]
     f_val_2: Annotated[
-        list[int],
+        List[int],
         MockField(
             ["lorem", "3", "upsum", "dolor", "1", "2"], filter_=lambda s: s.isdigit()
         ),
     ]
     f_val_3: Annotated[
-        list[str],
+        List[str],
         MockField(
             ["lorem", "3", "upsum", "dolor", "1", "2"],
             filter_=lambda s: not s.isdigit(),

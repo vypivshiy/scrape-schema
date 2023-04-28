@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 from tests.fixtures import TEXT
@@ -19,7 +17,7 @@ class MockSchema(BaseSchema):
     digit_float: ScField[float, ReMatch(r"(\d+)", callback=lambda s: f"{s}.5")]
     digit_x10: ScField[int, ReMatch(r"(\d+)", factory=lambda result: int(result) * 10)]
     b_word: ScField[str, ReMatch(r"(b\w+)")]
-    b_word_chars: ScField[list[str], ReMatch(r"(b\w+)", factory=list)]
+    b_word_chars: ScField[List[str], ReMatch(r"(b\w+)", factory=list)]
     b_word_title: ScField[str, ReMatch(r"(b\w+)", factory=lambda s: s.title())]
     has_b_word: ScField[bool, ReMatch(r"(b\w+)")]
     has_y_word: ScField[bool, ReMatch(r"(y\w+)")]
@@ -27,23 +25,23 @@ class MockSchema(BaseSchema):
     fail_value_none: ScField[Optional[str], ReMatch(r"(ololo)")]
     fail_value: ScField[bool, ReMatch(r"(ololo)")]
     # ReMatchList
-    words_lower: ScField[list[str], ReMatchList(r"([a-z]+)")]
-    words_upper: ScField[list[str], ReMatchList(r"([A-Z]+)")]
-    digits: ScField[list[int], ReMatchList(r"(\d+)")]
+    words_lower: ScField[List[str], ReMatchList(r"([a-z]+)")]
+    words_upper: ScField[List[str], ReMatchList(r"([A-Z]+)")]
+    digits: ScField[List[int], ReMatchList(r"(\d+)")]
     digits_float: ScField[
-        list[float], ReMatchList(r"(\d+)", callback=lambda s: f"{s}.5")
+        List[float], ReMatchList(r"(\d+)", callback=lambda s: f"{s}.5")
     ]
     max_digit: ScField[int, ReMatchList(r"(\d+)", callback=int, factory=max)]
     # auto typing is not stable works for more complex types, usage factory
     fail_list_1: ScField[
-        Optional[list[str]],
+        Optional[List[str]],
         ReMatchList(
             r"(ora)", factory=lambda lst: [] if isinstance(lst, type(None)) else lst
         ),
     ]
 
     fail_list_2: ScField[
-        list[str], ReMatchList(r"(ora)", default=[], factory=lambda lst: lst)
+        List[str], ReMatchList(r"(ora)", default=[], factory=lambda lst: lst)
     ]
     fail_list_3: ScField[bool, ReMatchList(r"(ora)", default=False)]
 
