@@ -96,7 +96,7 @@ class TypeCaster:
     def _cast_type(self, type_hint: Type, value: Any) -> Any:
         if sys.version_info >= (3, 9):
             type_hint = self._typing_to_builtin(type_hint)
-            
+
         origin = get_origin(type_hint)
         args = get_args(type_hint)
         logger.info(
