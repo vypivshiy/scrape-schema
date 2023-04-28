@@ -15,13 +15,13 @@ for third-party serialization libraries: json, dataclasses, pydantic, etc
 
 _____
 # Features
+* python 3.8+ support
+* decrease lines of code for your parsers
 * partial support type-casting from annotations (str, int, float, bool, list, dict, Optional)
-* converting parsed values using callbacks, filters, factories
-* logging to quickly find problems in getting values
+* interacting with values with callbacks, filters, factories
+* logging to quickly find problems in extracted values
 * optional success-attempts parse values checker from fields objects
-* decrease code lines for your parsers
 * standardization, modularity* of structures-parsers
-
 *If you usage schema-structures and they are separated from the logic of getting the text
 (stdout output, HTTP requests, etc)
 ____
@@ -57,8 +57,7 @@ pip install scrape-schema[all]
 ```
 ____
 # Code comparison
-Before scrape_schema:
-
+Before scrape_schema: harder to maintain, change logic
 ```python
 import re
 import pprint
@@ -112,7 +111,7 @@ if __name__ == '__main__':
     #                  'dolor'],
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
-After scrape_schema
+After scrape_schema: easy change of logic, support, portability
 ```python
 from typing import Annotated
 import pprint
@@ -165,7 +164,7 @@ To set up logger, you can get it by the name `"scrape_schema"`
 import logging
 
 logger = logging.getLogger("scrape_schema")
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 ...
 ```
 
