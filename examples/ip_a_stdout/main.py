@@ -2,6 +2,7 @@ import json
 import re
 import subprocess
 import sys
+from typing import List
 
 from schema import Device
 
@@ -34,7 +35,7 @@ else:
 
 if __name__ == "__main__":
     # split stdout to parts
-    def crop_stdout(stdout: str) -> list[str]:
+    def crop_stdout(stdout: str) -> List[str]:
         interfaces = re.split(r"^\d+: ", stdout, flags=re.MULTILINE)
         return [f"{i}: {face}" for i, face in enumerate(interfaces, 0) if face]
 
@@ -42,34 +43,3 @@ if __name__ == "__main__":
     print(*devices, sep="\n")
     for device in devices:
         print(device.name, device.ipv4, device.ipv6)
-
-    # convert to dict
-    print(json.dumps(devices[0].dict(), indent=4))
-    # Device(num<int>=1, name<str>=lo, interface<str>=['LOOPBACK', 'UP', 'LOWER_UP'], mtu<int>=65536,
-    # qdisc<str>=noqueue, state<str>=UNKNOWN, group<str>=default, qlen<int>=1000, link<str>=loopback,
-    # addr<str>=00:00:00:00:00:00, ipv4<list>=['127.0.0.1/8', '192.168.1.130/24', '10.3.2.3/32'],
-    # ipv6<list>=['::1/128', 'fefe::abcd:e000:0101:3695/64', 'fd00::3:2:3/128', 'fe80::b2d:189b:c179:3b10/64'])
-    # lo ['127.0.0.1/8', '192.168.1.130/24', '10.3.2.3/32'] ['::1/128', 'fefe::abcd:e000:0101:3695/64', 'fd00::3:2:3/128', 'fe80::b2d:189b:c179:3b10/64']
-    # {
-    #     "num": 1,
-    #     "name": "lo",
-    #     "interface": "['LOOPBACK', 'UP', 'LOWER_UP']",
-    #     "mtu": 65536,
-    #     "qdisc": "noqueue",
-    #     "state": "UNKNOWN",
-    #     "group": "default",
-    #     "qlen": 1000,
-    #     "link": "loopback",
-    #     "addr": "00:00:00:00:00:00",
-    #     "ipv4": [
-    #         "127.0.0.1/8",
-    #         "192.168.1.130/24",
-    #         "10.3.2.3/32"
-    #     ],
-    #     "ipv6": [
-    #         "::1/128",
-    #         "fefe::abcd:e000:0101:3695/64",
-    #         "fd00::3:2:3/128",
-    #         "fe80::b2d:189b:c179:3b10/64"
-    #     ]
-    # }

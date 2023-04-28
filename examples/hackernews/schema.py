@@ -1,5 +1,6 @@
 # A hackernews schema parser https://news.ycombinator.com
 import re
+from typing import List
 
 from bs4 import BeautifulSoup
 
@@ -63,12 +64,12 @@ class HackerNewsSchema(BaseSchema):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     @staticmethod
-    def _crop_posts(markup: str) -> list[str]:
+    def _crop_posts(markup: str) -> List[str]:
         """a crop rule for hackenews schema"""
         soup = BeautifulSoup(markup, "html.parser")
         # get main news table
         table = soup.find("tr", class_="athing").parent
-        elements: list[str] = []
+        elements: List[str] = []
         first_tag: str = ""
         # get two 'tr' tags and concatenate, skip <tr class='spacer'>
 
@@ -85,4 +86,4 @@ class HackerNewsSchema(BaseSchema):
                 break
         return elements
 
-    posts: ScField[list[Post], NestedList(Post, crop_rule=_crop_posts)]
+    posts: ScField[List[Post], NestedList(Post, crop_rule=_crop_posts)]

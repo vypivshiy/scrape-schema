@@ -1,4 +1,6 @@
 # Note: this parser works only English version (en.wikipedia.org)!
+from typing import List  # python38 support
+
 import json
 
 import requests
@@ -22,10 +24,10 @@ class MainEnPage(BaseSchema):
     ]
     language: ScField[str, SlaxSelect("#articlecount > a:nth-child(2)")]
     featured_article: ScField[str, SlaxSelect("#mp-tfa > p")]
-    did_your_know: ScField[list[str], SlaxSelectList("#mp-dyk > ul > li")]
-    in_the_news: ScField[list[str], SlaxSelectList("#mp-itn > ul > li")]
+    did_your_know: ScField[List[str], SlaxSelectList("#mp-dyk > ul > li")]
+    in_the_news: ScField[List[str], SlaxSelectList("#mp-itn > ul > li")]
     on_this_day_date: ScField[str, SlaxSelect("#mp-otd > p")]
-    on_this_day: ScField[list[str], SlaxSelectList("#mp-otd > ul > li")]
+    on_this_day: ScField[List[str], SlaxSelectList("#mp-otd > ul > li")]
     today_feature_picture: ScField[
         str,
         SlaxSelect(

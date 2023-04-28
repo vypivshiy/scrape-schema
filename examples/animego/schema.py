@@ -1,3 +1,5 @@
+from typing import List
+
 from bs4 import BeautifulSoup
 
 from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
@@ -78,49 +80,49 @@ class NewAnime(SchemaConfig):
     type: ScField[str, SoupSelect("span > a.text-link-gray")]
     year: ScField[int, SoupSelect("span.anime-year > a")]
     genres: ScField[
-        list[str], SoupSelectList("span.anime-genre > a", callback=get_attr("title"))
+        List[str], SoupSelectList("span.anime-genre > a", callback=get_attr("title"))
     ]
     description: ScField[
         str, SoupFind('<div class="description">', callback=get_text(strip=True))
     ]
 
 
+def _crop_new_anime(markup: str) -> List[str]:
+    soup = BeautifulSoup(markup, "html.parser")
+    tags = soup.select_one("#content > div:nth-child(2)").find_all(
+        "div", class_="animes-list-item media"
+    )
+    return [str(tag) for tag in tags]
+
+
+def _crop_ongoing(markup: str) -> List[str]:
+    soup = BeautifulSoup(markup, "html.parser")
+    tags = soup.find_all("div", class_="list-group")[0].find_all(
+        "div", class_="last-update-item"
+    )
+    return [str(tag) for tag in tags]
+
+
+def _crop_schedule(markup: str) -> List[str]:
+    soup = BeautifulSoup(markup, "html.parser")
+    tags = soup.find_all("div", class_="list-group")[1].find_all(
+        "div", class_="media-body"
+    )
+    return [str(tag) for tag in tags]
+
+
 class AnimegoSchema(SchemaConfig):
-    @staticmethod
-    def _crop_new_anime(markup: str) -> list[str]:
-        soup = BeautifulSoup(markup, "html.parser")
-        tags = soup.select_one("#content > div:nth-child(2)").find_all(
-            "div", class_="animes-list-item media"
-        )
-        return [str(tag) for tag in tags]
-
-    @staticmethod
-    def _crop_ongoing(markup: str) -> list[str]:
-        soup = BeautifulSoup(markup, "html.parser")
-        tags = soup.find_all("div", class_="list-group")[0].find_all(
-            "div", class_="last-update-item"
-        )
-        return [str(tag) for tag in tags]
-
-    @staticmethod
-    def _crop_schedule(markup: str) -> list[str]:
-        soup = BeautifulSoup(markup, "html.parser")
-        tags = soup.find_all("div", class_="list-group")[1].find_all(
-            "div", class_="media-body"
-        )
-        return [str(tag) for tag in tags]
-
     title: ScField[str, SoupFind("<title>")]
     lang: ScField[str, SoupFind("<html>", callback=get_attr("lang"))]
     anime_seasons: ScField[
-        list[AnimeSeason],
+        List[AnimeSeason],
         NestedList(AnimeSeason, crop_rule=crop_by_tag_all('<div class="item">')),
     ]
     schedule: ScField[
-        list[ScheduleItem], NestedList(ScheduleItem, crop_rule=_crop_schedule)
+        List[ScheduleItem], NestedList(ScheduleItem, crop_rule=_crop_schedule)
     ]
-    ongoings: ScField[list[Ongoing], NestedList(Ongoing, crop_rule=_crop_ongoing)]
-    new_anime: ScField[list[NewAnime], NestedList(NewAnime, crop_rule=_crop_new_anime)]
+    ongoings: ScField[List[Ongoing], NestedList(Ongoing, crop_rule=_crop_ongoing)]
+    new_anime: ScField[List[NewAnime], NestedList(NewAnime, crop_rule=_crop_new_anime)]
 
     @property
     def ongoings_count(self):
