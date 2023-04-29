@@ -113,10 +113,10 @@ if __name__ == '__main__':
 ```
 After scrape_schema: easy change of logic, support, portability
 ```python
-from typing import Annotated
+from typing import List  # if you usage python3.8 - usage GenericAliases
 import pprint
 
-from scrape_schema import BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 
 TEXT = """
@@ -129,16 +129,16 @@ lorem upsum dolor
 
 
 class Schema(BaseSchema):
-    ipv4: Annotated[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
-    max_digit: Annotated[int, ReMatchList(r"(\d+)",
+    ipv4: ScField[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
+    max_digit: ScField[int, ReMatchList(r"(\d+)",
                                           callback=int,                                      
                                           factory=max)]
-    failed_value: Annotated[bool, ReMatchList(r"(ora)", default=False)]
-    digits: Annotated[list[int], ReMatchList(r"(\d+)")]
-    digits_float: Annotated[list[float], ReMatchList(r"(\d+)", 
+    failed_value: ScField[bool, ReMatchList(r"(ora)", default=False)]
+    digits: ScField[List[int], ReMatchList(r"(\d+)")]
+    digits_float: ScField[List[float], ReMatchList(r"(\d+)", 
                                                      callback=lambda s: f"{s}.5")]
-    words_lower: Annotated[list[str], ReMatchList(r"([a-z]+)")]
-    words_upper: Annotated[list[str], ReMatchList(r"([A-Z]+)")]
+    words_lower: ScField[List[str], ReMatchList(r"([a-z]+)")]
+    words_upper: ScField[List[str], ReMatchList(r"([A-Z]+)")]
     
 if __name__ == '__main__':
     schema = Schema(TEXT)
