@@ -51,6 +51,11 @@ add selectolax fields
 pip install scrape-schema[selectolax]
 ```
 
+add parsel fields
+```shell
+pip install scrape-schema[parsel]
+```
+
 add all fields
 ```shell
 pip install scrape-schema[all]

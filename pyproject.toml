@@ -37,8 +37,10 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 [project.optional-dependencies]
 selectolax = ["selectolax"]
 bs4 = ["bs4"]
-all = ["selectolax", "bs4"]
-dev = ["bs4", "selectolax", "flake8", "black", "isort", "pytest", "mypy"]
+parsel = ["parsel"]
+all = ["selectolax", "bs4", "parsel"]
+dev = ["bs4", "selectolax", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
+ci = ["hatch", "bs4", "selectolax", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
 docs = ["mkdocs-material"]
 
 [tool.hatch.version]
@@ -65,7 +67,7 @@ cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=scrape
 no-cov = "cov --no-cov {args}"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["39", "310", "311"]
+python = ["38", "39", "310", "311"]
 
 [tool.hatch.build.targets.sdist]
 include = [
