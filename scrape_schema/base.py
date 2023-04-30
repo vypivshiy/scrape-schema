@@ -44,7 +44,7 @@ _stdout_handler.setFormatter(_formatter)
 logger.addHandler(_stdout_handler)
 
 T = TypeVar("T")
-MARKUP_TYPE: TypeAlias = Union[str, Any]
+MARKUP_TYPE: TypeAlias = Any
 
 
 def extract_fields(markup: MARKUP_TYPE, **fields: "BaseField") -> Dict[str, Any]:
@@ -355,6 +355,10 @@ class BaseField(ABCField, TypeCaster):
             if type_annotation := instance.__schema_annotations__.get(name):
                 value = self._cast_type(type_annotation, value)
         return value
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(default={self.default}, callback={self.callback}, " \
+               f"filter_={self.filter_}, factory={self.factory})"
 
 
 class BaseSchemaConfig:
