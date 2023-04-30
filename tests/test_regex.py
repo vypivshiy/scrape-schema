@@ -1,10 +1,15 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 from tests.fixtures import TEXT
 
 from scrape_schema import BaseSchema, ScField
-from scrape_schema.fields.regex import ReMatch, ReMatchList
+from scrape_schema.fields.regex import (
+    ReMatch,
+    ReMatchDict,
+    ReMatchList,
+    ReMatchListDict,
+)
 
 
 class MockSchema(BaseSchema):
@@ -46,7 +51,24 @@ class MockSchema(BaseSchema):
     fail_list_3: ScField[bool, ReMatchList(r"(ora)", default=False)]
 
 
-re_schema = MockSchema(TEXT)
+class RegexSchemaDicts(BaseSchema):
+    dict_1: ScField[Dict[str, str], ReMatchDict(r"\-(?P<key>\w+):(?P<value>\d+)")]
+    dict_2: ScField[Dict[str, int], ReMatchDict(r":(?P<value>\d+)")]
+    lst_dict_1: ScField[
+        List[Dict[str, int]],
+        ReMatchListDict(r":(?P<digit>\d+)"),
+    ]
+
+
+RE_SCHEMA = MockSchema(TEXT)
+
+REGEX_SCHEMA_DICTS = RegexSchemaDicts(TEXT)
+
+
+def test_values():
+    assert REGEX_SCHEMA_DICTS.dict_1 == {"key": "foo", "value": "10"}
+    assert REGEX_SCHEMA_DICTS.dict_2 == {"value": 10}
+    assert REGEX_SCHEMA_DICTS.lst_dict_1 == [{"digit": 10}, {"digit": 20}]
 
 
 @pytest.mark.parametrize(
@@ -76,4 +98,4 @@ re_schema = MockSchema(TEXT)
     ],
 )
 def test_re_parse(attr: str, result):
-    assert getattr(re_schema, attr) == result
+    assert getattr(RE_SCHEMA, attr) == result
