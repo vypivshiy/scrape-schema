@@ -59,7 +59,8 @@ serve = "mkdocs serve --dev-addr localhost:8000"
 dependencies = [
   "pytest",
   "selectolax",
-  "bs4"
+  "bs4",
+  "parsel"
 ]
 
 [tool.hatch.envs.default.scripts]
