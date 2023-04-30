@@ -1,7 +1,6 @@
 # Note: this parser works only English version (en.wikipedia.org)!
-from typing import List  # python38 support
-
 import json
+from typing import List  # python38 support
 
 import requests
 from selectolax.parser import HTMLParser

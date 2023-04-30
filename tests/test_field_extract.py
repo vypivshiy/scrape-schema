@@ -30,19 +30,19 @@ def test_extract_regex(field: BaseField, string: str, type_: Type, result):
     "field,string,type_,result",
     [
         (
-                SoupFind("<a>", callback=get_attr("href")),
-                '<a href="spam">egg</a>',
-                None,
-                "spam",
+            SoupFind("<a>", callback=get_attr("href")),
+            '<a href="spam">egg</a>',
+            None,
+            "spam",
         ),
         (SoupFind("<a>"), '<a href="spam">egg</a>', None, "egg"),
         (SoupFind("<p>"), "<p>100</p>", int, 100),
         (SoupFindList("<p>"), "<p>1</p>\n<p>2</p>\n<p>3</p>\n", List[int], [1, 2, 3]),
         (
-                SoupFindList("<p>", factory=lambda lst: sum(int(i) for i in lst)),
-                "<p>1</p>\n<p>2</p>\n<p>3</p>\n",
-                None,
-                6,
+            SoupFindList("<p>", factory=lambda lst: sum(int(i) for i in lst)),
+            "<p>1</p>\n<p>2</p>\n<p>3</p>\n",
+            None,
+            6,
         ),
     ],
 )
@@ -63,23 +63,24 @@ def test_extract_function_re():
         sentence=ReMatchList(r"([a-z]+)", factory=lambda lst: " ".join(lst)),
         digit=ReMatch(r"(\d+)", callback=int),
         digits=ReMatchList(r"(\d+)", callback=int),
-        sum=ReMatchList(r"(\d+)", callback=int, factory=sum)
-    ) == {'digit': 10,
-          'digits': [10, 100],
-          'sentence': 'lorem dolor',
-          'sum': 110,
-          'word': 'lorem',
-          'words': ['lorem', 'dolor']}
+        sum=ReMatchList(r"(\d+)", callback=int, factory=sum),
+    ) == {
+        "digit": 10,
+        "digits": [10, 100],
+        "sentence": "lorem dolor",
+        "sum": 110,
+        "word": "lorem",
+        "words": ["lorem", "dolor"],
+    }
 
 
 def test_extract_function_soup():
-    soup = BeautifulSoup('<a href="spam">egg</a>\n<p>1</p>\n<p>2</p>\n<p>3</p>\n', "html.parser")
+    soup = BeautifulSoup(
+        '<a href="spam">egg</a>\n<p>1</p>\n<p>2</p>\n<p>3</p>\n', "html.parser"
+    )
     assert extract_fields(
         soup,
         href=SoupFind("<a>", callback=get_attr("href")),
         digits=SoupFindList("<p>", callback=lambda t: int(t.get_text())),
-        sum=SoupFindList("<p>", callback=lambda t: int(t.get_text()), factory=sum)) == {
-        "href": "spam",
-        "digits": [1, 2, 3],
-        "sum": 6
-    }
+        sum=SoupFindList("<p>", callback=lambda t: int(t.get_text()), factory=sum),
+    ) == {"href": "spam", "digits": [1, 2, 3], "sum": 6}

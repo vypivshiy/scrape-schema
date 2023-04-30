@@ -1,4 +1,5 @@
 from typing import List
+
 from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch, ReMatchList
 

@@ -1,7 +1,7 @@
 # required requests or any http lib
-from typing import List  # python38 support
 import json
 from collections import Counter
+from typing import List  # python38 support
 
 import requests
 from bs4 import BeautifulSoup

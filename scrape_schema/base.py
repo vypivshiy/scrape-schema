@@ -357,8 +357,10 @@ class BaseField(ABCField, TypeCaster):
         return value
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(default={self.default}, callback={self.callback}, " \
-               f"filter_={self.filter_}, factory={self.factory})"
+        return (
+            f"{self.__class__.__name__}(default={self.default}, callback={self.callback}, "
+            f"filter_={self.filter_}, factory={self.factory})"
+        )
 
 
 class BaseSchemaConfig:
