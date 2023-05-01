@@ -165,12 +165,11 @@ print(Schema.from_kwargs())
 ```
 
 # Config
-`Config` (inherited from `BaseConfig`) class contains configurations in `BaseSchema`.
+`Config` (inherited from `BaseSchemaConfig`) class contains configurations in `BaseSchema`.
 
-### Params
+### Variables
 - `config_parser: dict[Type[Any], dict[str, Any]]` - third-party parsers configurations. 
-If you are using third party libraries and don't specify them - 
-- the scheme throw `MarkupNotFoundError` exception in runtime.
+If you are using third party libraries and don't specify them - the scheme throw `MarkupNotFoundError` exception in runtime.
 
 ```python
 from selectolax.parser import HTMLParser
