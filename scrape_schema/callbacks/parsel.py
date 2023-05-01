@@ -1,3 +1,4 @@
+"""Callbacks for scrape_schema.fields.parsel"""
 from typing import Any, Callable, List, Mapping, Optional, Union
 
 from parsel import Selector, SelectorList

@@ -29,7 +29,7 @@ References:
 """
 
 import re
-from typing import Any, Callable, Dict, List, Optional, Pattern, Union
+from typing import Any, Callable, Dict, List, Optional, Pattern, Type, Union, overload
 
 from ..base import BaseField
 

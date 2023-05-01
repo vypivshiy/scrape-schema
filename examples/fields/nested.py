@@ -85,9 +85,9 @@ class SchemaDivDict(SchemaConfig):
 
 
 class Schema(SchemaConfig):
-    title = SlaxSelect("head > title")
+    title: ScField[str, SlaxSelect("head > title")]
     # build-in callback for extract tag
-    lang = SlaxSelect("html", callback=get_attr("lang"))
+    lang: ScField[str, SlaxSelect("html", callback=get_attr("lang"))]
     # you can be found build-in crop rules in tools directory package or write manual
     # crop <div class="dict">...</div>
     first_div: ScField[

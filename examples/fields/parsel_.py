@@ -1,13 +1,22 @@
-from typing import List
 import pprint
+from typing import List
 
 from parsel import Selector
 
 from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
+from scrape_schema.callbacks.parsel import (
+    crop_by_selector,
+    crop_by_xpath,
+    crop_by_xpath_all,
+    get_attr,
+)
 from scrape_schema.fields import Nested, NestedList
-from scrape_schema.fields.parsel import ParselSelect, ParselSelectList, ParselXPath, ParselXPathList
-from scrape_schema.callbacks.parsel import get_attr, crop_by_xpath_all, crop_by_xpath, crop_by_selector
-
+from scrape_schema.fields.parsel import (
+    ParselSelect,
+    ParselSelectList,
+    ParselXPath,
+    ParselXPathList,
+)
 
 HTML = """
 <!DOCTYPE html>
@@ -68,8 +77,10 @@ HTML = """
 
 class ParselSchema(BaseSchema):
     """Base schema configurations"""
+
     class Config(BaseSchemaConfig):
         parsers_config = {Selector: {}}
+
     pass
 
 
@@ -84,7 +95,8 @@ class SchemaDivDict(ParselSchema):
     # crop <div class="sub-dict">...</div>
     sub_div: ScField[
         SchemaDivSubDict,
-        Nested(SchemaDivSubDict, crop_rule=crop_by_selector("div.sub-dict"))]
+        Nested(SchemaDivSubDict, crop_rule=crop_by_selector("div.sub-dict")),
+    ]
 
 
 class Schema(ParselSchema):
@@ -95,7 +107,7 @@ class Schema(ParselSchema):
     # crop <div class="dict">...</div>
     first_div: ScField[
         SchemaDivDict,
-        Nested(SchemaDivDict, crop_rule=crop_by_xpath('//div[@class="dict"]'))
+        Nested(SchemaDivDict, crop_rule=crop_by_xpath('//div[@class="dict"]')),
     ]
     # crop <div class="dict">...</div>
     all_divs: ScField[
@@ -104,7 +116,7 @@ class Schema(ParselSchema):
     ]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pprint.pprint(Schema(HTML).dict(), width=60, compact=True)
 # {'all_divs': [{'a': [1, 2, 3],
 #                'p': 'test-1',
