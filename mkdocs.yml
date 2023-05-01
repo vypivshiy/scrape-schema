@@ -33,5 +33,5 @@ nav:
       - nested: fields/nested.md
       - soup: fields/soup.md
       - slax: fields/slax.md
+      - parsel: fields/parsel.md
       - custom: fields/custom.md
-  - Callbacks: callbacks.md
