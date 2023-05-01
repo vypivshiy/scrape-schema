@@ -1,5 +1,3 @@
-**Documentation for version 0.1.0**
-
 # Scrape-schema
 
 This library is designed to write structured, readable, 
@@ -22,7 +20,10 @@ add bs4 fields
 ```shell
 pip install scrape-schema[bs4]
 ```
-
+add parsel fields
+```shell
+pip install scrape-schema[parsel]
+```
 add selectolax fields
 ```shell
 pip install scrape-schema[selectolax]
@@ -39,14 +40,16 @@ scrape_schema
 ├── exceptions.py  # custom exception classes
 ├── callbacks
 │    ├── slax.py # selectolax build-in common callbacks, crop_rules
-│    └── soup.py # bs4 build-in common callbacks, crop_rules
+│    ├── soup.py # bs4 build-in common callbacks, crop_rules
+│    └── parsel.py  # parsel build-in common callbacks, crop_rules
 ├── factory
 │    └── __init__.py # TODO build-in common factory callbacks
 └── fields
      ├── nested.py  # Nested fields
-     ├── regex.py  # re backend fields
-     ├── slax.py  # selectolax (Modest) backend fields
-     └── soup.py  # bs4 backend fields
+     ├── regex.py  # re fields
+     ├── slax.py  # selectolax (Modest) fields
+     └── soup.py  # bs4 fields
+     └── parsel.py  # parsel fields
 ```
 
 # Fields

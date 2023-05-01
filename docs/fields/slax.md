@@ -1,8 +1,8 @@
 # slax
-Usage [selectolax](https://selectolax.readthedocs.io/en/latest/parser.html) backend
+Usage [selectolax](https://selectolax.readthedocs.io/en/latest/parser.html) lib
 
 # Schema config
-this fields required `selectolax` configuration
+This fields required `selectolax` configuration
 
 ```python
 from selectolax.parser import HTMLParser
@@ -13,86 +13,233 @@ class SlaxSchema(BaseSchema):
     class Meta(BaseSchemaConfig):
         parsers_config = {HTMLParser: {}}
     # past slax fields here
-
 ```
 
-# SlaxSelect, SlaxSelectList
-* selector - css selector
-* strict - strict text. **Default False**
+# Field methods
 
-# callbacks
-callbacks, filter_ accept `Node` object
-```python
-from scrape_schema.callbacks.slax import get_attr, get_text
-from scrape_schema.fields.slax import SlaxSelect
-Example_callback_1 = SlaxSelect("body > a", callback=get_attr("href"))
-Example_callback_2 = SlaxSelect("img", callback=get_attr("src"))
+- `extract(self, markup: HTMLParser | Node, type_: Optional[Type] = None) -> Any`: Extracts data from the 
+`HTMLParser` object and any provided callbacks and factories. Returns the extracted data.
 
-Example_callback_3 = SlaxSelect("img", callback=get_text(separator=", "))
-```
+## Params
+- `markup: HTMLParser | Node` - HTMLParser object or Node
+- `type_: Optional[Type] = str`: The type to cast the matched string(s) to. This is only used if `factory` 
+is not provided.
 
-# crop_rules
-```python
-from scrape_schema.fields.nested import Nested, NestedList
-from scrape_schema.callbacks.slax import crop_by_slax, crop_by_slax_all
+# SlaxSelect
+This field provide [HTMLParser().css_first](https://selectolax.readthedocs.io/en/latest/parser.html#selectolax.parser.HTMLParser.css_first) method
 
-Nested_1 = Nested(..., crop_rule=crop_by_slax("body > div.foo"))
+## Params
+* `selector: str` - css selector
+* `strict: bool = False` -  Check if there is strictly only one match in the document. Default `False`
+* `default: Optional[Any]` - default value, if tag not founded. Default `None`
+* `callback: Optional[Callable[[Node], Union[str, Any]]]` - A function that transforms the `parser.Node` object into 
+another value. Default `get_text()`
+* `factory: Optional[Callable[[Any], Any]]` - A function that processes the value. 
+**Disable type-cast feature**. Default `None`
 
-Nested_2 = NestedList(..., crop_rule=crop_by_slax_all("body > div.bar"))
-```
-
-# Example
-Without schema:
+## Usage
 ```python
 from selectolax.parser import HTMLParser
-
-from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
-
+from scrape_schema.fields.slax import SlaxSelect
+from scrape_schema.callbacks.slax import get_attr
 HTML = """
-
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
 <div class="dict">
   <p class="string">test-1</p>
-  <a class="int">1</a>
-</div>
-<div class="dict">
-  <p class="string">test-2</p>
-  <a class="int">2</a>
-</div>
-<div class="dict2">
-  <p class="string">test-3</p>
+  <a class="list">1</a>
+  <a class="list">2</a>
   <a class="list">3</a>
-  <a class="list">8</a>
-  <a class="list">9</a>
+  <div class="sub-dict">
+    <p class="sub-string">spam-1</p>
+    <a class="sub-list">10</a>
+    <a class="sub-list">20</a>
+    <a class="sub-list">30</a>
+    <img src="/foo.png">foo</img>
+  </div>
 </div>
 """
 
-Select1 = SlaxSelect("div.dict > a.int")
-Select2 = SlaxSelect("div.dict > p.string")
-SelectList1 = SlaxSelectList("div.dict > a.int")
-SelectListSum = SlaxSelectList("div.dict > a.int", factory=lambda lst: sum(int(i) for i in lst))
-SelectList2 = SlaxSelectList("div.dict > p.string")
+PARSER = HTMLParser(HTML)
+print(SlaxSelect("div.dict > a.list").extract(PARSER))
+# "1"
 
-parser = HTMLParser(HTML)
-
-digit: int = Select1.extract(parser, type_=int)
-word: str = Select2.extract(parser)
-digits_sum: int = SelectListSum.extract(parser)
-digits: list[int] = SelectList1.extract(parser, type_=list[int])
-words: list[str] = SelectList2.extract(parser)
-
-print(digit, word, digits_sum, digits, words, sep="\n--\n")
+print(SlaxSelect("div.dict > a.list").extract(PARSER, type_=int))
 # 1
-# --
-# test-1
-# --
-# 3
-# --
-# [1, 2]
-# --
-# ['test-1', 'test-2']
+
+print(SlaxSelect("div.dict > div.sub-dict > p.sub-string"
+                 ).extract(PARSER))
+# spam-1
+
+print(SlaxSelect("div.dict > div.sub-dict > p.sub-string", factory=lambda s: s.upper()
+                 ).extract(PARSER))
+# SPAM-1
+print(SlaxSelect("div.sub-dict > img", callback=get_attr("src")
+                 ).extract(PARSER))
+# /foo.png
+
+```
+# SlaxSelectList
+This field provide [HTMLParser(),css](https://selectolax.readthedocs.io/en/latest/parser.html#selectolax.parser.HTMLParser.css) method
+
+## Params
+* `selector: str` - css selector
+* `default: Optional[Any]` - default value, if tag not founded. Default `None`
+* `filter_: Optional[Callable[[Node], bool]]` - A filter matched result. Default `None`
+* `callback: Optional[Callable[[Node], Union[str, Any]]]` - A function that transforms the `parser.Node` object into 
+another value. Default `get_text()`
+* `factory: Optional[Callable[[Any], Any]]` - A function that processes the values. 
+**Disable type-cast feature**. Default `None`
+
+## Usage
+```python
+from selectolax.parser import HTMLParser
+from scrape_schema.fields.slax import SlaxSelectList
+from scrape_schema.callbacks.slax import get_attr
+HTML = """
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
+<div class="dict">
+  <p class="string">test-1</p>
+  <a class="list">1</a>
+  <a class="list">2</a>
+  <a class="list">3</a>
+  <div class="sub-dict">
+    <p class="sub-string">spam-1</p>
+    <a class="sub-list">10</a>
+    <a class="sub-list">20</a>
+    <a class="sub-list">30</a>
+    <img src="/foo.png">foo</img>
+  </div>
+</div>
+"""
+
+PARSER = HTMLParser(HTML)
+print(SlaxSelectList("div.dict > a.list").extract(PARSER))
+# ["1", "2", "3"]
+
+print(SlaxSelectList("div.dict > a.list").extract(PARSER, type_=list[int]))
+# [1, 2, 3]
+
+
+print(SlaxSelectList("div.sub-dict > img").extract(PARSER))
+# ["foo"]
+
+print(SlaxSelectList("div.sub-dict > img", callback=get_attr("src")).extract(PARSER))
+# ["/foo.png"]
+
+
+print(SlaxSelectList("a", filter_=lambda n: n.text().isdigit() and int(n.text().isdigit()) <= 10
+                     ).extract(PARSER, type_=list[int])
+      )
+# [1, 2, 3, 10]
+```
+# scrape_schema.callbacks.slax
+this module contains most useful callbacks and crop rules
+
+## callbacks
+### get_text
+get text from `Node`. This default callback in `fields.slax` module
+
+```python
+from selectolax.parser import HTMLParser
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
+from scrape_schema.callbacks.soup import get_text
+
+HTML = """
+<img src="/foo.png">foo</img>
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
+<img src="/bar.jpg">bar</img>
+<img src="/baz.png">baz</img>
+"""
+
+
+PARSER = HTMLParser(HTML)
+
+print(SlaxSelect("p").extract(PARSER))
+# test-string
+
+print(SlaxSelect("p", callback=get_text()).extract(PARSER)) # same
+# test-string
+
+print(SlaxSelectList("p").extract(PARSER))
+# ["test-string", "555"]
+```
+### replace_text
+get text from Node and invoke `str.replace()` method
+```python
+from selectolax.parser import HTMLParser
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
+from scrape_schema.callbacks.soup import replace_text
+
+HTML = "<p>spamm-100</p>\n<p>spamm-200</p>"
+PARSER = HTMLParser(HTML)
+
+print(SlaxSelect("p", callback=replace_text("spam", "egg")))
+# eggm-100
+
+print(SlaxSelect("p", callback=replace_text("m", "n", 1)))
+# spanm-100
+
+print(SlaxSelectList("p", callback=replace_text("spam", "egg")))
+# ["eggm-100", "eggm-200"]
+
+print(SlaxSelectList("p", callback=replace_text("m", "n", 1)))
+# ["spanm-100", "spanm-200"]
+```
+### get_attr
+get attribute value from Node
+
+```python
+from selectolax.parser import HTMLParser
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
+from scrape_schema.callbacks.slax import get_attr
+HTML = '<a href="example.com/1">1</a>\n<a href="example.com/2">2</a>'
+
+SOUP = HTMLParser(HTML)
+
+print(SlaxSelect("a", callback=get_attr("href")))
+# example.com/1
+
+print(SlaxSelectList("a", callback=get_attr("href")))
+# ["example.com/1", "example.com/2"]
 ```
 
-With schema:
+## crop_rules
+This functions used in `fields.nested` fields
+
+### crop_by_slax
+Crop string by css selector to one part. This rule can be used in `Nested` field 
+
+### crop_by_slax_all
+Crop string by css selector to parts. This rule can be used in `NestedList` field
+
+```python
+from scrape_schema.callbacks.slax import crop_by_slax_all
+
+HTML = """
+<div class="a">
+<p>spam</p>
+</div>
+<div class="a">
+<p>egg</p>
+</div>
+"""
+print(crop_by_slax_all('div.a')(HTML))
+# ['<div class="a">\n<p>spam</p>\n</div>', <div class="a">\n<p>egg</p>\n</div>]
+```
+
+# Schema Usage
 ```python
 import pprint
 

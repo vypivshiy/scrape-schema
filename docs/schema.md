@@ -5,9 +5,12 @@ The primary means of defining objects in scrape_schema is via models
 # Constructors
 
 ## Default init constructor
-* markup: str - target string for parsing
-* parse_markup: bool - parse fields object. Default True
-* kwargs - any keyword arguments for setattr in schema
+### Params
+- `markup: str` - target string for parsing
+- `parse_markup: bool` - parse fields object. Default True
+- `**kwargs` - keyword arguments for setattr in schema
+
+### Example
 ```python
 from typing import Annotated
 from scrape_schema import BaseSchema
@@ -27,9 +30,11 @@ print(Schema(markup))
 ## from_markup
 Parse fields from markup. Alias for `BaseSchema(markup, parse_markup=True, **kwargs)`
 
-* markup: str - target string for parsing
-* kwargs - any keyword arguments for setattr in schema
+### Params:
+- `markup: str` - target string for parsing
+- `**kwargs: Any` - keyword arguments for setattr in schema
 
+### Example
 ```python
 from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
@@ -46,9 +51,13 @@ print(*Schema.from_markup(markup))
 # Schema(word:str='lorem', digit:int=100)
 ```
 ## from_list
-* markups: Iterable[str] - sequence of strings 
-* **kwargs - any keyword arguments for setattr in schema
+parse fields from list of markups
 
+### Params:
+- `markups: Iterable[str]` - sequence of strings 
+- `**kwargs: Any` - any keyword arguments for setattr in schema
+
+### Example
 ```python
 from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
@@ -65,12 +74,16 @@ print(*Schema.from_list(markups), sep="\n")
 # Schema(word:str='lorem', digit:int=100)
 # Schema(word:str='dolor', digit:int=200)
 ```
+
 ## from_crop_rule
 Split string by crop_rule method and return schema object
-* markup – target string for parsing
-* crop_rule – crop rule function to *part*.
-* **kwargs - any keyword arguments for setattr in schema
 
+### Params
+- `markup: str` – target string for parsing
+- `crop_rule: Callable[[str], str]` – crop rule function to **one part**.
+- `**kwargs: Any` - any keyword arguments for setattr in schema
+
+### Example
 ```python
 from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
@@ -91,10 +104,12 @@ print(Schema.from_crop_rule(markup, crop_rule=lambda s: s.split("; ")[-1]))
 ```
 ## from_crop_rule_list
 
-* markup – target string for parsing
-* crop_rule – crop rule function to *part***S**.
-* **kwargs - any keyword arguments for setattr in schema
+### Params
+* `markup: str` – target string for parsing
+* `crop_rule: Callable[[str], Iterable[str]]` – crop rule function to **parts**.
+* `**kwargs: Any` - keyword arguments for setattr in schema
 
+### Example
 ```python
 from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
@@ -119,10 +134,11 @@ print(*Schema.from_crop_rule_list(markup, crop_rule=lambda s: s.split("; ")), se
 Disable parse fields and set arguments manual. 
 
 Alias for `BaseSchema("", parse_markup=False, **kwargs)`
-* **kwargs - any keyword arguments for setattr in schema
+### Params
+- `**kwargs: Any` keyword arguments for setattr in schema
 
 >> Note: 
-> This method doesn't validate types and does not automatically typecast!
+> This method doesn't validate types and does not automatically typecast attributes!
 > 
 > This method is like a dataclass on minimal
 
@@ -140,8 +156,10 @@ class Schema(BaseSchema):
 
 print(Schema.from_kwargs(word="kwarg word", digit=0))
 # Schema(word:str='kwarg word', digit:int=0)
+
 print(Schema.from_kwargs(word={"spam": "egg"}, digit="lol", foo="bar"))
 # Schema(word:dict={'spam': 'egg'}, digit:str='lol', foo:str='bar')
+
 print(Schema.from_kwargs())
 # Schema()
 ```
@@ -149,8 +167,25 @@ print(Schema.from_kwargs())
 # Config
 `Config` (inherited from `BaseConfig`) class contains configurations in `BaseSchema`.
 
-* config_parser: dict[Type[Any], dict[str, Any]] - backend parsers confing. If you are using third party backends and don't
-specify them - the scheme throw `MarkupNotFoundError` exception in runtime.
+### Params
+- `config_parser: dict[Type[Any], dict[str, Any]]` - third-party parsers configurations. 
+If you are using third party libraries and don't specify them - 
+- the scheme throw `MarkupNotFoundError` exception in runtime.
+
+```python
+from selectolax.parser import HTMLParser
+from bs4 import BeautifulSoup
+
+from scrape_schema import BaseSchema, ScField
+from scrape_schema.fields.slax import SlaxSelect, SlaxSelectList
+
+class Schema(BaseSchema):
+    title: ScField[str, SlaxSelect("title")]
+    a: ScField[list[str], SlaxSelectList("a")]
+    # ... any fields
+Schema("...")
+# MarkupNotFoundError
+```
 
 ```python
 # Add BeautifulSoup, selectolax parsers support
@@ -239,11 +274,12 @@ The base class of the field for interacting with the `BaseSchema`
 
 * `factory` - convert result value to another type/struct. Avoid type-casting feature
 
-| name  | callback arg           | scope                                | backend            |
-|-------|------------------------|--------------------------------------|--------------------|
-| regex | str                    | any text                             | re                 |
- | soup  | bs4.Tag                | bs4.BeautifulSoup, (html, xml)       | bs4                |
-| slax  | selectolax.parser.Node | selectolax.parser.HTMLParser, (html) | selectolax(Modest) |
+| name   | callback arg                  | scope                                | parser lib         |
+|--------|-------------------------------|--------------------------------------|--------------------|
+| regex  | str                           | any text                             | re                 |
+ | soup   | bs4.Tag                       | bs4.BeautifulSoup, (html, xml)       | bs4                |
+| slax   | selectolax.parser.Node        | selectolax.parser.HTMLParser, (html) | selectolax(Modest) |
+| parsel | parsel.selector._SelectorType | parsel.Selector, (html, xml)         | parsel             |
 
 # type-casting
 If in `Config` class set `type_casting = True`, then the scheme will try auto cast in the simple types.

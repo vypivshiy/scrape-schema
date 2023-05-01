@@ -1,10 +1,73 @@
 # nested
-Usage for generate complex schemas structures
+The `Nested` and `NestedList` fields allow for the nested extraction of data by defining a sub-schema. 
+These fields can be used when the target data contains substructures that can be parsed as separate schemas, 
+and then combined with the parent schema.
 
-* schema - type schema class 
-* crop_rule - split text rule 
-* factory - optional rule for conversions to a different type/struct
+# Nested
+## Params:
+* `schema: Type[BaseSchema]` - Child Schema class
+* `crop_rule: Callable[[str], str]` - split text to part function 
+* `factory: Optional[Callable[[BaseSchema], Any]]` - optional rule for conversions to a different type/struct
+## Usage
+```python
+from scrape_schema import BaseSchema, ScField
+from scrape_schema.fields.regex import ReMatch
+from scrape_schema.fields import Nested
 
+TEXT = "dolor 100; John Wick 0 old"
+
+class Person(BaseSchema):
+    name: ScField[str, ReMatch(r"([A-Z][a-z]+ [A-Z][a-z]+)")]
+    age: ScField[int, ReMatch(r"(\d+)")]
+
+class Schema(BaseSchema):
+    name: ScField[Person, Nested(Person, crop_rule=lambda s: s.split("; ")[-1])]
+    name_values: ScField[tuple[str, int], Nested(Person, 
+                                     crop_rule=lambda s: s.split("; ")[-1],
+                                     factory=lambda sc: tuple(sc.dict().values()))]
+    word: ScField[str, ReMatch(r"(\w+)")]
+    digit: ScField[float, ReMatch(r"(\d+)")]
+
+print(Schema(TEXT))
+# Schema(name=Person(name:str='John Wick', age:int=0), 
+# name_values:tuple=('John Wick', 0), word:str='dolor', digit:float=100.0)
+```
+
+# NestedList
+## Params
+* `schema: Type[BaseSchema]` - Child Schema class
+* `crop_rule: Callable[[str], List[str]]` - split text to parts function
+* `factory: Optional[Callable[[BaseSchema], Any]]` - optional rule for conversions to a different type/struct
+
+## Usage
+```python
+from typing import List
+from scrape_schema import BaseSchema, ScField
+from scrape_schema.fields.regex import ReMatch
+from scrape_schema.fields import NestedList
+
+TEXT = "name shop_list: Thing cost 1 dolors; Egg cost 0.5 dolors; Spam cost 5 dolors"
+
+class Item(BaseSchema):
+    name: ScField[str, ReMatch("([A-Z][a-z]+)")]
+    price: ScField[float, ReMatch("cost ((?<!\S)\d+(?:\.\d+)?(?!\S))")]
+
+
+class Schema(BaseSchema):
+    name: ScField[str, ReMatch(r"name (\w+)")]
+    items: ScField[List[Item], NestedList(Item, crop_rule=lambda s: s.split(": ")[-1].split("; "))]
+    expensive_item: ScField[Item, NestedList(Item, 
+                                             crop_rule=lambda s: s.split(": ")[-1].split("; "),
+                                             factory=lambda lst: max(lst, key=lambda sc: sc.price))]
+
+print(Schema(TEXT))
+# Schema(name:str='shop_list', 
+# items:list=[
+# Item(name:str='Thing', price:float=1.0), 
+# Item(name:str='Egg', price:float=0.5), 
+# Item(name:str='Spam', price:float=5.0)], 
+# expensive_item=Item(name:str='Spam', price:float=5.0))
+```
 # Example
 
 ```python

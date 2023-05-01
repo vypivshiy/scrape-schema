@@ -1,8 +1,8 @@
 # soup
-Usage [beautifulsoup4](https://beautiful-soup-4.readthedocs.io/en/latest/#searching-the-tree) backend
+Usage [beautifulsoup4](https://beautiful-soup-4.readthedocs.io/en/latest/#searching-the-tree) lib
 
 # Schema config
-this fields required bs4 configuration
+This fields required bs4 configuration
 
 ```python
 from bs4 import BeautifulSoup
@@ -14,113 +14,156 @@ class SoupSchema(BaseSchema):
         # can add extra configurations, or usage another parser
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
-    # pass fields.soup here
+    # past fields.soup here
     ...
 ```
 
-# SoupFind, SoupFindList
-* element - html tag or kwargs for find/find_all methods
+# Field methods
 
-## features
-this field can automatically convert sting html tag string to kwargs for this methods
+- `extract(self, markup: bs4.BeautifulSoup | Tag, type_: Optional[Type] = None) -> Any`: 
+Extracts data from the `bs4.BeautifulSoup` object and any provided callbacks and factories. Returns the extracted data.
 
-```python
-from scrape_schema.callbacks.soup import element_to_dict
+## Params
+- `markup: bs4.BeautifulSoup | Tag` - Soup object or Tag
+- `type_: Optional[Type] = str`: The type to cast the matched string(s) to. This is only used if `factory` 
+is not provided.
 
+# SoupFind
+Field provided [find()](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#find) method
 
-print(element_to_dict("<a>"))
-# {"name": "a"}
-print(element_to_dict('<div class="spam" id="100">'))
-# {"name": "div", "attrs": {"class": "spam", "id": "100"}}
-print(element_to_dict('<div class="spam egg foo">'))
-# {"name": "div", "attrs": {"class": ["spam", "egg", "foo"]}}
-print(element_to_dict('div class="spam"'))
-# TypeError: Element `div class="spam` is not valid HTML tag
-print(element_to_dict('scrape_schema'))
-# TypeError: Element `scrape_schema` is not valid HTML tag
-```
+## Params
+- `element: str | Dict[str, Any]]` -  html tag or keywords arguments for find method
+- `default: Optional[Any]` - default value, if tag not founded. Default `None`
+- `callback: Optional[Callable[[Tag], Union[str, Any]]]` - A function that transforms the `bs4.Tag` object into 
+another value. Default `get_text()`
+- `factory: Optional[Callable[[Union[str, Any]], Any]]` - A function that processes the value. 
+**Disable type-cast feature**. Default `None`
+## Usage
 
-```python
-from scrape_schema.fields.soup import SoupFind, SoupFindList
-
-
-SoupFind("<a>")  # {"name": "a"}
-SoupFindList('<div class="spam" id="0">')  # {"name": "div", "attrs": {"class":"spam", "id": "0"}}
-SoupFind("foobar") # raise TypeError
-```
-Also, you can simplify tag for search elements:
-
-```python
-from scrape_schema.fields.soup import SoupFind
-
-
-# find div tag with class="spam" tag like <div class="spam" foo="bar", href="/foo">
-# <div class="spam egg">
-# <div class="spam foo bar baz">
-# ...
-SoupFind('<div class="spam">')  # {"name": "div", "attrs": {"class":"spam"}}
-```
-
-If you need advanced features of `soup.find, soup.find_all` - pass the first parameter as a dictionary,
-```python
-import re
-from scrape_schema.fields.soup import SoupFind, SoupFindList
-
-
-ExampleField_1 = SoupFind({"name": "div", "class_": re.compile(r'^spam*')})
-ExampleField_2 = SoupFindList({"name": ["a", "p", "h1"]})
-...
-```
-
-# SoupSelect, SoupSelectList
-* selector - css selector
-
-```python
-from scrape_schema.fields.soup import SoupSelect, SoupSelectList
-
-SelectorExample = SoupSelect("body > div.spam > div.egg")
-SelectorExample_2 = SoupSelectList("div.spam > ul > li")
-```
-
-## callbacks
-fields.soup in callbacks, filter accept `Tag` object
-
-```python
-from scrape_schema.fields.soup import SoupFind, SoupSelect
-from scrape_schema.callbacks.soup import get_attr, get_text
-
-# get tag attribute
-ExampleCallback_1 = SoupFind("<a>", callback=get_attr("href"))
-ExampleCallback_2 = SoupSelect("div > img", callback=get_attr("src", default=''))
-
-# get text. is default callback
-ExampleCallback_3 = SoupFind("<div>", callback=get_text(separator=",", strip=True))
-```
-
-## crop_rules
-
-```python
-from scrape_schema.fields.nested import Nested, NestedList
-from scrape_schema.callbacks.soup import crop_by_tag, crop_by_tag_all, crop_by_selector, crop_by_selector_all
-
-# crop rules (Nested)
-Nested_1 = Nested(..., crop_rule=crop_by_tag('ul'))
-Nested_2 = Nested(..., crop_rule=crop_by_selector('body > div', features='lxml'))
-
-# crop selectors (NestedList)
-Nested_3 = NestedList(..., crop_rule=crop_by_tag_all('div'))
-Nested_4 = NestedList(..., crop_rule=crop_by_selector_all('body > div'))
-```
-
-## Example
-Without usage schema:
 ```python
 from bs4 import BeautifulSoup
-from scrape_schema.callbacks.soup import get_attr, get_text
-from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect, SoupSelectList
+from scrape_schema.fields.soup import SoupFind
+
+# convert html tag to soup keyword arguments feature
+SoupFind("<a>")
+# equivalent SoupFind({"name": "a"})
+SoupFind('<div class="spam" id="0">')
+# equivalent SoupFind({"name": "div", "attrs": {"class":"spam", "id": "0"}})
+SoupFind("foobar") # TypeError: "Element `foobar` is not valid HTML tag
+
 
 HTML = """
 <img src="/foo.png">foo</img>
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
+"""
+SOUP = BeautifulSoup(HTML, "html.parser")
+print(SoupFind("<img>").extract(SOUP)) # foo
+# same
+print(SoupFind({"name": "img"}).extract(SOUP)) # foo
+
+from scrape_schema.callbacks.soup import get_attr
+print(SoupFind("<img>", 
+               callback=get_attr("src")).extract(SOUP)) # "/foo.png"
+
+print(SoupFind('<p class="body-int">').extract(SOUP)) # "555"
+print(SoupFind('<p class="body-int">').extract(SOUP, type_=int)) # 555
+print(SoupFind('<p class="body-int">', factory=lambda v: int(v) * 2).extract(SOUP)) # 1110
+
+# find() method features (functions, regex) accepted
+import re
+print(SoupFind(
+    {"name": "p", 
+     "attrs": 
+         {"class": re.compile(r"int")}
+     }).extract(HTML)) # "555"
+```
+
+# SoupFindList
+Field provided [find_all()](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#find-all) method
+
+## Params:
+- `element: str | Dict[str, Any]]` -  html tag or keywords arguments for find method
+- `default: Optional[Any]` - default value, if tags not founded. Default `None`
+- `filter_: Optional[Callable[[Tag], bool]]` - A filter matched result. Default `None`
+- `callback: Optional[Callable[[Tag], Union[str, Any]]]` - A function that transforms the `bs4.Tag` object into 
+another value. Default `get_text()`
+- `factory: Optional[Callable[[Any], Any]]` - A function that processes the value. 
+**Disable type-cast feature**. Default `None`
+
+## Usage
+```python
+from bs4 import BeautifulSoup
+from scrape_schema.fields.soup import SoupFindList
+from scrape_schema.callbacks.soup import get_attr
+HTML = """
+<img src="/foo.png">foo</img>
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
+<img src="/bar.jpg">bar</img>
+<img src="/baz.png">baz</img>
+"""
+
+
+SOUP = BeautifulSoup(HTML, "html.parser")
+# SoupFindList have same feature: convert html tag to attrs
+SoupFindList("<a>")
+# equivalent SoupFind({"name": "a"})
+SoupFindList('<div class="spam" id="0">')
+# equivalent SoupFindList({"name": "div", "attrs": {"class":"spam", "id": "0"}})
+SoupFindList("foobar") # raise TypeError
+
+print(SoupFindList("<img>").extract(SOUP)) 
+# ["foo", "bar", "baz"]
+
+print(SoupFindList("<img>", callback=get_attr("src")).extract(SOUP)) 
+# ["/foo.png", "/bar.jpg", "/baz.png"]
+
+print(SoupFindList("<img>", 
+                   filter_=lambda t: not t.get("src").endswith(".jpg"),
+                   callback=get_attr("src")).extract(SOUP)) 
+# ["/foo.png", "/baz.png"]
+
+print(SoupFindList("<img>", 
+                   callback=get_attr("src"), 
+                   factory=lambda lst: [f"example.com{p}" for p in lst]
+                   ).extract(SOUP))
+# ["example.com/foo.png", "example.com/bar.jpg", "example.com/baz.png"]
+
+print(SoupFindList({"name": ["p", "a"]}, 
+                   filter_=lambda t: t.get_text().isdigit(),
+                   ).extract(SOUP, type_=list[int])
+      )
+# [555, 666, 777, 888]
+```
+
+
+# SoupSelect
+This field provided by [select_one()](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#css-selectors-through-the-css-property) method
+
+## Params:
+- `selector: str` - css selector
+- `default: Optional[Any]` - default value, if tag not founded. Default `None`
+- `callback: Optional[Callable[[Tag], Any]]` - A function that transforms the `bs4.Tag` object into 
+another value. Default `get_text()`
+- `factory: Optional[Callable[[Any], Any]]` - A function that processes the value. 
+**Disable type-cast feature**. Default `None`
+
+## Usage
+```python
+from bs4 import BeautifulSoup
+
+from scrape_schema.fields.soup import SoupSelect
+from scrape_schema.callbacks.soup import get_attr
+
+
+HTML = """
 <p class="body-string">test-string</p>
 <p class="body-int">555</p>
 <a class="body-list">666</a>
@@ -136,35 +179,263 @@ HTML = """
     <a class="sub-list">10</a>
     <a class="sub-list">20</a>
     <a class="sub-list">30</a>
+    <img src="/foo.png">foo</img>
   </div>
 </div>
 """
-Image = SoupFind("<img>", callback=get_attr("src"))
-AllPText = SoupFindList("<p>", filter_=lambda t: not(get_text()(t).isdigit()))
-SubList = SoupFindList('<a class="sub-list">')
-SelectSubDictA = SoupSelectList("div.sub-dict > a")
-SelectSubString = SoupSelect("div.sub-dict > p.sub-string")
 
-soup = BeautifulSoup(HTML, "html.parser")
+SOUP = BeautifulSoup(HTML, "html.parser")
+print(SoupSelect("div.dict > a.list").extract(SOUP))
+# "1"
 
-img: str = Image.extract(soup)
-p_lst: list[str] = AllPText.extract(soup)
-sub_list: list[int] = SubList.extract(soup, type_=list[int])
-sub_list_2: list[float] = SelectSubDictA.extract(soup, type_=list[float])
-sub_str: str = SelectSubString.extract(soup)
+print(SoupSelect("div.dict > a.list").extract(SOUP, type_=int))
+# 1
 
-print(img, p_lst, sub_list, sub_list_2, sub_str, sep="\n__\n")
+print(SoupSelect("div.sub-dict > p.sub-string").extract(SOUP))
+# "spam-1"
+
+print(SoupSelect("div.sub-dict > p.sub-string",
+                 factory=lambda s: s.upper()).extract(SOUP))
+# "SPAM-1"
+
+print(SoupSelect("div.dict > div.sub-dict > img", callback=get_attr("src")))
 # /foo.png
-# __
-# ['test-string', 'test-1', 'spam-1']
-# __
-# [10, 20, 30]
-# __
-# [10.0, 20.0, 30.0]
-# __
-# spam-1
+
 ```
-With schema:
+# SoupSelectList
+This field provided by [select()](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#css-selectors-through-the-css-property) method
+
+## Params:
+- `selector: str` - css selector
+- `default: Optional[Any]` - default value, if tag not founded. Default `None`
+- `filter_: Optional[Callable[[Tag], bool]]` - A filter matched result function. Default `None`
+- `callback: Optional[Callable[[Tag], Any]]` - A function that transforms the `bs4.Tag` object into 
+another value. Default `get_text()`
+- `factory: Optional[Callable[[List[Any]]], Any]` - A function that processes the value. 
+**Disable type-cast feature**. Default `None`
+
+## Usage
+```python
+from bs4 import BeautifulSoup
+
+from scrape_schema.fields.soup import SoupSelectList
+
+HTML = """
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
+<div class="dict">
+  <p class="string">test-1</p>
+  <a class="list">1</a>
+  <a class="list">2</a>
+  <a class="list">3</a>
+  <div class="sub-dict">
+    <p class="sub-string">spam-1</p>
+    <a class="sub-list">10</a>
+    <a class="sub-list">20</a>
+    <a class="sub-list">30</a>
+    <img src="/foo.png">foo</img>
+  </div>
+</div>
+"""
+
+SOUP = BeautifulSoup(HTML, "html.parser")
+
+print(SoupSelectList("div.dict > a.list").extract(SOUP))
+# ["1", "2", "3"]
+
+print(SoupSelectList("div.dict > div.sub-dict > a.list").extract(SOUP))
+# ["10", "20", "30"]
+
+print(SoupSelectList("div.dict > div.sub-dict > a.list"
+                     ).extract(SOUP, type_=list[int]))
+# [10, 20, 30]
+
+print(SoupSelectList("a", 
+                     filter_=lambda t: t.get_text().isdigit() and int(t.get_text()) <= 10,
+                     ).extract(SOUP, type_=list[int]))
+# [1, 2, 3, 10]
+
+```
+# scrape_schema.callbacks.soup
+this module contains most useful callbacks and crop rules
+
+## callbacks
+
+### get_text()
+get text from tag. This default callback in `fields.soup` module
+```python
+from bs4 import BeautifulSoup
+from scrape_schema.fields.soup import SoupFind, SoupFindList, SoupSelect,SoupSelectList
+from scrape_schema.callbacks.soup import get_text
+
+HTML = """
+<img src="/foo.png">foo</img>
+<p class="body-string">test-string</p>
+<p class="body-int">555</p>
+<a class="body-list">666</a>
+<a class="body-list">777</a>
+<a class="body-list">888</a>
+<img src="/bar.jpg">bar</img>
+<img src="/baz.png">baz</img>
+"""
+
+
+SOUP = BeautifulSoup(HTML, "html.parser")
+
+print(SoupFind("<p>").extract(SOUP))
+# test-string
+
+print(SoupFind("<p>", callback=get_text()).extract(SOUP)) # same
+# test-string
+
+print(SoupFindList("<p>").extract(SOUP))
+# ["test-string", "555"] 
+
+print(SoupSelect("p").extract(SOUP))
+# test-string
+
+print(SoupSelectList("p").extract(SOUP))
+# ["test-string", "555"]
+```
+### replace_text()
+get text from tag and invoke `str.replace()` method
+```python
+from bs4 import BeautifulSoup
+from scrape_schema.fields.soup import SoupSelect, SoupSelectList
+from scrape_schema.callbacks.soup import replace_text
+
+HTML = "<p>spamm-100</p>\n<p>spamm-200</p>"
+SOUP = BeautifulSoup(HTML, "html.parser")
+
+print(SoupSelect("p", callback=replace_text("spam", "egg")))
+# eggm-100
+
+print(SoupSelect("p", callback=replace_text("m", "n", 1)))
+# spanm-100
+
+print(SoupSelectList("p", callback=replace_text("spam", "egg")))
+# ["eggm-100", "eggm-200"]
+
+print(SoupSelectList("p", callback=replace_text("m", "n", 1)))
+# ["spanm-100", "spanm-200"] 
+
+```
+### element_to_dict()
+Convert html tag to soup keyword arguments. 
+Automatically init in `SoupFind`, `SoupFindList` constructors if argument **is string**.
+
+```python
+from scrape_schema.fields.soup import SoupFind
+from scrape_schema.callbacks.soup import element_to_dict
+SoupFind("<a>")  # same SoupFind({"name": "a"})
+SoupFind('<div class="spam"> id="100">')  # same SoupFind({"name": "div", "attrs": {"class": "spam", "id": "100"})
+
+print(element_to_dict("<a>"))
+# {"name": "a"}
+print(element_to_dict('<div class="spam"> id="100">'))
+# {"name": "div", "attrs": {"class": "spam", "id": "100"}
+
+print(element_to_dict("div > a"))
+# TypeError
+```
+
+### get_attr()
+get attribute value from Tag
+
+```python
+from bs4 import BeautifulSoup
+from scrape_schema.fields.soup import SoupSelect, SoupFindList
+from scrape_schema.callbacks.soup import get_attr
+HTML = '<a href="example.com/1">1</a>\n<a href="example.com/2">2</a>'
+
+SOUP = BeautifulSoup(HTML, "html.parser")
+
+print(SoupSelect("a", callback=get_attr("href")))
+# example.com/1
+
+print(SoupFindList("<a>", callback=get_attr("href")))
+# ["example.com/1", "example.com/2"]
+```
+
+## crop_rules
+this functions used in `fields.nested` fields
+
+### crop_by_tag
+crop string by tag to one part. This rule can be used in `Nested` field 
+
+```python
+from scrape_schema.callbacks.soup import crop_by_tag
+
+HTML = """
+<div class="a">
+<p>spam</p>
+</div>
+<div class="a">
+<p>egg</p>
+</div>
+"""
+print(crop_by_tag('<div class="a">')(HTML))
+# <div class="a">
+# <p>spam</p>
+# </div>
+```
+### crop_by_tag_all
+crop string by tag to parts. This rule can be used in `NestedList` field 
+
+```python
+from scrape_schema.callbacks.soup import crop_by_tag_all
+
+HTML = """
+<div class="a">
+<p>spam</p>
+</div>
+<div class="a">
+<p>egg</p>
+</div>
+"""
+print(crop_by_tag_all('<div class="a">')(HTML))
+# ['<div class="a">\n<p>spam</p>\n</div>', <div class="a">\n<p>egg</p>\n</div>]
+```
+
+### crop_by_selector
+crop string by css selector to one part. This rule can be used in `Nested` field 
+
+```python
+from scrape_schema.callbacks.soup import crop_by_selector
+HTML = """
+<div class="a">
+<p>spam</p>
+</div>
+<div class="a">
+<p>egg</p>
+</div>
+"""
+print(crop_by_selector('div.a')(HTML))
+# <div class="a">
+# <p>spam</p>
+# </div>
+```
+### crop_by_selector_all
+crop string by css selector to parts. This rule can be used in `NestedList` field
+```python
+from scrape_schema.callbacks.soup import crop_by_selector_all
+
+HTML = """
+<div class="a">
+<p>spam</p>
+</div>
+<div class="a">
+<p>egg</p>
+</div>
+"""
+print(crop_by_selector_all('div.a')(HTML))
+# ['<div class="a">\n<p>spam</p>\n</div>', <div class="a">\n<p>egg</p>\n</div>]
+```
+
+## Schema Usage
 ```python
 import pprint
 import re
@@ -248,8 +519,8 @@ class Schema(BaseSchema):
         parsers_config = {BeautifulSoup: {"features": "html.parser"}}
 
     # <title> param auto converts to {"name": "title"} params
-    title = SoupFind("<title>")
-    title_select = SoupSelect("head > title")
+    title: ScField[str, SoupFind("<title>")]
+    title_select: ScField[str, SoupSelect("head > title")]
     # usage build-in callback for get attribute
     lang: ScField[str, SoupFind("<html>", callback=get_attr("lang"))]
     lang_select: ScField[str, SoupSelect("html", callback=get_attr("lang"))]
@@ -333,3 +604,18 @@ if __name__ == '__main__':
     #  'title': 'TEST PAGE',
     #  'title_select': 'TEST PAGE'}
 ```
+# Reference:
+
+* https://beautiful-soup-4.readthedocs.io/en/latest/
+
+* https://beautiful-soup-4.readthedocs.io/en/latest/#find
+
+* https://beautiful-soup-4.readthedocs.io/en/latest/#find-all
+
+* https://beautiful-soup-4.readthedocs.io/en/latest/#a-regular-expression
+
+* https://beautiful-soup-4.readthedocs.io/en/latest/#a-list
+
+* https://beautiful-soup-4.readthedocs.io/en/latest/#a-function
+
+* https://beautiful-soup-4.readthedocs.io/en/latest/#css-selectors
