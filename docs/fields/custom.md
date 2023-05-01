@@ -49,7 +49,7 @@ class Schema(BaseSchema):
 
 ## Create new field
 Also, you can create your field based on `BaseField` and `BaseConfigField` 
-(MetaField required for configuration parser backend)
+(BaseFieldConfig required for configuration parser backend)
 
 Optionally, to use the library features, pass the following parameters to the constructor:
 
@@ -59,7 +59,7 @@ Optionally, to use the library features, pass the following parameters to the co
 * `default: Optional[Any] = None`
 
 ```python
-from typing import Optional, Any, Callable
+from typing import Optional, Any, Callable, Union, List
 from bs4 import BeautifulSoup
 
 from scrape_schema import BaseSchema, BaseFieldConfig, BaseSchemaConfig, ScField
@@ -96,7 +96,7 @@ class RawText(BaseField):
 
 
 class SoupImage(BaseField):
-    class Meta(BaseFieldConfig):
+    class Config(BaseFieldConfig):
         # markup parser rule config
         parser = BeautifulSoup
 
@@ -109,7 +109,7 @@ class SoupImage(BaseField):
                  default: Optional[str] = "empty"):
         super().__init__(factory=factory, filter_=filter_, callback=callback, default=default)
 
-    def _parse(self, markup: BeautifulSoup) -> str | Any:
+    def _parse(self, markup: BeautifulSoup) -> Union[str, Any]:
         return image.get("src") if (image := markup.find("img")) else self.default
 
 
@@ -121,7 +121,7 @@ class SoupImageList(SoupImage):
                  default: Optional[str] = "empty"):
         super().__init__(filter_=filter_, callback=callback, factory=factory, default=default)
 
-    def _parse(self, markup: BeautifulSoup) -> str | list[str]:
+    def _parse(self, markup: BeautifulSoup) -> Union[str, List[str]]:
         if images := markup.find_all("img"):
             return [tag.get("src") for tag in images]
         return []
@@ -136,7 +136,7 @@ class Schema(BaseSchema):
     images: ScField[list[str], SoupImageList()]
     images_png: ScField[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"))]
     images_png_full: ScField[list[str], SoupImageList(filter_=lambda s: s.endswith(".png"),
-                                                        callback=lambda s: "https://example.com" + s)]
+                                                      callback=lambda s: "https://example.com" + s)]
 
 
 if __name__ == '__main__':
