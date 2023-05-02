@@ -29,8 +29,7 @@ ____
 - [x] re
 - [x] bs4
 - [x] selectolax(Modest)
-- [ ] parsel
-- [ ] lxml
+- [x] parsel
 - [ ] selenium
 - [ ] playwright
 ____
