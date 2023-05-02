@@ -27,6 +27,8 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Tutorial:
+      - regex: tutorial/stdout_parse.md
   - BaseSchema: schema.md
   - Fields:
       - regex: fields/regex.md
