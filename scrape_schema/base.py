@@ -6,7 +6,6 @@ from typing import (
     Any,
     ByteString,
     Callable,
-    ClassVar,
     Dict,
     Iterable,
     List,
@@ -32,11 +31,10 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self
 
-from scrape_schema._field_hook import FieldHooks
+from scrape_schema._base_configs import BaseFieldConfig, BaseSchemaConfig
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
 NoneType = type(None)
-
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
 _formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
@@ -182,16 +180,6 @@ class TypeCaster:
                 "Cast `%s` := `%s(%s)`", self.__class__.__name__, type_hint, value
             )
             return type_hint(value)
-
-
-class BaseFieldConfig:
-    """BaseField configuration class:
-
-    * parser: Optional[Type[Any]] - parser backend object. If value None - work with python str
-    """
-
-    parser: ClassVar[Optional[Type[Any]]] = None
-    hooks: ClassVar["FieldHooks"] = FieldHooks()
 
 
 class BaseField(ABCField, TypeCaster):
@@ -434,29 +422,6 @@ class BaseField(ABCField, TypeCaster):
             f"{self.__class__.__name__}(default={self.default}, callback={self.callback}, "
             f"filter_={self.filter_}, factory={self.factory})"
         )
-
-
-class BaseSchemaConfig:
-    """Schema configuration for BaseSchema
-
-    parsers_config: dict[Type[Any], dict[str, Any]] parser classes for usage backend
-
-    type_cast: bool usage type casting feature. default True
-
-    fails_attempt: int - fields parse success counter checker. default -1 disable
-
-    fails_attempt < 0   - disable checker (default)
-
-    fails_attempt == 0  - if _first_ field return `default` value - throw `ParseFailAttemptsError`
-
-    fails_attempt = n, fails_attempt > 0 - print *n* warnings messages if field return `default` value.
-    if `n` msgs - throw `ParseFailAttemptsError`
-    """
-
-    parsers_config: ClassVar[Dict[Type[Any], Dict[str, Any]]] = {}
-    type_cast: ClassVar[bool] = True
-    fails_attempt: ClassVar[int] = -1
-    hooks_priority: ClassVar[bool] = True
 
 
 class SchemaMetaClass(type):
