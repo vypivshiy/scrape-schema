@@ -32,6 +32,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self
 
+from scrape_schema._field_hook import FieldHooks
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
 NoneType = type(None)
@@ -57,15 +58,33 @@ class ABCField(ABC):
         ...
 
     @abstractmethod
-    def _filter(self, value: T) -> bool:
+    def _filter(
+        self,
+        value: T,
+        *,
+        schema_instance: Optional["BaseSchema"] = None,
+        name: Optional[str] = None,
+    ) -> bool:
         ...
 
     @abstractmethod
-    def _factory(self, value: T) -> T:
+    def _factory(
+        self,
+        value: T,
+        *,
+        schema_instance: Optional["BaseSchema"] = None,
+        name: Optional[str] = None,
+    ) -> T:
         ...
 
     @abstractmethod
-    def _callback(self, value: T) -> T:
+    def _callback(
+        self,
+        value: T,
+        *,
+        schema_instance: Optional["BaseSchema"] = None,
+        name: Optional[str] = None,
+    ) -> T:
         ...
 
     @abstractmethod
@@ -172,6 +191,7 @@ class BaseFieldConfig:
     """
 
     parser: ClassVar[Optional[Type[Any]]] = None
+    hooks: ClassVar["FieldHooks"] = FieldHooks()
 
 
 class BaseField(ABCField, TypeCaster):
@@ -272,9 +292,10 @@ class BaseField(ABCField, TypeCaster):
         value = self._parse(markup)
         if not value:
             logger.debug(
-                "%s.%s: value not found, set default `%s` value",
+                "%s.%s: value is %s, set default `%s`",
                 instance.__class__.__name__,
                 name,
+                value,
                 self.default,
             )
             value = self.default
@@ -283,65 +304,117 @@ class BaseField(ABCField, TypeCaster):
                 "%s.%s := %s raw value(s)", instance.__class__.__name__, name, value
             )
 
-        if self._is_iterable_and_not_string_value(value):
-            value = self._filter(value)
-            if self.filter_:
-                logger.debug(
-                    "%s.%s := filter_(%s)", instance.__class__.__name__, name, value
-                )
-
-        value = self._callback(value)
-        if self.callback:
-            logger.debug(
-                "%s.%s := callback(%s)", instance.__class__.__name__, name, value
-            )
-
-        if self.factory:
-            value = self._factory(value)
-            logger.debug(
-                "%s.%s := factory(%s)", instance.__class__.__name__, name, value
-            )
+        value = self._filter(value, schema_instance=instance, name=name)
+        value = self._callback(value, schema_instance=instance, name=name)
+        if self.factory or self.Config.hooks.get_factory(name):
+            value = self._factory(value, schema_instance=instance, name=name)
         else:
             value = self._typing(instance, name, value)
         logger.info("%s.%s = `%s` Done", instance.__class__.__name__, name, value)
         return value
 
-    def _filter(self, value: T) -> Any:
+    def _filter(
+        self,
+        value: T,
+        *,
+        schema_instance: Optional["BaseSchema"] = None,
+        name: Optional[str] = None,
+    ) -> Any:
         """filter parsed value by filter_ function, if it passed
 
         :param value: list or dict value. dict filter by values
         :return: filtered value
         """
-        if self.filter_:
+        if schema_instance and name:
+            if schema_instance.Config.hooks_priority:
+                filter_ = self.Config.hooks.get_filter(name) or self.filter_
+            else:
+                filter_ = self.filter_ or self.Config.hooks.get_filter(name)
+        else:
+            filter_ = self.filter_
+
+        if filter_ and self._is_iterable_and_not_string_value(value):
+            logger.debug(
+                "%s.%s := filter_(%s)",
+                schema_instance.__class__.__name__
+                if schema_instance
+                else self.__class__.__name__,
+                name or "extract",
+                value,
+            )
             if isinstance(value, list):
-                return list(filter(self.filter_, value))
+                return list(filter(filter_, value))
             elif isinstance(value, dict):
-                return {k: v for k, v in value.items() if self.filter_(v)}
+                return {k: v for k, v in value.items() if filter_(v)}
         return value
 
-    def _factory(self, value: T) -> Any:
+    def _factory(
+        self,
+        value: T,
+        *,
+        schema_instance: Optional["BaseSchema"] = None,
+        name: Optional[str] = None,
+    ) -> Any:
         """factory result value entrypoint
 
         :param value: parsed value
         :return:
         """
-        return self.factory(value) if self.factory else value
+        if schema_instance and name:
+            if schema_instance.Config.hooks_priority:
+                factory = self.Config.hooks.get_factory(name) or self.factory
+            else:
+                factory = self.factory or self.Config.hooks.get_factory(name)
+        else:
+            factory = self.factory
+        if factory:
+            logger.debug(
+                "%s.%s := factory(%s)",
+                schema_instance.__class__.__name__
+                if schema_instance
+                else self.__class__.__name__,
+                name or "extract",
+                value,
+            )
+        return factory(value) if factory else value
 
-    def _callback(self, value: T) -> Any:
+    def _callback(
+        self,
+        value: T,
+        *,
+        schema_instance: Optional["BaseSchema"] = None,
+        name: Optional[str] = None,
+    ) -> Any:
         """eval value by callback function
 
         :param value:
         :return:
         """
-        if not self.callback:
+        if schema_instance and name:
+            if schema_instance.Config.hooks_priority:
+                callback = self.Config.hooks.get_callback(name) or self.callback
+            else:
+                callback = self.callback or self.Config.hooks.get_callback(name)
+        else:
+            callback = self.callback
+
+        if not callback:
             return value
+        logger.debug(
+            "%s.%s := callback(%s)",
+            schema_instance.__class__.__name__
+            if schema_instance
+            else self.__class__.__name__,
+            name or "extract",
+            value,
+        )
         if not self._is_iterable_and_not_string_value(value):
-            return self.callback(value)
+            return callback(value)
         if isinstance(value, list):
-            return [self.callback(i) for i in value]
+            return [callback(i) for i in value]
         elif isinstance(value, dict):
-            return {k: self.callback(v) for k, v in value}
-        return self.callback(value)
+            return {k: callback(v) for k, v in value}
+        return callback(value)
 
     def _typing(self, instance: "BaseSchema", name: str, value: T) -> Any:
         """auto type-cast method
@@ -383,6 +456,7 @@ class BaseSchemaConfig:
     parsers_config: ClassVar[Dict[Type[Any], Dict[str, Any]]] = {}
     type_cast: ClassVar[bool] = True
     fails_attempt: ClassVar[int] = -1
+    hooks_priority: ClassVar[bool] = True
 
 
 class SchemaMetaClass(type):
@@ -421,8 +495,8 @@ class SchemaMetaClass(type):
 
 
 class BaseSchema(metaclass=SchemaMetaClass):
-    __schema_fields__: Dict[str, Tuple[BaseField, ...]] = {}
-    __schema_annotations__: Dict[str, Type] = {}
+    __schema_fields__: Dict[str, Tuple[BaseField, ...]]
+    __schema_annotations__: Dict[str, Type]
 
     class Config(BaseSchemaConfig):
         pass
