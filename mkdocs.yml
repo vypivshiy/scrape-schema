@@ -37,3 +37,4 @@ nav:
       - slax: fields/slax.md
       - parsel: fields/parsel.md
       - custom: fields/custom.md
+  - Hooks: hooks.md
