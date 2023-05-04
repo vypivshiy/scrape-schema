@@ -1,4 +1,3 @@
-import logging
 import sys
 import warnings
 from abc import ABC, abstractmethod
@@ -33,14 +32,9 @@ else:
 
 from scrape_schema._base_configs import BaseFieldConfig, BaseSchemaConfig
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
+from scrape_schema._logger import logger
 
 NoneType = type(None)
-logger = logging.getLogger("scrape_schema")
-logger.setLevel(logging.DEBUG)
-_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-_stdout_handler = logging.StreamHandler()
-_stdout_handler.setFormatter(_formatter)
-logger.addHandler(_stdout_handler)
 
 T = TypeVar("T")
 MARKUP_TYPE: TypeAlias = Any
