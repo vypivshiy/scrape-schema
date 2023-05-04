@@ -1,6 +1,9 @@
 [![Hatch project](https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg)](https://github.com/pypa/hatch)
 [![Documentation Status](https://readthedocs.org/projects/scrape-schema/badge/?version=latest)](https://scrape-schema.readthedocs.io/en/latest/?badge=latest)
 ![CI](https://github.com/vypivshiy/scrape_schema/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/github/license/vypivshiy/scrape-schema)
+![Version](https://img.shields.io/pypi/v/scrape-schema)
+![Python-versions](https://img.shields.io/pypi/pyversions/scrape_schema)
 # Scrape-schema
 This library is designed to write structured, readable, 
 reusable parsers for unstructured text data (like html, stdout or any text) and
