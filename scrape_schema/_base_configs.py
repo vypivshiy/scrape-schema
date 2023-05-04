@@ -1,6 +1,6 @@
 from typing import Any, ClassVar, Dict, Optional, Type
 
-from scrape_schema._field_hook import FieldHooks
+from scrape_schema.hooks import HooksStorage
 
 
 class BaseFieldConfig:
@@ -10,7 +10,7 @@ class BaseFieldConfig:
     """
 
     parser: ClassVar[Optional[Type[Any]]] = None
-    hooks: ClassVar["FieldHooks"] = FieldHooks()
+    hooks: ClassVar["HooksStorage"] = HooksStorage()
 
 
 class BaseSchemaConfig:
@@ -28,6 +28,8 @@ class BaseSchemaConfig:
 
     fails_attempt = n, fails_attempt > 0 - print *n* warnings messages if field return `default` value.
     if `n` msgs - throw `ParseFailAttemptsError`
+
+    hooks_priority: bool - defined hooks overwrite Field attributes in params. Default True
     """
 
     parsers_config: ClassVar[Dict[Type[Any], Dict[str, Any]]] = {}

@@ -31,8 +31,8 @@ else:
     from typing_extensions import Self
 
 from scrape_schema._base_configs import BaseFieldConfig, BaseSchemaConfig
-from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 from scrape_schema._logger import logger
+from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
 NoneType = type(None)
 
