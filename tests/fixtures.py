@@ -2,6 +2,8 @@ from typing import Any
 
 from scrape_schema import BaseField
 from scrape_schema.base import MARKUP_TYPE
+from scrape_schema.fields.mock import MockField
+
 
 TEXT = """
 banana potato BANANA POTATO
@@ -67,11 +69,14 @@ HTML = """
 </html>
 """
 
-
-class MockField(BaseField):
-    def __init__(self, value: Any, **kwargs):
-        super().__init__(**kwargs)
-        self.value = value
-
-    def _parse(self, markup: MARKUP_TYPE) -> Any:
-        return self.value
+# for callbacks tests
+HTML_SHORT = """
+<div class="a">
+<p>spam</p>
+<a href="example.com/spam">spam</a>
+</div>
+<div class="a">
+<p>egg</p>
+<a href="example.com/egg">egg</a>
+</div>
+"""
