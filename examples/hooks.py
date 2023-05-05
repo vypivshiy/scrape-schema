@@ -19,13 +19,15 @@ class Schema(BaseSchema):
     digit: ScField[int, ReMatch(r"(\d+)")]
     digit_x10: ScField[int, ReMatch(r"(\d+)")]
 
+    # this static methods guaranteed works in python 3.10+ version
+    # in older maybe raise traceback, im not testing there
     @staticmethod
-    @hooks.on_callback("a_word", "b_word", "c_word")
+    @hooks.on_callback("Schema.a_word", "Schema.b_word", "Schema.c_word")
     def _upper_callback(val: str) -> str:
         return val.upper()
 
     @staticmethod
-    @hooks.on_callback("digit_x10")
+    @hooks.on_callback("Schema.digit_x10")
     def _my_callback(val: str):
         return int(val) * 10
 
