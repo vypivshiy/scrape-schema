@@ -4,8 +4,7 @@
 ![License](https://img.shields.io/github/license/vypivshiy/scrape-schema)
 ![Version](https://img.shields.io/pypi/v/scrape-schema)
 ![Python-versions](https://img.shields.io/pypi/pyversions/scrape_schema)
-[![codecov](https://codecov.io/github/vypivshiy/scrape-schema/branch/main/graph/badge.svg?token=jqSNuE7g5l)](https://codecov.io/github/vypivshiy/scrape-schema)
-
+[![codecov](https://codecov.io/gh/vypivshiy/scrape-schema/branch/master/graph/badge.svg?token=jqSNuE7g5l)](https://codecov.io/gh/vypivshiy/scrape-schema)
 # Scrape-schema
 This library is designed to write structured, readable, 
 reusable parsers for unstructured text data (like html, stdout or any text) and
