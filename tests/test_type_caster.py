@@ -52,4 +52,4 @@ def test_cast_direct():
     tc = TypeCaster()
     assert tc.cast(int, "1") == 1
     assert tc.cast(str, 1) == "1"
-    assert tc.cast(list[str], "spam") == ["s", "p", "a", "m"]
+    assert tc.cast(List[str], "spam") == ["s", "p", "a", "m"]
