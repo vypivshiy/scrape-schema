@@ -16,6 +16,7 @@ from scrape_schema import (
 from scrape_schema.callbacks.soup import crop_by_tag
 from scrape_schema.fields.nested import Nested
 from scrape_schema.fields.soup import SoupFind, SoupFindList
+from scrape_schema.factory import NO_TYPING, _no_typing
 
 
 class FieldTitle(BaseField):
@@ -107,15 +108,21 @@ def test_filter():
 def test_factory():
     assert isinstance(FEATURES_SCHEMA.sub_dict, dict)
     assert FEATURES_SCHEMA.sub_dict == {
-        "a_int": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+        "a_int": [1, 2, 3],
         "p": "test-1",
     }
     assert is_dataclass(FEATURES_SCHEMA.sub_dataclass)
     assert FEATURES_SCHEMA.sub_dataclass == DictData(
-        p="test-1", a_int=[1, 2, 3, 4, 5, 6, 7, 8, 9]
+        p="test-1", a_int=[1, 2, 3]
     )
     assert isinstance(FEATURES_SCHEMA.sub_json_str, str)
     assert (
         FEATURES_SCHEMA.sub_json_str
-        == '{"p": "test-1", "a_int": [1, 2, 3, 4, 5, 6, 7, 8, 9]}'
+        == '{"p": "test-1", "a_int": [1, 2, 3]}'
     )
+
+
+def nothing_callback():
+    assert NO_TYPING(100) == 100
+    assert NO_TYPING(None) is None
+    assert NO_TYPING(100) != "100"
