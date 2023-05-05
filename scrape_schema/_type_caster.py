@@ -1,17 +1,13 @@
 import sys
-
-from typing import Type, Iterable, ByteString, Any, Union
-
-from scrape_schema.base import get_args, get_origin
+from typing import Any, ByteString, Iterable, Type, Union
 
 from scrape_schema._logger import logger
+from scrape_schema.base import get_args, get_origin
 
 NoneType = type(None)
 
 
 class TypeCaster:
-
-
     def _typing_to_builtin(self, type_hint: Type) -> Type:
         origin = get_origin(type_hint)
         args = get_args(type_hint)

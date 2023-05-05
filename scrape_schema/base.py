@@ -31,10 +31,9 @@ else:
     from typing_extensions import Self
 
 from scrape_schema._base_configs import BaseFieldConfig, BaseSchemaConfig
-from scrape_schema._type_caster import TypeCaster
 from scrape_schema._logger import logger
+from scrape_schema._type_caster import TypeCaster
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
-
 
 T = TypeVar("T")
 MARKUP_TYPE: TypeAlias = Any
@@ -230,10 +229,14 @@ class BaseField(ABCField):
         """
         if schema_instance and name:
             if schema_instance.Config.hooks_priority:
-                hook = self.Config.hooks.get_filter(f"{schema_instance.__schema_name__}.{name}")
+                hook = self.Config.hooks.get_filter(
+                    f"{schema_instance.__schema_name__}.{name}"
+                )
                 filter_ = hook or self.filter_
             else:
-                hook = self.Config.hooks.get_filter(f"{schema_instance.__schema_name__}.{name}")
+                hook = self.Config.hooks.get_filter(
+                    f"{schema_instance.__schema_name__}.{name}"
+                )
                 filter_ = self.filter_ or hook
         else:
             filter_ = self.filter_
@@ -267,10 +270,14 @@ class BaseField(ABCField):
         """
         if schema_instance and name:
             if schema_instance.Config.hooks_priority:
-                hook = self.Config.hooks.get_factory(f"{schema_instance.__schema_name__}.{name}")
+                hook = self.Config.hooks.get_factory(
+                    f"{schema_instance.__schema_name__}.{name}"
+                )
                 factory = hook or self.factory
             else:
-                hook = self.Config.hooks.get_factory(f"{schema_instance.__schema_name__}.{name}")
+                hook = self.Config.hooks.get_factory(
+                    f"{schema_instance.__schema_name__}.{name}"
+                )
                 factory = self.factory or hook
         else:
             factory = self.factory
@@ -299,10 +306,14 @@ class BaseField(ABCField):
         """
         if schema_instance and name:
             if schema_instance.Config.hooks_priority:
-                hook = self.Config.hooks.get_callback(f"{schema_instance.__schema_name__}.{name}")
+                hook = self.Config.hooks.get_callback(
+                    f"{schema_instance.__schema_name__}.{name}"
+                )
                 callback = hook or self.callback
             else:
-                hook = self.Config.hooks.get_callback(f"{schema_instance.__schema_name__}.{name}")
+                hook = self.Config.hooks.get_callback(
+                    f"{schema_instance.__schema_name__}.{name}"
+                )
                 callback = self.callback or hook
         else:
             callback = self.callback
@@ -517,9 +528,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
                 fails_counter=_fails_counter, field=field, attr_name=name, value=value
             )
             setattr(self, name, value)
-        logger.debug(
-            "%s done! Fields fails: %i", self.__schema_name__, _fails_counter
-        )
+        logger.debug("%s done! Fields fails: %i", self.__schema_name__, _fails_counter)
 
     def __init__(self, markup: str, *, parse_markup: bool = True, **kwargs):
         """

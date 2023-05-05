@@ -14,9 +14,7 @@ HOOK_CALLBACK_EVERY_1 = FieldHook(callback=lambda s: 1)
 HOOK_GT_10 = FieldHookList(default=11, filter_=lambda val: int(val) > 10)
 
 
-@hooks.on_callback("SchemaHooks1.word_1",
-                   "SchemaHooks1.word_2",
-                   "SchemaHooks1.word_3")
+@hooks.on_callback("SchemaHooks1.word_1", "SchemaHooks1.word_2", "SchemaHooks1.word_3")
 def _word_callback(val: str):
     return f"hooked {val}"
 

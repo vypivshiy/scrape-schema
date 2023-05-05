@@ -1,15 +1,15 @@
-from typing import Generator, Optional, List
-from time import sleep
 import pprint
+from time import sleep
+from typing import Generator, List, Optional
 
 import requests
 from parsel import Selector
 
-from scrape_schema.hooks import HooksStorage
-from scrape_schema import BaseSchema, ScField, BaseSchemaConfig
-from scrape_schema.fields.parsel import ParselSelect
-from scrape_schema.fields.nested import NestedList
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.callbacks.parsel import crop_by_selector_all, get_attr, get_text
+from scrape_schema.fields.nested import NestedList
+from scrape_schema.fields.parsel import ParselSelect
+from scrape_schema.hooks import HooksStorage
 
 hooks = HooksStorage()
 
@@ -17,7 +17,9 @@ hooks = HooksStorage()
 def request_pagination(start: int = 1, end: int = 50) -> Generator[str, None, None]:
     """requests pagination generator"""
     for page in range(start, end + 1):
-        yield requests.get(f"https://books.toscrape.com/catalogue/page-{page}.html").text
+        yield requests.get(
+            f"https://books.toscrape.com/catalogue/page-{page}.html"
+        ).text
         sleep(0.3)
 
 
@@ -35,13 +37,7 @@ def _concat_image(sel: Selector) -> str:
 @hooks.on_callback("Book.rating")
 def _rating_callback(sel: Selector) -> Optional[int]:
     # create dict table for convert string to integer
-    ratings = {
-        "One": 1,
-        "Two": 2,
-        "Three": 3,
-        "Four": 4,
-        "Five": 5
-    }
+    ratings = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
     rating_key = sel.attrib.get("class").split()[-1]
     return ratings.get(rating_key)
 
@@ -65,11 +61,16 @@ class BookInfo(MainSchema):
 class Book(MainSchema):
     url: ScField[str, ParselSelect("div.image_container > a")]
     image: ScField[str, ParselSelect("div.image_container > a > img")]
-    rating: ScField[int, ParselSelect('p.star-rating')]
+    rating: ScField[int, ParselSelect("p.star-rating")]
     name: ScField[str, ParselSelect("h3 > a", callback=get_attr("title"))]
     price: ScField[float, ParselSelect("div.product_price > p.price_color")]
-    available: ScField[str, ParselSelect("div.product_price > p.instock.availability",
-                                         callback=get_text(deep=True, strip=True))]
+    available: ScField[
+        str,
+        ParselSelect(
+            "div.product_price > p.instock.availability",
+            callback=get_text(deep=True, strip=True),
+        ),
+    ]
 
     @property
     def about(self):
@@ -81,11 +82,15 @@ class Book(MainSchema):
 
 
 class CataloguePage(MainSchema):
-    books: ScField[List[Book],
-                   NestedList(Book,
-                              crop_rule=crop_by_selector_all(
-                                  "section > div > ol.row > li",
-                              ))]
+    books: ScField[
+        List[Book],
+        NestedList(
+            Book,
+            crop_rule=crop_by_selector_all(
+                "section > div > ol.row > li",
+            ),
+        ),
+    ]
 
 
 for resp in request_pagination():
