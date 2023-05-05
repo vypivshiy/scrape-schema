@@ -31,10 +31,10 @@ else:
     from typing_extensions import Self
 
 from scrape_schema._base_configs import BaseFieldConfig, BaseSchemaConfig
+from scrape_schema._type_caster import TypeCaster
 from scrape_schema._logger import logger
 from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
 
-NoneType = type(None)
 
 T = TypeVar("T")
 MARKUP_TYPE: TypeAlias = Any
@@ -84,99 +84,7 @@ class ABCField(ABC):
         ...
 
 
-class TypeCaster:
-    @staticmethod
-    def _is_iterable_and_not_string_type(value_type: Type) -> bool:
-        return issubclass(value_type, Iterable) and not issubclass(
-            value_type, (ByteString, str)
-        )
-
-    @staticmethod
-    def _is_iterable_and_not_string_value(value: T) -> bool:
-        return isinstance(value, Iterable) and not (
-            isinstance(value, (ByteString, str))
-        )
-
-    def _typing_to_builtin(self, type_hint: Type) -> Type:
-        origin = get_origin(type_hint)
-        args = get_args(type_hint)
-
-        if origin is not None and args:
-            # Recursively convert the nested generic types
-            converted_args = tuple(self._typing_to_builtin(arg) for arg in args)
-            return origin[converted_args]
-        else:
-            return type_hint
-
-    def _cast_type(self, type_hint: Type, value: Any) -> Any:
-        if sys.version_info >= (3, 9):
-            type_hint = self._typing_to_builtin(type_hint)
-
-        origin = get_origin(type_hint)
-        args = get_args(type_hint)
-        logger.info(
-            "`%s` Cast type start. `value=%s`, type_annotation=%s, `origin=%s`, `args=%s`",
-            self.__class__.__name__,
-            value,
-            type_hint,
-            origin,
-            args,
-        )
-        # None
-        if value is None and type_hint is not bool:
-            return value
-
-        if origin is not None and args:
-            # list
-            if origin is list:
-                logger.debug(
-                    "List cast %s -> arg=%s, value=%s",
-                    self.__class__.__name__,
-                    args[0],
-                    value,
-                )
-                return [self._cast_type(type_hint=args[0], value=v) for v in value]
-            # dict
-            elif origin is dict:
-                key_type, value_type = args
-                logger.debug(
-                    "Dict cast %s -> key=%s, value=%s  `%s`",
-                    self.__class__.__name__,
-                    key_type.__name__,
-                    value_type.__name__,
-                    value,
-                )
-                return {
-                    self._cast_type(type_hint=key_type, value=k): self._cast_type(
-                        type_hint=value_type, value=v
-                    )
-                    for k, v in value.items()
-                }
-            # Optional
-            elif origin is Union:
-                if value is None and NoneType in args:
-                    logger.debug(
-                        "Optional cast %s -> %s", self.__class__.__name__, value
-                    )
-                    return None
-                # in python3.8 raise TypeError: issubclass() arg 1 must be a class
-                # example _cast_type(Optional[List[int]], [])
-                non_none_args = [arg for arg in args if arg is not NoneType]
-                if len(non_none_args) == 1:
-                    return self._cast_type(type_hint=non_none_args[0], value=value)
-        # bool cast
-        elif type_hint is bool:
-            logger.debug("Cast %s `%s()` -> bool", self.__class__.__name__, value)
-            return bool(value)
-        else:
-            # direct cast
-            logger.debug(
-                "Cast `%s` := `%s(%s)`", self.__class__.__name__, type_hint, value
-            )
-            return type_hint(value)
-
-
-class BaseField(ABCField, TypeCaster):
+class BaseField(ABCField):
     class Config(BaseFieldConfig):
         pass
 
@@ -201,6 +109,7 @@ class BaseField(ABCField, TypeCaster):
         self.callback = callback
         self.filter_ = filter_
         self.default = default
+        self._type_caster = TypeCaster()
 
     @abstractmethod
     def _parse(self, markup: MARKUP_TYPE) -> Any:
@@ -210,6 +119,18 @@ class BaseField(ABCField, TypeCaster):
         :return: first parsed value
         """
         ...
+
+    @staticmethod
+    def _is_iterable_and_not_string_type(value_type: Type) -> bool:
+        return issubclass(value_type, Iterable) and not issubclass(
+            value_type, (ByteString, str)
+        )
+
+    @staticmethod
+    def _is_iterable_and_not_string_value(value: T) -> bool:
+        return isinstance(value, Iterable) and not (
+            isinstance(value, (ByteString, str))
+        )
 
     def extract(self, markup: MARKUP_TYPE, *, type_: Optional[Type] = None) -> Any:
         """parse markup without BaseSchema Instance
@@ -251,7 +172,7 @@ class BaseField(ABCField, TypeCaster):
             logger.debug("%s.extract `factory(%s)`", self.__class__.__name__, value)
             value = self._factory(value)
         elif type_:
-            value = self._cast_type(type_, value)
+            value = self._type_caster.cast(type_, value)
         logger.info(
             "%s.extract return `%s[%s]`",
             self.__class__.__name__,
@@ -408,7 +329,7 @@ class BaseField(ABCField, TypeCaster):
         """
         if instance.Config.type_cast:
             if type_annotation := instance.__schema_annotations__.get(name):
-                value = self._cast_type(type_annotation, value)
+                value = self._type_caster.cast(type_annotation, value)
         return value
 
     def __repr__(self):
