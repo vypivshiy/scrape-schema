@@ -121,7 +121,7 @@ def crop_by_tag(
 
     def wrapper(markup: str) -> str:
         soup = BeautifulSoup(markup, features=features, **soup_config)
-        return str(soup.find_all(**element))
+        return str(soup.find(**element))
 
     return wrapper
 
