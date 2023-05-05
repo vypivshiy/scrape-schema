@@ -1,13 +1,24 @@
 import pytest
 from bs4 import Tag
-from scrape_schema.callbacks.soup import (element_to_dict, get_attr, get_text, replace_text,
-                                          crop_by_tag, crop_by_tag_all, crop_by_selector,
-                                          crop_by_selector_all)
+
+from scrape_schema.callbacks.soup import (
+    crop_by_selector,
+    crop_by_selector_all,
+    crop_by_tag,
+    crop_by_tag_all,
+    element_to_dict,
+    get_attr,
+    get_text,
+    replace_text,
+)
 
 
 def test_element_to_dict():
     assert element_to_dict("<p>") == {"name": "p", "attrs": {}}
-    assert element_to_dict('<a id="1" class="thing">') == {"name": "a", "attrs": {"id": "1", "class": "thing"}}
+    assert element_to_dict('<a id="1" class="thing">') == {
+        "name": "a",
+        "attrs": {"id": "1", "class": "thing"},
+    }
 
 
 def test_raise_element_to_dict():
@@ -56,8 +67,10 @@ def test_crop_by_tag():
     """
     assert crop_by_tag("<p>")(markup) == "<p>First paragraph.</p>"
     assert crop_by_tag({"name": "p"})(markup) == "<p>First paragraph.</p>"
-    assert crop_by_tag({"name": "div", "attrs": {"id": "content"}})(
-        markup) == '<div id="content">\n<p>First paragraph.</p>\n<p>Second paragraph.</p>\n</div>'
+    assert (
+        crop_by_tag({"name": "div", "attrs": {"id": "content"}})(markup)
+        == '<div id="content">\n<p>First paragraph.</p>\n<p>Second paragraph.</p>\n</div>'
+    )
 
 
 def test_crop_by_tag_all():
@@ -72,8 +85,14 @@ def test_crop_by_tag_all():
         </body>
     </html>
     """
-    assert crop_by_tag_all("<p>")(markup) == ["<p>First paragraph.</p>", "<p>Second paragraph.</p>"]
-    assert crop_by_tag_all({"name": "p"})(markup) == ["<p>First paragraph.</p>", "<p>Second paragraph.</p>"]
+    assert crop_by_tag_all("<p>")(markup) == [
+        "<p>First paragraph.</p>",
+        "<p>Second paragraph.</p>",
+    ]
+    assert crop_by_tag_all({"name": "p"})(markup) == [
+        "<p>First paragraph.</p>",
+        "<p>Second paragraph.</p>",
+    ]
 
 
 def test_crop_by_selector():
@@ -89,8 +108,10 @@ def test_crop_by_selector():
     </html>
     """
     assert crop_by_selector("p")(markup) == "<p>First paragraph.</p>"
-    assert crop_by_selector("#content")(
-        markup) == '<div id="content">\n<p>First paragraph.</p>\n<p>Second paragraph.</p>\n</div>'
+    assert (
+        crop_by_selector("#content")(markup)
+        == '<div id="content">\n<p>First paragraph.</p>\n<p>Second paragraph.</p>\n</div>'
+    )
 
 
 def test_crop_by_selector_all():
@@ -105,9 +126,13 @@ def test_crop_by_selector_all():
         </body>
     </html>
     """
-    assert crop_by_selector_all("p")(markup) == ['<p>First paragraph.</p>', '<p>Second paragraph.</p>']
-    assert crop_by_selector_all("#content")(
-        markup) == ['<div id="content">\n'
-                    '<p>First paragraph.</p>\n'
-                    '<p>Second paragraph.</p>\n'
-                    '</div>']
+    assert crop_by_selector_all("p")(markup) == [
+        "<p>First paragraph.</p>",
+        "<p>Second paragraph.</p>",
+    ]
+    assert crop_by_selector_all("#content")(markup) == [
+        '<div id="content">\n'
+        "<p>First paragraph.</p>\n"
+        "<p>Second paragraph.</p>\n"
+        "</div>"
+    ]

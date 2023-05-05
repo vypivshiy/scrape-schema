@@ -1,8 +1,15 @@
 import pytest
 from parsel import Selector
-from scrape_schema.callbacks.parsel import (crop_by_selector, crop_by_selector_all,
-                              crop_by_xpath, crop_by_xpath_all, get_attr,
-                              get_text, replace_text)
+
+from scrape_schema.callbacks.parsel import (
+    crop_by_selector,
+    crop_by_selector_all,
+    crop_by_xpath,
+    crop_by_xpath_all,
+    get_attr,
+    get_text,
+    replace_text,
+)
 
 
 def test_get_text():
@@ -39,7 +46,10 @@ def test_crop_by_selector():
     </html>
     """
     assert crop_by_selector("p")(markup) == "<p>First paragraph.</p>"
-    assert crop_by_selector("#content")(markup) == '<div id="content">\n                <p>First paragraph.</p>\n                <p>Second paragraph.</p>\n            </div>'
+    assert (
+        crop_by_selector("#content")(markup)
+        == '<div id="content">\n                <p>First paragraph.</p>\n                <p>Second paragraph.</p>\n            </div>'
+    )
 
 
 def test_crop_by_selector_all():
@@ -54,7 +64,10 @@ def test_crop_by_selector_all():
         </body>
     </html>
     """
-    assert crop_by_selector_all("p")(markup) == ["<p>First paragraph.</p>", "<p>Second paragraph.</p>"]
+    assert crop_by_selector_all("p")(markup) == [
+        "<p>First paragraph.</p>",
+        "<p>Second paragraph.</p>",
+    ]
 
 
 def test_crop_by_xpath():
@@ -70,8 +83,10 @@ def test_crop_by_xpath():
     </html>
     """
     assert crop_by_xpath("//p")(markup) == "<p>First paragraph.</p>"
-    assert crop_by_xpath("//*[@id='content']")(
-        markup) == '<div id="content">\n                <p>First paragraph.</p>\n                <p>Second paragraph.</p>\n            </div>'
+    assert (
+        crop_by_xpath("//*[@id='content']")(markup)
+        == '<div id="content">\n                <p>First paragraph.</p>\n                <p>Second paragraph.</p>\n            </div>'
+    )
 
 
 def test_crop_by_xpath_all():
@@ -86,7 +101,10 @@ def test_crop_by_xpath_all():
         </body>
     </html>
     """
-    assert crop_by_xpath_all("//p")(markup) == ["<p>First paragraph.</p>", "<p>Second paragraph.</p>"]
+    assert crop_by_xpath_all("//p")(markup) == [
+        "<p>First paragraph.</p>",
+        "<p>Second paragraph.</p>",
+    ]
 
 
 def test_fail_crop_by_selector():

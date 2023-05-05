@@ -4,7 +4,6 @@ from scrape_schema import BaseField
 from scrape_schema.base import MARKUP_TYPE
 from scrape_schema.fields.mock import MockField
 
-
 TEXT = """
 banana potato BANANA POTATO
 -foo:10

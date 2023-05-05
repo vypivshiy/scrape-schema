@@ -1,5 +1,7 @@
-import pytest
 from typing import Dict, List, Optional, Union
+
+import pytest
+
 from scrape_schema._type_caster import TypeCaster
 
 
@@ -17,8 +19,15 @@ def test_cast_list():
 
 def test_cast_dict():
     tc = TypeCaster()
-    assert tc.cast(Dict[str, int], {"a": "1", "b": "2", "c": "3"}) == {"a": 1, "b": 2, "c": 3}
-    assert tc.cast(Dict[str, List[int]], {"a": ["1", "2"], "b": ["3", "4"]}) == {"a": [1, 2], "b": [3, 4]}
+    assert tc.cast(Dict[str, int], {"a": "1", "b": "2", "c": "3"}) == {
+        "a": 1,
+        "b": 2,
+        "c": 3,
+    }
+    assert tc.cast(Dict[str, List[int]], {"a": ["1", "2"], "b": ["3", "4"]}) == {
+        "a": [1, 2],
+        "b": [3, 4],
+    }
 
 
 def test_cast_optional():

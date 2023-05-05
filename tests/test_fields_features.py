@@ -14,9 +14,9 @@ from scrape_schema import (
     ScField,
 )
 from scrape_schema.callbacks.soup import crop_by_tag
+from scrape_schema.factory import NO_TYPING, _no_typing
 from scrape_schema.fields.nested import Nested
 from scrape_schema.fields.soup import SoupFind, SoupFindList
-from scrape_schema.factory import NO_TYPING, _no_typing
 
 
 class FieldTitle(BaseField):
@@ -112,14 +112,9 @@ def test_factory():
         "p": "test-1",
     }
     assert is_dataclass(FEATURES_SCHEMA.sub_dataclass)
-    assert FEATURES_SCHEMA.sub_dataclass == DictData(
-        p="test-1", a_int=[1, 2, 3]
-    )
+    assert FEATURES_SCHEMA.sub_dataclass == DictData(p="test-1", a_int=[1, 2, 3])
     assert isinstance(FEATURES_SCHEMA.sub_json_str, str)
-    assert (
-        FEATURES_SCHEMA.sub_json_str
-        == '{"p": "test-1", "a_int": [1, 2, 3]}'
-    )
+    assert FEATURES_SCHEMA.sub_json_str == '{"p": "test-1", "a_int": [1, 2, 3]}'
 
 
 def nothing_callback():

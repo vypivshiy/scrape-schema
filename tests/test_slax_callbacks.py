@@ -1,7 +1,13 @@
 import pytest
-from selectolax.parser import Node, HTMLParser
-from scrape_schema.callbacks.slax import (crop_by_slax, crop_by_slax_all, get_attr, get_text,
-                                          replace_text)
+from selectolax.parser import HTMLParser, Node
+
+from scrape_schema.callbacks.slax import (
+    crop_by_slax,
+    crop_by_slax_all,
+    get_attr,
+    get_text,
+    replace_text,
+)
 
 
 def test_crop_by_slax():
@@ -17,8 +23,10 @@ def test_crop_by_slax():
     </html>
     """
     assert crop_by_slax("p")(markup) == "<p>First paragraph.</p>"
-    assert crop_by_slax("#content")(
-        markup) == '<div id="content">\n                <p>First paragraph.</p>\n                <p>Second paragraph.</p>\n            </div>'
+    assert (
+        crop_by_slax("#content")(markup)
+        == '<div id="content">\n                <p>First paragraph.</p>\n                <p>Second paragraph.</p>\n            </div>'
+    )
 
 
 def test_crop_by_slax_all():
@@ -33,7 +41,10 @@ def test_crop_by_slax_all():
         </body>
     </html>
     """
-    assert crop_by_slax_all("p")(markup) == ["<p>First paragraph.</p>", "<p>Second paragraph.</p>"]
+    assert crop_by_slax_all("p")(markup) == [
+        "<p>First paragraph.</p>",
+        "<p>Second paragraph.</p>",
+    ]
 
 
 def test_get_attr():
