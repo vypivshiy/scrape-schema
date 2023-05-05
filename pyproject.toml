@@ -60,7 +60,8 @@ dependencies = [
   "pytest",
   "selectolax",
   "bs4",
-  "parsel"
+  "parsel",
+  "pytest-cov"
 ]
 
 [tool.hatch.envs.default.scripts]
