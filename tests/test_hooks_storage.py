@@ -14,7 +14,9 @@ HOOK_CALLBACK_EVERY_1 = FieldHook(callback=lambda s: 1)
 HOOK_GT_10 = FieldHookList(default=11, filter_=lambda val: int(val) > 10)
 
 
-@hooks.on_callback("word_1", "word_2", "word_3")
+@hooks.on_callback("SchemaHooks1.word_1",
+                   "SchemaHooks1.word_2",
+                   "SchemaHooks1.word_3")
 def _word_callback(val: str):
     return f"hooked {val}"
 
@@ -44,9 +46,9 @@ def test_hooks_storage_1():
 
 def test_hooks_storage_2():
     assert SchemaHooks2("").dict() == {
-        "word_1": "hooked spam2",
-        "word_2": "hooked egg2",
-        "word_3": "hooked baz2",
+        "word_1": "spam2",
+        "word_2": "egg2",
+        "word_3": "baz2",
         "word_4": "foo2",
     }
 

@@ -2,7 +2,7 @@
 This module contains hooks and structures for reusing callback functions in Fields
 
 # FieldHook, FieldHookList
-TypedDict structures that store values for fields
+TypedDict structures that store values for fields classes
 ## FieldHook
 ### Attributes:
 - `default: Optional[Any]` default attribute
@@ -90,7 +90,17 @@ class Config(BaseSchemaConfig):
     hooks_priority = False # disable hooks priority
 ```
 
->>> Note: decorator functions are called **by attribute name in all schemas** regardless of location
+## decorator hooks syntax:
+```
+hooks = HooksStorage()
+
+@hooks.on_<action>("<SchemaName>.<attribute_1>",
+                    "<SchemaName>.<attribute_2>",
+                    ...
+                    "<SchemaName>.<attribute_n>")
+def something_action(value):
+    ...
+```
 ## Methods
 - `on_filter(*attrs_names: str)` decorate `filter_` attribute for attr names in schemas
 
@@ -107,7 +117,8 @@ from scrape_schema.callbacks.soup import get_attr
 hooks = HooksStorage()
 
 
-@hooks.on_filter("hrefs", "urls")
+@hooks.on_filter("Schema1.hrefs", "Schema1.urls",
+                 "Schema2.hrefs", "Schema2.urls")
 def _is_example_netloc(tag: bs4.Tag):
     return tag.get("href").startswith("example.com")
 
@@ -171,7 +182,7 @@ from scrape_schema.fields.regex import ReMatch
 
 hooks = HooksStorage()
 
-@hooks.on_factory("word")
+@hooks.on_factory("Schema.word")
 def _to_reverse(val: str) -> str:
     return val[::-1]
 
@@ -190,24 +201,24 @@ from scrape_schema.fields.regex import ReMatch
 
 hooks = HooksStorage()
 
-@hooks.on_callback("word")
+@hooks.on_callback("Schema.word")
 def _upper(val: str) -> str:
     return val.upper()
 
-@hooks.on_filter("words")
+@hooks.on_filter("Schema.words")
 def _filter(val: str) -> bool:
     return len(val) > 5
 
-@hooks.on_factory("word")
+@hooks.on_factory("Schema.word")
 def _reverse(val: str) -> str:
     return val[::-1]
 
-hooks.get_callback("word")  # <function _upper at ...>
-hooks.get_callback("spam")  # None
-hooks.get_filter("words")  # <function _filter at ...>
-hooks.get_filter("eggs")  # None
-hooks.get_factory("word")  # <function _reverse at ...>
-hooks.get_factory("words")  # None
+hooks.get_callback("Schema.word")  # <function _upper at ...>
+hooks.get_callback("Schema.spam")  # None
+hooks.get_filter("Schema.words")  # <function _filter at ...>
+hooks.get_filter("Schema.eggs")  # None
+hooks.get_factory("Schema.word")  # <function _reverse at ...>
+hooks.get_factory("Schema.words")  # None
 
 ```
 - `add_hook(name: str, hook: FieldHook | FieldHookList)` - storage `FieldHook or FieldHookList` by name
