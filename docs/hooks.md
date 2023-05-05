@@ -165,7 +165,7 @@ from scrape_schema.fields.regex import ReMatch
 
 hooks = HooksStorage()
 
-@hooks.on_callback("word")
+@hooks.on_callback("Schema.word")
 def _upper(val: str) -> str:
     return val.upper()
 
