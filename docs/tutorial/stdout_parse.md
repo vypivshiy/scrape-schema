@@ -1,8 +1,10 @@
 # stdout parser
 >>> Note: in this tutorial there will be no theory of writing regular expressions. 
 > It assumes that you know how to write them.
-> For the initial writing of expressions, use [regex101](https://regex101.com/) service and official documentation 
-[regex how-to](https://docs.python.org/3.11/howto/regex.html#regex-howto)
+> 
+> [regex101](https://regex101.com/) this service helps write regular expressions 
+> 
+> [regex how-to](https://docs.python.org/3.11/howto/regex.html#regex-howto) official HOWTO documentation 
 
 Welcome to scrape_schema tutorial!
 
