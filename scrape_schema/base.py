@@ -46,7 +46,7 @@ def extract_fields(markup: MARKUP_TYPE, **fields: "BaseField") -> Dict[str, Any]
 class ABCField(ABC):
     @abstractmethod
     def _parse(self, markup: MARKUP_TYPE) -> Any:
-        ...
+        pass
 
     @abstractmethod
     def _filter(
@@ -56,7 +56,7 @@ class ABCField(ABC):
         schema_instance: Optional["BaseSchema"] = None,
         name: Optional[str] = None,
     ) -> bool:
-        ...
+        pass
 
     @abstractmethod
     def _factory(
@@ -66,7 +66,7 @@ class ABCField(ABC):
         schema_instance: Optional["BaseSchema"] = None,
         name: Optional[str] = None,
     ) -> T:
-        ...
+        pass
 
     @abstractmethod
     def _callback(
@@ -76,11 +76,11 @@ class ABCField(ABC):
         schema_instance: Optional["BaseSchema"] = None,
         name: Optional[str] = None,
     ) -> T:
-        ...
+        pass
 
     @abstractmethod
     def _typing(self, instance: "BaseSchema", name: str, value: T) -> T:
-        ...
+        pass
 
 
 class BaseField(ABCField):
@@ -405,12 +405,11 @@ class BaseSchema(metaclass=SchemaMetaClass):
         if self._get_parser(field_parser) is None:
             try:
                 raise MarkupNotFoundError(
-                    f"{field.__class__.__name__} required "
-                    f"{type(field_parser).__name__} configuration"
+                    f"{field.__class__.__name__} required {type(field_parser).__name__} configuration"
                 )
             except MarkupNotFoundError as e:
-                logger.exception(e)
-                raise e
+                logger.exception("{}", e)
+                raise
         return True
 
     @staticmethod
@@ -597,10 +596,6 @@ class BaseSchema(metaclass=SchemaMetaClass):
         elif isinstance(value, list):
             if all(isinstance(val, BaseSchema) for val in value):
                 return [val.dict() for val in value]
-
-        elif isinstance(value, dict):
-            if all(isinstance(val, BaseSchema) for val in value.values()):
-                return {k: v.dict() for k, v in value.items()}
         return value
 
     def raw_dict(self) -> Dict[str, Any]:
