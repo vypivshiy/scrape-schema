@@ -19,6 +19,12 @@ def test_get_text():
     assert get_text()(5) == 5
 
 
+def test_get_text_deep():
+    sel = Selector(text="<p>  Hello, <a>world!  </a></p>")
+    assert get_text(deep=True)(sel) == '  Hello, world!  '
+    assert get_text(deep=True, strip=True)(sel) == 'Hello, world!'
+
+
 def test_replace_text():
     sel = Selector(text="<p>Hello, world!</p>")
     assert replace_text("world", "Earth")(sel) == "Hello, Earth!"

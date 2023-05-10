@@ -42,3 +42,12 @@ def test_from_crop_rule_list():
         {"word": "lorem", "digit": 100},
         {"word": "dolor", "digit": 200},
     ]
+
+
+def test_ignore_parse_markup_kwarg():
+    class Schema(BaseSchema):
+        pass
+
+    assert Schema.from_kwargs(parse_markup="spam", a=1).raw_dict() == {"a": 1}
+    assert Schema.from_kwargs(parse_markup="spam", a=1).dict() == {}
+

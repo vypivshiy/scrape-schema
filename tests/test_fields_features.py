@@ -3,6 +3,10 @@ import re
 from dataclasses import dataclass, is_dataclass
 from typing import Any, Dict, List, Optional
 
+import pytest
+
+from scrape_schema.exceptions import MarkupNotFoundError
+
 from bs4 import BeautifulSoup
 from fixtures import HTML
 
@@ -34,6 +38,10 @@ class FieldSoupImages(BaseField):
         if results := markup.find_all("img"):
             return [element["src"] for element in results if element.get("src")]
         return []
+
+
+class RaiseSchema(BaseSchema):
+    a: ScField[str, SoupFind("<a>")]
 
 
 @dataclass
@@ -121,3 +129,8 @@ def nothing_callback():
     assert NO_TYPING(100) == 100
     assert NO_TYPING(None) is None
     assert NO_TYPING(100) != "100"
+
+
+def test_raise_markup_error():
+    with pytest.raises(MarkupNotFoundError):
+        RaiseSchema("spam")
