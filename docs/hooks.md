@@ -79,6 +79,9 @@ print(ReMatchList(r"(\d+)", **hook_filter_ge_10).extract("31", type_=list[int]))
 ```
 
 # FieldHooksStorage
+>>> Note: deprecated, usage @property decorator in `BaseSchema` classes instead
+
+
 Singleton class storage. 
 Sets the default field attributes globally. By default, callback functions take precedence over
 named arguments. if you need argument precedence, set `hooks_priority=False` in the `class Config`.

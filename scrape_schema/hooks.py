@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Callable, Dict, KeysView, Optional, Tuple, TypedDict, Union
 
 from scrape_schema._logger import logger
@@ -30,6 +31,9 @@ class HooksStorage:
     __field_hooks__: Dict[str, Union[FieldHook, FieldHookList]] = {}
 
     def __new__(cls):
+        warnings.warn(stacklevel=0, category=DeprecationWarning,
+                      message="HooksStorage will be deleted in next updates, use @property decorators in BaseSchema "
+                              "classes")
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
