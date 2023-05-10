@@ -105,6 +105,7 @@ files = "scrape_schema/*.py,scrape_schema/fields/*.py,scrape_schema/callbacks/*.
 filterwarnings = [
     "error",
     'ignore::RuntimeWarning',
+    'ignore::DeprecationWarning'
 ]
 
 
