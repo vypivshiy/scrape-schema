@@ -590,7 +590,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
         return cls("", parse_markup=False, **kwargs)
 
     @staticmethod
-    def _to_dict(value: Union["BaseSchema", list, Dict]):
+    def _to_dict(value: Union["BaseSchema", List, Dict, Any]):
         if isinstance(value, BaseSchema):
             return value.dict()
 
@@ -603,21 +603,45 @@ class BaseSchema(metaclass=SchemaMetaClass):
                 return {k: v.dict() for k, v in value.items()}
         return value
 
-    def dict(self) -> Dict[str, Any]:
+    def raw_dict(self) -> Dict[str, Any]:
         """convert schema object to python dict"""
         return {
             k: self._to_dict(v)
             for k, v in self.__dict__.items()
-            if not k.startswith("_") and k != "Config"
+            if k != "Config"
         }
 
+    def dict(self) -> Dict[str, Any]:
+        # parse properties
+        result: Dict[str, Any] = {
+            k: getattr(self, k)
+            for k, v in self.__class__.__dict__.items()
+            if isinstance(v, property)
+        }
+        # parse public field keys
+        for k, v in self.__dict__.items():
+            if not k.startswith("_") and self.__schema_fields__.get(k):
+                result[k] = self._to_dict(v)
+        return result
+
     def __repr_args__(self) -> List[str]:
+        # parse properties
+
+        args: Dict[str, Any] = {
+            k: getattr(self, k)
+            for k, v in self.__class__.__dict__.items()
+            if isinstance(v, property)
+        }
+        # parse public field keys
+        for k, v in self.__dict__.items():
+            if not k.startswith("_") and self.__schema_fields__.get(k):
+                args[k] = v
+
         return [
             f"{k}={repr(v)}"
             if isinstance(v, BaseSchema)
             else f"{k}:{type(v).__name__}={repr(v)}"
-            for k, v in self.__dict__.items()
-            if not k.startswith("_") and k != "Config"
+            for k, v in args.items()
         ]
 
     def __repr__(self):
