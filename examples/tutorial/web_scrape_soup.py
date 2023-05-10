@@ -1,5 +1,5 @@
 import pprint
-from typing import Generator
+from typing import Generator, Dict, List
 
 import requests
 from bs4 import BeautifulSoup
@@ -26,7 +26,7 @@ class MainSchema(BaseSchema):
 
 class Book(MainSchema):
     # convert class attr to int
-    __RATING: dict[str, int] = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    __RATING: Dict[str, int] = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
     _url_path: ScField[
         str, SoupSelect("div.image_container > a", callback=get_attr("href"))
     ]
@@ -63,12 +63,12 @@ class Book(MainSchema):
 
     @property
     def rating(self) -> int:
-        return self.__RATING.get(self._rating)
+        return self.__RATING.get(self._rating, 0)
 
 
 class CataloguePage(MainSchema):
     books: ScField[
-        list[Book],
+        List[Book],
         NestedList(
             Book,
             crop_rule=crop_by_selector_all(
