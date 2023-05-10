@@ -99,9 +99,7 @@ class ReMatchList(BaseField):
         self.group = group
 
     def _parse(self, markup: str) -> List[str]:
-        if matches := self.pattern.finditer(markup):
-            return [m.group(self.group) for m in matches]
-        return []
+        return [m.group(self.group) for m in self.pattern.finditer(markup)]
 
 
 class ReMatchDict(BaseField):
@@ -163,6 +161,4 @@ class ReMatchListDict(BaseField):
             raise AttributeError(f"{pattern.pattern} required named groups")  # type: ignore
 
     def _parse(self, markup: str) -> List[Dict[str, str]]:
-        if results := self.pattern.finditer(markup):
-            return [result.groupdict() for result in results]
-        return []
+        return [result.groupdict() for result in self.pattern.finditer(markup)]

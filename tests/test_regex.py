@@ -99,3 +99,21 @@ def test_values():
 )
 def test_re_parse(attr: str, result):
     assert getattr(RE_SCHEMA, attr) == result
+
+
+def test_raise_match_dict():
+    with pytest.raises(AttributeError):
+        ReMatchDict("\d+")
+
+
+def test_raise_match_list_dict():
+    with pytest.raises(AttributeError):
+        ReMatchListDict("\d+")
+
+
+def test_empty_match_list():
+    assert ReMatchList("(\d+)").extract("") is None
+
+
+def test_empty_match_list_dict():
+    assert ReMatchListDict("(?P<d>\d+)").extract("") is None

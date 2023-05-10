@@ -1,5 +1,7 @@
 from typing import List
 
+import pytest
+
 from fixtures import HTML
 from selectolax.parser import HTMLParser
 
@@ -110,3 +112,13 @@ def test_nested_list():
             "sub_dict": {"a": [70, 80, 90], "p": "spam-3"},
         },
     ]
+
+
+def test_raise_nested():
+    with pytest.raises(NotImplementedError):
+        Nested(SubDict, crop_rule=lambda _: _).extract("spam")
+
+
+def test_raise_nested_list():
+    with pytest.raises(NotImplementedError):
+        NestedList(SubDict, crop_rule=lambda _: _).extract("spam")
