@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from bs4 import BeautifulSoup, Tag
 
 RE_TAG_NAME = re.compile(r"<(\w+)")
-RE_TAG_ATTRS = re.compile(r'(?P<name>[\w_\-:.]+)="(?P<value>[\w_\-:.]+)"')
+RE_TAG_ATTRS = re.compile(r'(?P<name>[\w_\-:.]+)="(?P<value>[\w_\-:.\s]+)"')
 
 __all__ = [
     "get_attr",
@@ -46,7 +46,7 @@ def element_to_dict(
     tag_name = match.group(1)
     attrs = dict(RE_TAG_ATTRS.findall(element))
     if (klass := attrs.get("class")) and len(klass.split(" ")) != 1:
-        attrs["class"] = klass.split(" ")
+        attrs["class"] = klass.split()
     return {"name": tag_name, "attrs": attrs}
 
 
