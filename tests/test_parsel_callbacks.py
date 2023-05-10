@@ -21,8 +21,8 @@ def test_get_text():
 
 def test_get_text_deep():
     sel = Selector(text="<p>  Hello, <a>world!  </a></p>")
-    assert get_text(deep=True)(sel) == '  Hello, world!  '
-    assert get_text(deep=True, strip=True)(sel) == 'Hello, world!'
+    assert get_text(deep=True)(sel) == "  Hello, world!  "
+    assert get_text(deep=True, strip=True)(sel) == "Hello, world!"
 
 
 def test_replace_text():

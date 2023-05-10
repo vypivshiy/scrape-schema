@@ -4,9 +4,6 @@ from dataclasses import dataclass, is_dataclass
 from typing import Any, Dict, List, Optional
 
 import pytest
-
-from scrape_schema.exceptions import MarkupNotFoundError
-
 from bs4 import BeautifulSoup
 from fixtures import HTML
 
@@ -18,6 +15,7 @@ from scrape_schema import (
     ScField,
 )
 from scrape_schema.callbacks.soup import crop_by_tag
+from scrape_schema.exceptions import MarkupNotFoundError
 from scrape_schema.factory import NO_TYPING, _no_typing
 from scrape_schema.fields.nested import Nested
 from scrape_schema.fields.soup import SoupFind, SoupFindList

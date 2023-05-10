@@ -1,7 +1,6 @@
 from typing import List
 
 import pytest
-
 from fixtures import HTML
 from selectolax.parser import HTMLParser
 

@@ -50,4 +50,3 @@ def test_ignore_parse_markup_kwarg():
 
     assert Schema.from_kwargs(parse_markup="spam", a=1).raw_dict() == {"a": 1}
     assert Schema.from_kwargs(parse_markup="spam", a=1).dict() == {}
-
