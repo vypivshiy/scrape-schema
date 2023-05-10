@@ -21,6 +21,10 @@ def test_element_to_dict():
     }
 
 
+def test_crop_class_attr():
+    assert element_to_dict('<div class="spam egg">') == {"name": "div", "attrs": {"class": ["spam", "egg"]}}
+
+
 def test_raise_element_to_dict():
     with pytest.raises(TypeError):
         element_to_dict("#content > p")
