@@ -1,4 +1,4 @@
-from scrape_schema import ScField, BaseSchema
+from scrape_schema import BaseSchema, ScField
 from scrape_schema.fields.regex import ReMatch
 
 
@@ -29,15 +29,19 @@ PROP_SC = PropSchema("911 dolor spam")
 
 
 def test_prop_sc_dict():
-    assert PROP_SC.dict() == {'float_value': 911.0,
-                              'value_x2': 829921,
-                              'upper_word': 'DOLOR',
-                              'sentence': 'dolor spam',
-                              'public_value': 'spam'}
+    assert PROP_SC.dict() == {
+        "float_value": 911.0,
+        "value_x2": 829921,
+        "upper_word": "DOLOR",
+        "sentence": "dolor spam",
+        "public_value": "spam",
+    }
 
 
 def test_prop_sc_raw_dict():
-    assert PROP_SC.raw_dict() == {'_value_1': 911,
-                                  '_value_2': '911',
-                                  '_word': 'dolor',
-                                  'public_value': 'spam'}
+    assert PROP_SC.raw_dict() == {
+        "_value_1": 911,
+        "_value_2": "911",
+        "_word": "dolor",
+        "public_value": "spam",
+    }

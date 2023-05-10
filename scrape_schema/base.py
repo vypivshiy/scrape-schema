@@ -605,11 +605,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
 
     def raw_dict(self) -> Dict[str, Any]:
         """convert schema object to python dict"""
-        return {
-            k: self._to_dict(v)
-            for k, v in self.__dict__.items()
-            if k != "Config"
-        }
+        return {k: self._to_dict(v) for k, v in self.__dict__.items() if k != "Config"}
 
     def dict(self) -> Dict[str, Any]:
         # parse properties
