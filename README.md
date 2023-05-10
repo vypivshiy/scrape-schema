@@ -138,9 +138,6 @@ lorem upsum dolor
 
 class Schema(BaseSchema):
     ipv4: ScField[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
-    max_digit: ScField[int, ReMatchList(r"(\d+)",
-                                          callback=int,                                      
-                                          factory=max)]
     failed_value: ScField[bool, ReMatchList(r"(ora)", default=False)]
     digits: ScField[List[int], ReMatchList(r"(\d+)")]
     digits_float: ScField[List[float], ReMatchList(r"(\d+)", 
@@ -148,18 +145,25 @@ class Schema(BaseSchema):
     words_lower: ScField[List[str], ReMatchList(r"([a-z]+)")]
     words_upper: ScField[List[str], ReMatchList(r"([A-Z]+)")]
     
+    @property
+    def max_digit(self) -> int:
+        return max(self.digits)
+    
+    @property
+    def all_words(self) -> List[str]:
+        return self.words_lower + self.words_upper
+    
 if __name__ == '__main__':
     schema = Schema(TEXT)
-    pprint.pprint(schema.dict(), width=48, compact=True)
-    # {'digits': [10, 20, 192, 168, 0, 1],
-    #  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5,
-    #                   1.5],
+    pprint.pprint(schema.dict(), compact=True)
+    # {'all_words': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor',
+    #           'BANANA', 'POTATO'],
+    #  'digits': [10, 20, 192, 168, 0, 1],
+    #  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5, 1.5],
     #  'failed_value': False,
-    #  'ip_v4': '192.168.0.1',
+    #  'ipv4': '192.168.0.1',
     #  'max_digit': 192,
-    #  'words_lower': ['banana', 'potato', 'foo',
-    #                  'bar', 'lorem', 'upsum',
-    #                  'dolor'],
+    #  'words_lower': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor'],
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
 
