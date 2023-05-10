@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 import pytest
 
@@ -17,6 +17,21 @@ HOOK_GT_10 = FieldHookList(default=11, filter_=lambda val: int(val) > 10)
 @hooks.on_callback("SchemaHooks1.word_1", "SchemaHooks1.word_2", "SchemaHooks1.word_3")
 def _word_callback(val: str):
     return f"hooked {val}"
+
+
+@hooks.on_filter("SchemaHooks3.words")
+def _a_words_filter(val: str) -> bool:
+    return val.lower().startswith("a")
+
+
+# @hooks.on_factory("SchemaHooks3.sentence")
+# def _sentence_factory(vals: List[str]) -> str:
+#     return ", ".join(vals)
+
+
+class SchemaHooks3(BaseSchema):
+    words: ScField[List[str], MockField(["alorem", "dolor", "morgen", "aupsum"])]
+    sentence: ScField[str, MockField(["dolor", "morgen"])]
 
 
 class SchemaHooks1(BaseSchema):
@@ -70,3 +85,9 @@ def test_hooks_storage_2():
 )
 def test_structured_hooks(field: MockField, result):
     assert field.extract("") == result
+
+
+def test_decorated_hooks():
+    sc = SchemaHooks3("")
+    assert sc.words == ["alorem", "aupsum"]
+    # assert sc.sentence == "dolor morgen"
