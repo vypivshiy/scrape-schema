@@ -13,7 +13,7 @@
 > [bs4 documentation](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
 
 
-# Parsers library choice
+# Parser library choice
 
 At the time of writing the tutorial, fields with support `bs4`, `selectolax`, `parsel` libraries.
 Which one to choose or use depends on your circumstances and preferences, or you can use them
@@ -63,17 +63,17 @@ This tutorial will write implementations of parsers for all types of fields (exc
 >>> Lifehack: when you write a parser for a real project, download the html page as a file and experiment on it:
 > You can do this through a request with saving it to a file or 
 > in the browser on the page, right-click and select "Save As..."
-
-Recipe 1:
-```python
-import requests
-response = requests.get("https://books.toscrape.com/index.html")
-with open("page.html", "w") as f:
-    f.write(response.text)
-```
-
-Recipe 2:
-![img.png](imgs/save_page.png)
+>
+> Recipe 1:
+> ```python
+> import requests
+> response = requests.get("https://books.toscrape.com/index.html")
+> with open("page.html", "w") as f:
+>     f.write(response.text)
+> ```
+> 
+> Recipe 2:
+> ![img.png](imgs/save_page.png)
 
 # logging feature
 The logger is enabled at the `DEBUG` level by default for quick error detection reasons
@@ -235,7 +235,6 @@ print(crop_by_selector_all('div.a', features="lxml")(HTML))
 ## bs4
 ```python
 from typing import Generator
-from time import sleep
 import pprint
 
 import requests
@@ -253,7 +252,6 @@ def request_pagination(start: int =1, end: int = 50) -> Generator[str, None, Non
     """requests pagination generator"""
     for page in range(start, end + 1):
         yield requests.get(f"https://books.toscrape.com/catalogue/page-{page}.html").text
-        sleep(0.3)         
 
         
 class MainSchema(BaseSchema):
@@ -306,502 +304,350 @@ next, need enchant values:
 * rating - enchant to integer value
 * url - enchant path to full url
 
-## About HooksStorage
-HookStorage is a singleton class, has the following syntax for global binding of callback functions
-
-Has the following syntax:
-```
-hooks = HooksStorage()
-
-@hooks.on_<action>("<SchemaName>.<attribute_1>",
-                    "<SchemaName>.<attribute_2>",
-                    ...
-                    "<SchemaName>.<attribute_n>")
-def something_action(value):
-    ...
-```
-
-### Example: 
-```python
-from scrape_schema import ScField, BaseSchema
-from scrape_schema.hooks import HooksStorage
-from scrape_schema.fields.regex import ReMatch
-
-hooks = HooksStorage()
-
-@hooks.on_callback("Schema.word")
-def _upper(val: str) -> str:
-    return val.upper()
-
-class Schema(BaseSchema):
-    word: ScField[str, ReMatch(r"([a-z]+)")]
-
-
-class Schema2(BaseSchema):
-    word: ScField[str, ReMatch(r"([a-z]+)", callback=lambda s: s.upper())]
-    
-    
-class Schema3(BaseSchema):
-    word: ScField[str, ReMatch(r"([a-z]+)", callback=_upper)]
-    
-
-
-sc_1 = Schema("dolor")
-sc_2 = Schema2("dolor")
-sc_3 = Schema3("dolor")
-assert sc_1.dict() == sc_2.dict()
-assert sc_2.dict() == sc_3.dict()
-assert sc_1.dict() == sc_3.dict()
-print(sc_1, sc_2, sc_3, sep="\n")
-# Schema(word:str='DOLOR')
-# Schema2(word:str='DOLOR')
-# Schema3(word:str='DOLOR')
-```
-
-Schema, Schema2, Schema3 have the same value conversion logic!
-
 ## add enchant values
-
+you can easily convert the values. To do this, you need to create **properties** 
+and "hide" the initial values.
 ```python
-from typing import Generator, Optional
-from time import sleep
+from typing import Generator
 import pprint
 
-import bs4
 import requests
 from bs4 import BeautifulSoup
 
-from scrape_schema.hooks import HooksStorage
 from scrape_schema import BaseSchema, ScField, BaseSchemaConfig
 from scrape_schema.fields.soup import SoupSelect
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.callbacks.soup import crop_by_selector_all, get_attr, get_text
 
-hooks = HooksStorage()
+from scrape_schema.callbacks.soup import get_attr, crop_by_selector_all, get_text
 
 
 def request_pagination(start: int =1, end: int = 50) -> Generator[str, None, None]:
     """requests pagination generator"""
     for page in range(start, end + 1):
         yield requests.get(f"https://books.toscrape.com/catalogue/page-{page}.html").text
-        sleep(0.3)         
 
         
 class MainSchema(BaseSchema):
     class Config(BaseSchemaConfig):
+        # base schema configuration might be reused
         parsers_config = {BeautifulSoup: {"features": "lxml"}}
-        
-        
-@hooks.on_callback("Book.image")
-def _concat_image(tag: bs4.Tag) -> str:
-    # remove `..` symbols and concat url
-    return "https://books.toscrape.com" + tag.get("src")[2:]
-
-
-@hooks.on_callback("Book.rating")
-def _rating_callback(tag: bs4.Tag) -> Optional[int]:
-    # create dict table for convert string to integer
-    ratings = {
-        "One": 1,
-        "Two": 2,
-        "Three": 3,
-        "Four": 4,
-        "Five": 5
-    }
-    rating_key = tag.get("class")[-1]
-    return ratings.get(rating_key)
-
-
-@hooks.on_callback("Book.price")
-def _price_callback(tag: bs4.Tag) -> str:
-    # remove 2 chars and return string digit value 
-    # (it's automatically converted to float) 
-    return tag.get_text()[2:]
-
-
-@hooks.on_callback("Book.url")
-def _url_concat(tag: bs4.Tag) -> str:
-    return f"https://books.toscrape.com/catalogue/{tag.get('href')}"
-
-
-class BookInfo(MainSchema):
-    ...
 
 
 class Book(MainSchema):
-    url: ScField[str, SoupSelect("div.image_container > a")]
-    image: ScField[str, SoupSelect("div.image_container > a > img")]
-    rating: ScField[int, SoupSelect('p.star-rating')]
+    # convert class attr to int
+    __RATING = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    _url_path: ScField[str, SoupSelect("div.image_container > a", 
+                                 callback=get_attr("href"))]
+    _image_path: ScField[str, SoupSelect("div.image_container > a > img", 
+                                   callback=get_attr("src"))]
+    _rating: ScField[str, SoupSelect('p.star-rating',
+                                    callback=lambda tag: tag.get("class")[-1])]
     name: ScField[str, SoupSelect("h3 > a", callback=get_attr("title"))]
-    price: ScField[float, SoupSelect("div.product_price > p.price_color")]
+    _price: ScField[str, SoupSelect("div.product_price > p.price_color")]
     available: ScField[str, SoupSelect("div.product_price > p.instock.availability",
                                        callback=get_text(strip=True))]
     
     @property
-    def about(self):
-        # you can go to book url page and collect extra information,
-        # you can follow the link and parse more information like this construction, 
-        # this tutorial will not implement
-        response = requests.get(self.url).text
-        return BookInfo(response)
-
+    def url(self) -> str:
+        return f"https://books.toscrape.com/catalogue/{self._url_path}"
+    
+    @property
+    def image(self) -> str:
+        return f"https://books.toscrape.com{self._image_path[2:]}"
+    
+    @property
+    def price(self) -> float:
+        return float(self._price[2:])
+    
+    @property
+    def currency(self) -> str:
+        return self._price[1:2]
+    
+    @property
+    def rating(self) -> int:
+        return self.__RATING.get(self._rating)
+    
     
 class CataloguePage(MainSchema):
-    books: ScField[list[Book],
-                   NestedList(Book,
-                              crop_rule=crop_by_selector_all(
-                                  "section > div > ol.row > li",
-                              features="lxml"))]
+    books: ScField[
+        list[Book],
+        NestedList(Book,
+                   crop_rule=crop_by_selector_all("section > div > ol.row > li",
+                                                  features="lxml"))]
 
 
 for resp in request_pagination():
     pprint.pprint(CataloguePage(resp).dict(), compact=True)
-    sleep(1)
-# {'books': [{'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg',
-#             'name': 'A Light in the Attic',
-#             'price': 51.77,
-#             'rating': 3,
-#             'url': 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html'},
-#            {'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg',
-#             'name': 'Tipping the Velvet',
-#             'price': 53.74,
-#             'rating': 1,
-#             'url': 'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'},
-# ...
+    break
 ```
 
 # Alternative realisations
 
 ## selectolax
 ```python
-from typing import Generator, Optional, List
-from time import sleep
+from typing import Generator, List
 import pprint
 
 import requests
-from selectolax.parser import HTMLParser, Node
+from selectolax.parser import HTMLParser
 
-from scrape_schema.hooks import HooksStorage
 from scrape_schema import BaseSchema, ScField, BaseSchemaConfig
 from scrape_schema.fields.slax import SlaxSelect
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.callbacks.slax import crop_by_slax_all, get_attr, get_text
 
-hooks = HooksStorage()
+from scrape_schema.callbacks.slax import get_attr, crop_by_slax_all, get_text
 
 
 def request_pagination(start: int = 1, end: int = 50) -> Generator[str, None, None]:
     """requests pagination generator"""
     for page in range(start, end + 1):
         yield requests.get(f"https://books.toscrape.com/catalogue/page-{page}.html").text
-        sleep(0.3)
 
 
 class MainSchema(BaseSchema):
     class Config(BaseSchemaConfig):
+        # base schema configuration might be reused
         parsers_config = {HTMLParser: {}}
 
 
-@hooks.on_callback("Book.image")
-def _concat_image(node: Node) -> str:
-    # remove `..` symbols and concat url
-    return "https://books.toscrape.com" + node.attrs.get("src")[2:]
-
-
-@hooks.on_callback("Book.rating")
-def _rating_callback(node: Node) -> Optional[int]:
-    # create dict table for convert string to integer
-    ratings = {
-        "One": 1,
-        "Two": 2,
-        "Three": 3,
-        "Four": 4,
-        "Five": 5
-    }
-    rating_key = node.attrs.get("class").split()[-1]
-    return ratings.get(rating_key)
-
-
-@hooks.on_callback("Book.price")
-def _price_callback(node: Node) -> str:
-    # remove 2 chars and return string digit value
-    # (it's automatically converted to float)
-    return node.text(deep=False)[2:]
-
-
-@hooks.on_callback("Book.url")
-def _url_concat(node: Node) -> str:
-    return f"https://books.toscrape.com/catalogue/{node.attrs.get('href')}"
-
-
-class BookInfo(MainSchema):
-    ...
-
-
 class Book(MainSchema):
-    url: ScField[str, SlaxSelect("div.image_container > a")]
-    image: ScField[str, SlaxSelect("div.image_container > a > img")]
-    rating: ScField[int, SlaxSelect('p.star-rating')]
+    # convert class attr to int
+    __RATING = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    _url_path: ScField[str, SlaxSelect("div.image_container > a",
+                                       callback=get_attr("href"))]
+    _image_path: ScField[str, SlaxSelect("div.image_container > a > img",
+                                         callback=get_attr("src"))]
+    _rating: ScField[str, SlaxSelect('p.star-rating',
+                                     callback=lambda node: node.attrs.get("class").split()[-1])]
+    _price: ScField[str, SlaxSelect("div.product_price > p.price_color")]
     name: ScField[str, SlaxSelect("h3 > a", callback=get_attr("title"))]
-    price: ScField[float, SlaxSelect("div.product_price > p.price_color")]
     available: ScField[str, SlaxSelect("div.product_price > p.instock.availability",
                                        callback=get_text(strip=True))]
 
     @property
-    def about(self):
-        # you can go to book url page and collect extra information,
-        # you can follow the link and parse more information like this construction,
-        # this tutorial will not implement
-        response = requests.get(self.url).text
-        return BookInfo(response)
+    def url(self) -> str:
+        return f"https://books.toscrape.com/catalogue/{self._url_path}"
+
+    @property
+    def image(self) -> str:
+        return f"https://books.toscrape.com{self._image_path[2:]}"
+
+    @property
+    def price(self) -> float:
+        return float(self._price[2:])
+
+    @property
+    def currency(self) -> str:
+        return self._price[1:2]
+
+    @property
+    def rating(self) -> int:
+        return self.__RATING.get(self._rating, 0)
 
 
 class CataloguePage(MainSchema):
-    books: ScField[List[Book],
-                   NestedList(Book,
-                              crop_rule=crop_by_slax_all(
-                                  "section > div > ol.row > li",
-                                  ))]
+    books: ScField[
+        List[Book],
+        NestedList(Book,
+                   crop_rule=crop_by_slax_all("section > div > ol.row > li"))]
 
 
 for resp in request_pagination():
     pprint.pprint(CataloguePage(resp).dict(), compact=True)
-    sleep(1)
-# {'books': [{'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg',
-#             'name': 'A Light in the Attic',
-#             'price': 51.77,
-#             'rating': 3,
-#             'url': 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html'},
-#            {'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg',
-#             'name': 'Tipping the Velvet',
-#             'price': 53.74,
-#             'rating': 1,
-#             'url': 'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'},
-# ...
+    break
+    # {'books': [{'available': 'In stock',
+    #             'currency': '£',
+    #             'image': 'https://books.toscrape.com/media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg',
+    #             'name': 'A Light in the Attic',
+    #             'price': 51.77,
+    #             'rating': 3,
+    #             'url': 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html'},
+    #            {'available': 'In stock',
+    #             'currency': '£',
+    #             'image': 'https://books.toscrape.com/media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg',
+    #             'name': 'Tipping the Velvet',
+    #             'price': 53.74,
+    #             'rating': 1,
+    #             'url': 'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'},
+    # ...
 ```
-
 ## parsel
 
 ### css
 ```python
-from typing import Generator, Optional, List
-from time import sleep
+# Note: you can combine CSS and XPath selectors
+from typing import Generator, List
 import pprint
 
 import requests
 from parsel import Selector
 
-from scrape_schema.hooks import HooksStorage
 from scrape_schema import BaseSchema, ScField, BaseSchemaConfig
 from scrape_schema.fields.parsel import ParselSelect
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.callbacks.parsel import crop_by_selector_all, get_attr, get_text
 
-hooks = HooksStorage()
+from scrape_schema.callbacks.parsel import get_attr, crop_by_selector_all, get_text
 
 
 def request_pagination(start: int = 1, end: int = 50) -> Generator[str, None, None]:
     """requests pagination generator"""
     for page in range(start, end + 1):
         yield requests.get(f"https://books.toscrape.com/catalogue/page-{page}.html").text
-        sleep(0.3)
 
 
 class MainSchema(BaseSchema):
     class Config(BaseSchemaConfig):
+        # base schema configuration might be reused
         parsers_config = {Selector: {}}
 
 
-@hooks.on_callback("Book.image")
-def _concat_image(sel: Selector) -> str:
-    # remove `..` symbols and concat url
-    return "https://books.toscrape.com" + sel.attrib.get("src")[2:]
-
-
-@hooks.on_callback("Book.rating")
-def _rating_callback(sel: Selector) -> Optional[int]:
-    # create dict table for convert string to integer
-    ratings = {
-        "One": 1,
-        "Two": 2,
-        "Three": 3,
-        "Four": 4,
-        "Five": 5
-    }
-    rating_key = sel.attrib.get("class").split()[-1]
-    return ratings.get(rating_key)
-
-
-@hooks.on_callback("Book.price")
-def _price_callback(sel: Selector) -> str:
-    # remove 2 chars and return string digit value
-    # (it's automatically converted to float)
-    return sel.css("::text").get()[2:]
-
-
-@hooks.on_callback("Book.url")
-def _url_concat(sel: Selector) -> str:
-    return f"https://books.toscrape.com/catalogue/{sel.attrib.get('href')}"
-
-
-class BookInfo(MainSchema):
-    ...
-
-
 class Book(MainSchema):
-    url: ScField[str, ParselSelect("div.image_container > a")]
-    image: ScField[str, ParselSelect("div.image_container > a > img")]
-    rating: ScField[int, ParselSelect('p.star-rating')]
+    # convert class attr to int
+    __RATING = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    _url_path: ScField[str, ParselSelect("div.image_container > a",
+                                         callback=get_attr("href"))]
+    _image_path: ScField[str, ParselSelect("div.image_container > a > img",
+                                           callback=get_attr("src"))]
+    _rating: ScField[str, ParselSelect('p.star-rating',
+                                       callback=lambda css: css.attrib.get("class").split()[-1])]
+    _price: ScField[str, ParselSelect("div.product_price > p.price_color")]
     name: ScField[str, ParselSelect("h3 > a", callback=get_attr("title"))]
-    price: ScField[float, ParselSelect("div.product_price > p.price_color")]
     available: ScField[str, ParselSelect("div.product_price > p.instock.availability",
-                                         callback=get_text(deep=True, strip=True))]
+                                         callback=get_text(strip=True, deep=True))]
 
     @property
-    def about(self):
-        # you can go to book url page and collect extra information,
-        # you can follow the link and parse more information like this construction,
-        # this tutorial will not implement
-        response = requests.get(self.url).text
-        return BookInfo(response)
+    def url(self) -> str:
+        return f"https://books.toscrape.com/catalogue/{self._url_path}"
+
+    @property
+    def image(self) -> str:
+        return f"https://books.toscrape.com{self._image_path[2:]}"
+
+    @property
+    def price(self) -> float:
+        return float(self._price[2:])
+
+    @property
+    def currency(self) -> str:
+        return self._price[1:2]
+
+    @property
+    def rating(self) -> int:
+        return self.__RATING.get(self._rating, 0)
 
 
 class CataloguePage(MainSchema):
-    books: ScField[List[Book],
-                   NestedList(Book,
-                              crop_rule=crop_by_selector_all(
-                                  "section > div > ol.row > li",
-                              ))]
+    books: ScField[
+        List[Book],
+        NestedList(Book,
+                   crop_rule=crop_by_selector_all("section > div > ol.row > li"))]
 
 
 for resp in request_pagination():
     pprint.pprint(CataloguePage(resp).dict(), compact=True)
-    sleep(1)
-# {'books': [{'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg',
-#             'name': 'A Light in the Attic',
-#             'price': 51.77,
-#             'rating': 3,
-#             'url': 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html'},
-#            {'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg',
-#             'name': 'Tipping the Velvet',
-#             'price': 53.74,
-#             'rating': 1,
-#             'url': 'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'},
-# ...
+    break
+    # {'books': [{'available': 'In stock',
+    #             'currency': '£',
+    #             'image': 'https://books.toscrape.com/media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg',
+    #             'name': 'A Light in the Attic',
+    #             'price': 51.77,
+    #             'rating': 3,
+    #             'url': 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html'},
+    #            {'available': 'In stock',
+    #             'currency': '£',
+    #             'image': 'https://books.toscrape.com/media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg',
+    #             'name': 'Tipping the Velvet',
+    #             'price': 53.74,
+    #             'rating': 1,
+    #             'url': 'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'},
+    # ...
 ```
 ### xpath
 ```python
-from typing import Generator, Optional, List
-from time import sleep
+# Note: you can combine CSS and XPath selectors
+from typing import Generator, List
 import pprint
 
 import requests
 from parsel import Selector
 
-from scrape_schema.hooks import HooksStorage
 from scrape_schema import BaseSchema, ScField, BaseSchemaConfig
 from scrape_schema.fields.parsel import ParselXPath
 from scrape_schema.fields.nested import NestedList
-from scrape_schema.callbacks.parsel import crop_by_xpath_all, get_attr, get_text
 
-hooks = HooksStorage()
+from scrape_schema.callbacks.parsel import get_attr, crop_by_selector_all, get_text
 
 
 def request_pagination(start: int = 1, end: int = 50) -> Generator[str, None, None]:
     """requests pagination generator"""
     for page in range(start, end + 1):
         yield requests.get(f"https://books.toscrape.com/catalogue/page-{page}.html").text
-        sleep(0.3)
 
 
 class MainSchema(BaseSchema):
     class Config(BaseSchemaConfig):
+        # base schema configuration might be reused
         parsers_config = {Selector: {}}
 
 
-@hooks.on_callback("Book.image")
-def _concat_image(sel: Selector) -> str:
-    # remove `..` symbols and concat url
-    return "https://books.toscrape.com" + sel.attrib.get("src")[2:]
-
-
-@hooks.on_callback("Book.rating")
-def _rating_callback(sel: Selector) -> Optional[int]:
-    # create dict table for convert string to integer
-    ratings = {
-        "One": 1,
-        "Two": 2,
-        "Three": 3,
-        "Four": 4,
-        "Five": 5
-    }
-    rating_key = sel.attrib.get("class").split()[-1]
-    return ratings.get(rating_key)
-
-
-@hooks.on_callback("Book.price")
-def _price_callback(sel: Selector) -> str:
-    # remove 2 chars and return string digit value
-    # (it's automatically converted to float)
-    return sel.css("::text").get()[2:]
-
-
-@hooks.on_callback("Book.url")
-def _url_concat(sel: Selector) -> str:
-    return f"https://books.toscrape.com/catalogue/{sel.attrib.get('href')}"
-
-
-class BookInfo(MainSchema):
-    ...
-
-
 class Book(MainSchema):
-    url: ScField[str, ParselXPath('//div[@class="image_container"]/a')]
-    image: ScField[str, ParselXPath('//div[@class="image_container"]/a/img')]
-    # parsel parse not split class attributes
-    rating: ScField[int, ParselXPath('//p[contains(@class, "star-rating")]')]
+    # convert class attr to int
+    __RATING = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    _url_path: ScField[str, ParselXPath('//div[@class="image_container"]/a',
+                                        callback=get_attr("href"))]
+    _image_path: ScField[str, ParselXPath('//div[@class="image_container"]/a/img',
+                                          callback=get_attr("src"))]
+    _rating: ScField[str, ParselXPath('//p[contains(@class, "star-rating")]',
+                                      callback=lambda css: css.attrib.get("class").split()[-1])]
+    _price: ScField[str, ParselXPath('//div[@class="product_price"]/p[@class="price_color"]')]
     name: ScField[str, ParselXPath("//h3/a", callback=get_attr("title"))]
-    price: ScField[float, ParselXPath('//div[@class="product_price"]/p[@class="price_color"]')]
     available: ScField[str, ParselXPath('//div[@class="product_price"]/p[@class="instock availability"]',
-                                        callback=get_text(deep=True, strip=True))]
+                                        callback=get_text(strip=True, deep=True))]
 
     @property
-    def about(self):
-        # you can go to book url page and collect extra information,
-        # you can follow the link and parse more information like this construction,
-        # this tutorial will not implement
-        response = requests.get(self.url).text
-        return BookInfo(response)
+    def url(self) -> str:
+        return f"https://books.toscrape.com/catalogue/{self._url_path}"
+
+    @property
+    def image(self) -> str:
+        return f"https://books.toscrape.com{self._image_path[2:]}"
+
+    @property
+    def price(self) -> float:
+        return float(self._price[2:])
+
+    @property
+    def currency(self) -> str:
+        return self._price[1:2]
+
+    @property
+    def rating(self) -> int:
+        return self.__RATING.get(self._rating, 0)
 
 
 class CataloguePage(MainSchema):
-    books: ScField[List[Book],
-                   NestedList(Book,
-                              crop_rule=crop_by_xpath_all(
-                                  '//section/div/ol[@class="row"]/li',
-                              ))]
+    books: ScField[
+        List[Book],
+        NestedList(Book,
+                   crop_rule=crop_by_selector_all("section > div > ol.row > li"))]
 
 
 for resp in request_pagination():
     pprint.pprint(CataloguePage(resp).dict(), compact=True)
-    sleep(1)
-# {'books': [{'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg',
-#             'name': 'A Light in the Attic',
-#             'price': 51.77,
-#             'rating': 3,
-#             'url': 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html'},
-#            {'available': 'In stock',
-#             'image': 'https://books.toscrape.com/media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg',
-#             'name': 'Tipping the Velvet',
-#             'price': 53.74,
-#             'rating': 1,
-#             'url': 'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'},
-# ...
+    break
+    # {'books': [{'available': 'In stock',
+    #             'currency': '£',
+    #             'image': 'https://books.toscrape.com/media/cache/2c/da/2cdad67c44b002e7ead0cc35693c0e8b.jpg',
+    #             'name': 'A Light in the Attic',
+    #             'price': 51.77,
+    #             'rating': 3,
+    #             'url': 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html'},
+    #            {'available': 'In stock',
+    #             'currency': '£',
+    #             'image': 'https://books.toscrape.com/media/cache/26/0c/260c6ae16bce31c8f8c95daddd9f4a1c.jpg',
+    #             'name': 'Tipping the Velvet',
+    #             'price': 53.74,
+    #             'rating': 1,
+    #             'url': 'https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html'},
+    # ...
 ```
