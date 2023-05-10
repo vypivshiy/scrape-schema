@@ -138,7 +138,7 @@ class BaseField(ABCField):
         :param type_: optional type for type-casting
         """
         logger.info(
-            "%s[%s] start extract value. Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
+            "{}[{}] start extract value. Field attrs: factory={}, callback={}, filter_={}, default={}",
             self.__class__.__name__,
             self.Config.parser or "str",
             repr(self.factory),
@@ -154,25 +154,25 @@ class BaseField(ABCField):
         value = self._parse(markup)
         if not value:
             logger.debug(
-                "%s.extract value not found, set default `%s` value",
+                "{}.extract value not found, set default `{}` value",
                 self.__class__.__name__,
                 self.default,
             )
             value = self.default
         if self._is_iterable_and_not_string_value(value):
             if self.filter_:
-                logger.debug("%s.extract `filter_(%s)`", self.__class__.__name__, value)
+                logger.debug("{}.extract `filter_({})`", self.__class__.__name__, value)
             value = self._filter(value)
         if self.callback:
-            logger.debug("%s.extract `callback(%s)`", self.__class__.__name__, value)
+            logger.debug("{}.extract `callback({})`", self.__class__.__name__, value)
             value = self._callback(value)
         if self.factory:
-            logger.debug("%s.extract `factory(%s)`", self.__class__.__name__, value)
+            logger.debug("{}.extract `factory({})`", self.__class__.__name__, value)
             value = self._factory(value)
         elif type_:
             value = self._type_caster.cast(type_, value)
         logger.info(
-            "%s.extract return `%s[%s]`",
+            "{}.extract return `{}[{}]`",
             self.__class__.__name__,
             value,
             type(value).__name__,
@@ -182,7 +182,7 @@ class BaseField(ABCField):
     def __call__(self, instance: "BaseSchema", name: str, markup: MARKUP_TYPE) -> Any:
         """parser entrypoint inside a BaseSchema object"""
         logger.info(
-            "%s.%s[%s]: Field attrs: factory=%s, callback=%s, filter_=%s, default=%s",
+            "{}.{}[{}]: Field attrs: factory={}, callback={}, filter_={}, default={}",
             instance.__schema_name__,
             name,
             self.Config.parser or "str",
@@ -194,7 +194,7 @@ class BaseField(ABCField):
         value = self._parse(markup)
         if not value:
             logger.debug(
-                "%s.%s: value is %s, set default `%s`",
+                "{}.{}: value is {}, set default `{}`",
                 instance.__schema_name__,
                 name,
                 value,
@@ -203,7 +203,7 @@ class BaseField(ABCField):
             value = self.default
         else:
             logger.debug(
-                "%s.%s := %s raw value(s)", instance.__schema_name__, name, value
+                "{}.{} := {} raw value(s)", instance.__schema_name__, name, value
             )
 
         value = self._filter(value, schema_instance=instance, name=name)
@@ -212,7 +212,7 @@ class BaseField(ABCField):
             value = self._factory(value, schema_instance=instance, name=name)
         else:
             value = self._typing(instance, name, value)
-        logger.info("%s.%s = `%s` Done", instance.__class__.__name__, name, value)
+        logger.info("{}.{} = `{}` Done", instance.__class__.__name__, name, value)
         return value
 
     def _filter(
@@ -243,7 +243,7 @@ class BaseField(ABCField):
 
         if filter_ and self._is_iterable_and_not_string_value(value):
             logger.debug(
-                "%s.%s := filter_(%s)",
+                "{}.{} := filter_({})",
                 schema_instance.__schema_name__
                 if schema_instance
                 else self.__class__.__name__,
@@ -283,7 +283,7 @@ class BaseField(ABCField):
             factory = self.factory
         if factory:
             logger.debug(
-                "%s.%s := factory(%s)",
+                "{}.{} := factory({})",
                 schema_instance.__schema_name__
                 if schema_instance
                 else self.__class__.__name__,
@@ -321,7 +321,7 @@ class BaseField(ABCField):
         if not callback:
             return value
         logger.debug(
-            "%s.%s := callback(%s)",
+            "{}.{} := callback({})",
             schema_instance.__schema_name__
             if schema_instance
             else self.__class__.__name__,
@@ -486,7 +486,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
             )
 
             logger.warning(
-                "[%i] Failed parse `%s.%s` by `%s`, set `%s`",
+                "[{}] Failed parse `{}.{}` by `{}`, set `{}`",
                 fails_counter,
                 self.__class__.__name__,
                 attr_name,
@@ -500,7 +500,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
                     "fields failed parse."
                 )
         logger.debug(
-            "`%s.%s[%s] = %s`",
+            "`{}.{}[{}] = {}`",
             self.__class__.__name__,
             attr_name,
             field.__class__.__name__,
@@ -515,7 +515,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
         _parsers: Dict[Type[Any], Any] = {}
         _fails_counter = 0
         logger.info(
-            "Start parse `%s`. Fields count: %i",
+            "Start parse `{}`. Fields count: {}",
             self.__schema_name__,
             len(self.__schema_fields__.keys()),
         )
@@ -528,7 +528,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
                 fails_counter=_fails_counter, field=field, attr_name=name, value=value
             )
             setattr(self, name, value)
-        logger.debug("%s done! Fields fails: %i", self.__schema_name__, _fails_counter)
+        logger.debug("{} done! Fields fails: {}", self.__schema_name__, _fails_counter)
 
     def __init__(self, markup: str, *, parse_markup: bool = True, **kwargs):
         """

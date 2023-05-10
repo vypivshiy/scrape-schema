@@ -24,7 +24,9 @@ classifiers = [
   "Topic :: Text Processing"
 ]
 dependencies = [
-'typing_extensions; python_version < "3.11"']
+  'colorama',
+  'typing_extensions; python_version < "3.11"'
+]
 dynamic = ["version"]
 
 [project.urls]
@@ -57,6 +59,7 @@ serve = "mkdocs serve --dev-addr localhost:8000"
 
 [tool.hatch.envs.default]
 dependencies = [
+  "colorama",
   "pytest",
   "selectolax",
   "bs4",

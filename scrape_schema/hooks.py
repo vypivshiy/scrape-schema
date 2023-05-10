@@ -58,7 +58,7 @@ class HooksStorage:
         """
 
         def decorator(func):
-            logger.debug("Register `on_filter` hook: %s %s", attrs_names, func)
+            logger.debug("Register `on_filter` hook: {} {}", attrs_names, func)
             self._register_hook(self.__filter_hooks__, attrs_names, func)
             return func
 
@@ -71,7 +71,7 @@ class HooksStorage:
         """
 
         def decorator(func):
-            logger.debug("Register `on_factory` hook: %s %s", attrs_names, func)
+            logger.debug("Register `on_factory` hook: {} {}", attrs_names, func)
             self._register_hook(self.__factory_hooks__, attrs_names, func)
             return func
 
@@ -84,7 +84,7 @@ class HooksStorage:
         """
 
         def decorator(func):
-            logger.debug("Register on_callback hook: %s %s", attrs_names, func)
+            logger.debug("Register on_callback hook: {} {}", attrs_names, func)
             self._register_hook(self.__callback_hooks__, attrs_names, func)
             return func
 
@@ -104,7 +104,7 @@ class HooksStorage:
 
     def add_hook(self, name: str, hook: Union[FieldHook, FieldHookList]):
         """add FieldHook or FieldHookList in storage."""
-        logger.debug("Add `%s` %s", name, hook)
+        logger.debug("Add `{}` {}", name, hook)
         self.__field_hooks__[name] = hook
 
     def add_kwargs_hook(
@@ -117,7 +117,7 @@ class HooksStorage:
     ):
         """create hook by keyword arguments and add in storage."""
         logger.debug(
-            "Add `%s` FieldHook. Arguments: default=%s, callback=%s, filter_=%s, factory=%s",
+            "Add `{}` FieldHook. Arguments: default={}, callback={}, filter_={}, factory={}",
             name,
             default,
             callback,
@@ -138,9 +138,9 @@ class HooksStorage:
     def get_hook(self, name: str) -> Union[FieldHook, FieldHookList]:
         """return stored hook. If not founded key - return empty dict"""
         if hook := self.__field_hooks__.get(name):
-            logger.debug("Get hook %s. Values: %s", name, hook)
+            logger.debug("Get hook {}. Values: {}", name, hook)
             return hook
-        logger.debug("Not contains hook in `%s` key. Return empty dict", name)
+        logger.debug("Not contains hook in `{}` key. Return empty dict", name)
         return {}
 
     def hook_keys(self) -> KeysView[str]:

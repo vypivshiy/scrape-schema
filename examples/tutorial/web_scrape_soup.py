@@ -1,5 +1,5 @@
 import pprint
-from typing import Generator, Dict, List
+from typing import Dict, Generator, List
 
 import requests
 from bs4 import BeautifulSoup
