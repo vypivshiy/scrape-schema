@@ -2,7 +2,7 @@
 from typing import Any, Callable, List, Optional, Type, Union
 
 from ..base import BaseField, BaseSchema  # type: ignore
-
+from scrape_schema._logger import logger
 __all__ = ["BaseNested", "Nested", "NestedList"]
 
 
@@ -32,9 +32,15 @@ class Nested(BaseNested):
     def __call__(
         self, instance: BaseSchema, name: str, markup: str
     ) -> Union[BaseSchema, Any]:
+        logger.info("%s.%s start extract value. Field attrs: schema=%s, crop_rule=%s, factory=%s",
+                    instance.__schema_name__, self._schema.__name__, self.crop_rule, self.factory)
         markup = self._parse(markup)
         value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)
+        logger.debug("%s.%s create schema: %s", instance.__schema_name__, name, value)
         return self._factory(value)
+
+    def extract(self, markup: Any, *, type_: Optional[Type] = None) -> None:
+        raise NotImplementedError("Method `extract` not allowed in Nested field")
 
 
 class NestedList(BaseNested):
@@ -59,6 +65,12 @@ class NestedList(BaseNested):
     def __call__(
         self, instance: BaseSchema, name: str, markup: str
     ) -> Union[List[BaseSchema], Any]:
+        logger.info("%s.%s start extract value. Field attrs: schema=%s, crop_rule=%s, factory=%s",
+                    instance.__schema_name__, self._schema.__name__, self.crop_rule, self.factory)
         markup = self._parse(markup)
         value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
+        logger.debug("%s.%s create schemas: %s", instance.__schema_name__, name, value)
         return self._factory(value)
+
+    def extract(self, markup: Any, *, type_: Optional[Type] = None) -> None:
+        raise NotImplementedError("Method `extract` not allowed in NestedList field")
