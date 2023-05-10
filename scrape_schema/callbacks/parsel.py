@@ -18,9 +18,7 @@ def get_text(
             if deep:
                 text = sep.join(element.css("::text").getall())
             else:
-                # TODO
                 text = element.css("::text").get(default=default)  # type: ignore
-
             if text:
                 return text.strip() if strip else text
             return text
