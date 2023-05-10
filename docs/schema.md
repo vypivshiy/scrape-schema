@@ -47,7 +47,7 @@ class Schema(BaseSchema):
     digit: ScField[int, ReMatch(r"(\d+)")]
 
 
-print(*Schema.from_markup(markup))
+print(Schema.from_markup(markup))
 # Schema(word:str='lorem', digit:int=100)
 ```
 ## from_list
@@ -163,8 +163,66 @@ print(Schema.from_kwargs(word={"spam": "egg"}, digit="lol", foo="bar"))
 print(Schema.from_kwargs())
 # Schema()
 ```
+## Methods
+### dict
+Returns the received public field values in the dict. Ignore hidden values (startswith "_").
+
+```python
+from scrape_schema import ScField, BaseSchema
+from scrape_schema.fields.mock import MockField
+
+
+class Schema(BaseSchema):
+    _foo: ScField[str, MockField("foo")]
+    bar: ScField[str, MockField("bar")]
+
+print(Schema("").dict())
+# {'bar': 'bar'}
+```
+You can create properties for them by adding a decorator
+
+```python
+from scrape_schema import ScField, BaseSchema
+from scrape_schema.fields.mock import MockField
+
+
+class Schema(BaseSchema):
+    _foo: ScField[str, MockField("foo")]
+    bar: ScField[str, MockField("bar")]
+    
+    @property
+    def foo_len(self) -> int: return len(self._foo)
+    
+    @property
+    def bar_upper(self) -> str: return self.bar.upper()
+
+print(Schema("").dict())
+# {'foo_len': 3, 'bar_upper': 'BAR', 'bar': 'bar'}
+```
+
+### raw_dict()
+Returns all field values in the dict. **Ignore properties**. 
+```python
+from scrape_schema import ScField, BaseSchema
+from scrape_schema.fields.mock import MockField
+
+
+class Schema(BaseSchema):
+    _foo: ScField[str, MockField("foo")]
+    bar: ScField[str, MockField("bar")]
+    
+    @property
+    def foo_len(self) -> int: return len(self._foo)
+    
+    @property
+    def bar_upper(self): return self.bar.upper()
+
+print(Schema("").raw_dict())
+# {'_foo': 'foo', 'bar': 'bar'}
+```
 
 # Config
+
 `Config` (inherited from `BaseSchemaConfig`) class contains configurations in `BaseSchema`.
 
 ### Variables
