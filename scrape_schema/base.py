@@ -208,7 +208,7 @@ class BaseField(ABCField):
 
         value = self._filter(value, schema_instance=instance, name=name)
         value = self._callback(value, schema_instance=instance, name=name)
-        if self.factory or self.Config.hooks.get_factory(name):
+        if self.factory:
             value = self._factory(value, schema_instance=instance, name=name)
         else:
             value = self._typing(instance, name, value)
@@ -227,19 +227,7 @@ class BaseField(ABCField):
         :param value: list or dict value. dict filter by values
         :return: filtered value
         """
-        if schema_instance and name:
-            if schema_instance.Config.hooks_priority:
-                hook = self.Config.hooks.get_filter(
-                    f"{schema_instance.__schema_name__}.{name}"
-                )
-                filter_ = hook or self.filter_
-            else:
-                hook = self.Config.hooks.get_filter(
-                    f"{schema_instance.__schema_name__}.{name}"
-                )
-                filter_ = self.filter_ or hook
-        else:
-            filter_ = self.filter_
+        filter_ = self.filter_
 
         if filter_ and self._is_iterable_and_not_string_value(value):
             logger.debug(
@@ -268,19 +256,7 @@ class BaseField(ABCField):
         :param value: parsed value
         :return:
         """
-        if schema_instance and name:
-            if schema_instance.Config.hooks_priority:
-                hook = self.Config.hooks.get_factory(
-                    f"{schema_instance.__schema_name__}.{name}"
-                )
-                factory = hook or self.factory
-            else:
-                hook = self.Config.hooks.get_factory(
-                    f"{schema_instance.__schema_name__}.{name}"
-                )
-                factory = self.factory or hook
-        else:
-            factory = self.factory
+        factory = self.factory
         if factory:
             logger.debug(
                 "{}.{} := factory({})",
@@ -304,19 +280,7 @@ class BaseField(ABCField):
         :param value:
         :return:
         """
-        if schema_instance and name:
-            if schema_instance.Config.hooks_priority:
-                hook = self.Config.hooks.get_callback(
-                    f"{schema_instance.__schema_name__}.{name}"
-                )
-                callback = hook or self.callback
-            else:
-                hook = self.Config.hooks.get_callback(
-                    f"{schema_instance.__schema_name__}.{name}"
-                )
-                callback = self.callback or hook
-        else:
-            callback = self.callback
+        callback = self.callback
 
         if not callback:
             return value

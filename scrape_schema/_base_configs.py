@@ -1,7 +1,5 @@
 from typing import Any, ClassVar, Dict, Optional, Type
 
-from scrape_schema.hooks import HooksStorage
-
 
 class BaseFieldConfig:
     """BaseField configuration class:
@@ -10,7 +8,6 @@ class BaseFieldConfig:
     """
 
     parser: ClassVar[Optional[Type[Any]]] = None
-    hooks: ClassVar["HooksStorage"] = HooksStorage()
 
 
 class BaseSchemaConfig:
@@ -35,4 +32,3 @@ class BaseSchemaConfig:
     parsers_config: ClassVar[Dict[Type[Any], Dict[str, Any]]] = {}
     type_cast: ClassVar[bool] = True
     fails_attempt: ClassVar[int] = -1
-    hooks_priority: ClassVar[bool] = True
