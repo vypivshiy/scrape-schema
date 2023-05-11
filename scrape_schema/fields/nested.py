@@ -37,6 +37,7 @@ class Nested(BaseNested):
         logger.info(
             "{}.{} start extract value. Field attrs: schema={}, crop_rule={}, factory={}",
             instance.__schema_name__,
+            self.__class__.__name__,
             self._schema.__name__,
             self.crop_rule,
             self.factory,
@@ -75,6 +76,7 @@ class NestedList(BaseNested):
         logger.info(
             "{}.{} start extract value. Field attrs: schema={}, crop_rule={}, factory={}",
             instance.__schema_name__,
+            self.__class__.__name__,
             self._schema.__name__,
             self.crop_rule,
             self.factory,
