@@ -88,7 +88,8 @@ branch = true
 parallel = true
 omit = [
   "scrape_schema/__about__.py",
-  "scrape_schema/factory/__init__.py"
+  "scrape_schema/factory/__init__.py",
+  "scrape_schema/_logger.py"
 ]
 
 [tool.coverage.report]
