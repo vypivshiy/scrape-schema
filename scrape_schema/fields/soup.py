@@ -25,16 +25,29 @@ References:
 
 * https://beautiful-soup-4.readthedocs.io/en/latest/#css-selectors
 """
-
 from abc import ABC
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from bs4 import BeautifulSoup, ResultSet, Tag
 
-from ..base import BaseField, BaseFieldConfig
-from ..callbacks.soup import element_to_dict, get_text
+from scrape_schema.base import BaseField, BaseFieldConfig
+from scrape_schema.callbacks.soup import element_to_dict, get_text
+from scrape_schema.fields.nested import Nested, NestedList
 
-__all__ = ["BaseSoup", "SoupFind", "SoupFindList", "SoupSelect", "SoupSelectList"]
+__all__ = [
+    "BaseSoup",
+    "SoupFind",
+    "SoupFindList",
+    "SoupSelect",
+    "SoupSelectList",
+    "NestedSoup",
+    "NestedSoupList",
+]
+
+
+NestedSoup = partial(Nested, parser=BeautifulSoup)
+NestedSoupList = partial(NestedList, parser=BeautifulSoup)
 
 
 class BaseSoup(BaseField, ABC):

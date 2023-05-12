@@ -6,12 +6,14 @@ Reference:
 
 """
 from abc import ABC
+from functools import partial
 from typing import Any, Callable, Mapping, Optional, Union
 
 from parsel import Selector, SelectorList
 from parsel.selector import _SelectorType
 
 from scrape_schema.callbacks.parsel import get_text
+from scrape_schema.fields.nested import Nested, NestedList
 
 from ..base import BaseField, BaseFieldConfig
 
@@ -21,7 +23,12 @@ __all__ = [
     "ParselSelectList",
     "ParselXPath",
     "ParselXPathList",
+    "NestedParsel",
+    "NestedParselList",
 ]
+
+NestedParsel = partial(Nested, parser=Selector)
+NestedParselList = partial(NestedList, parser=Selector)
 
 
 class BaseParselField(BaseField, ABC):

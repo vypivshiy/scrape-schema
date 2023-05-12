@@ -15,14 +15,20 @@ References:
 """
 
 from abc import ABC
+from functools import partial
 from typing import Any, Callable, List, Optional, Union
 
 from selectolax.parser import HTMLParser, Node
 
-from ..base import BaseField, BaseFieldConfig
-from ..callbacks.slax import get_text
+from scrape_schema.base import BaseField, BaseFieldConfig
+from scrape_schema.callbacks.slax import get_text
+from scrape_schema.fields.nested import Nested, NestedList
 
-__all__ = ["BaseSlax", "SlaxSelect", "SlaxSelectList"]
+__all__ = ["BaseSlax", "SlaxSelect", "SlaxSelectList", "NestedSlax", "NestedSlaxList"]
+
+
+NestedSlax = partial(Nested, parser=HTMLParser)
+NestedSlaxList = partial(NestedList, parser=HTMLParser)
 
 
 class BaseSlax(BaseField, ABC):
