@@ -31,6 +31,26 @@ is not provided.
 >>> Note: 
 > For these fields to work predictably, don't use the `::text` selector, this object should be handled by **callback**
 
+# NestedParsel
+Alias of `scrape_schema.fields.Nested with parser=Selector`
+```python
+from parsel import Selector
+from scrape_schema.fields.parsel import NestedParsel
+from scrape_schema.fields.nested import Nested
+
+NestedParsel(...) 
+Nested(..., parser=Selector)  # same
+```
+# NestedParselList
+Alias of `scrape_schema.fields.NestedList with parser=Selector`
+```python
+from parsel import Selector
+from scrape_schema.fields.parsel import NestedParselList
+from scrape_schema.fields.nested import NestedList
+
+NestedParselList(...) 
+NestedList(..., parser=Selector)  # same
+```
 # ParselSelect
 This field provided [Selector.css](https://parsel.readthedocs.io/en/latest/usage.html) method and return first value
 

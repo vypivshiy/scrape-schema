@@ -24,7 +24,26 @@ class SlaxSchema(BaseSchema):
 - `markup: HTMLParser | Node` - HTMLParser object or Node
 - `type_: Optional[Type] = str`: The type to cast the matched string(s) to. This is only used if `factory` 
 is not provided.
+# NestedSlax
+Alias of Nested with `parser=HTMLParser` param
+```python
+from selectolax.parser import HTMLParser
+from scrape_schema.fields.slax import NestedSlax
+from scrape_schema.fields.nested import Nested
 
+NestedSlax(...) 
+Nested(..., parser=HTMLParser)  # same
+```
+# NestedSlaxList
+Alias of NestedList with `parser=HTMLParser` param
+```python
+from selectolax.parser import HTMLParser
+from scrape_schema.fields.slax import NestedSlaxList
+from scrape_schema.fields.nested import NestedList
+
+NestedSlaxList(...) 
+NestedList(..., parser=HTMLParser)  # same
+```
 # SlaxSelect
 This field provide [HTMLParser().css_first](https://selectolax.readthedocs.io/en/latest/parser.html#selectolax.parser.HTMLParser.css_first) method
 

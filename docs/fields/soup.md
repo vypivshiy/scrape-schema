@@ -27,6 +27,28 @@ Extracts data from the `bs4.BeautifulSoup` object and any provided callbacks and
 - `markup: bs4.BeautifulSoup | Tag` - Soup object or Tag
 - `type_: Optional[Type] = str`: The type to cast the matched string(s) to. This is only used if `factory` 
 is not provided.
+- 
+# NestedSoup
+Alias of Nested with `parser=BeautifulSoup` param
+```python
+from bs4 import BeautifulSoup
+from scrape_schema.fields.nested import Nested
+from scrape_schema.fields.soup import NestedSoup
+
+NestedSoup(...)
+Nested(..., parser=BeautifulSoup) # same
+```
+
+# NestedSoupList
+Alias of NestedList with `parser=BeautifulSoup` param
+```python
+from bs4 import BeautifulSoup
+from scrape_schema.fields.nested import NestedList
+from scrape_schema.fields.soup import NestedSoupList
+
+NestedSoupList(...)
+NestedList(..., parser=BeautifulSoup) # same
+```
 
 # SoupFind
 Field provided [find()](https://www.crummy.com/software/BeautifulSoup/bs4/doc/#find) method

@@ -8,6 +8,10 @@ and then combined with the parent schema.
 * `schema: Type[BaseSchema]` - Child Schema class
 * `crop_rule: Callable[[str], str]` - split text to part function 
 * `factory: Optional[Callable[[BaseSchema], Any]]` - optional rule for conversions to a different type/struct
+* `parser : Optional[Type]` - optional parser instance: get by class cached parser from schema instance.
+**this feature increase speed by 25%!** if the parser was not cached - raise `AttributeError` 
+(new in 0.2.4) 
+
 ## Usage
 ```python
 from scrape_schema import BaseSchema, ScField
