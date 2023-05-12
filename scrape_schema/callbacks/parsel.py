@@ -62,8 +62,10 @@ def crop_by_selector(
     _expr: Optional[str] = None,
     huge_tree: bool = LXML_SUPPORTS_HUGE_TREE,
 ):
-    def wrapper(markup: str) -> str:
-        if (
+    def wrapper(markup: Union[str, Selector]) -> str:
+        if isinstance(markup, Selector):
+            return markup.css(query).get() or ""
+        elif (
             markup_part := Selector(
                 text=markup,
                 type=type,
@@ -79,7 +81,7 @@ def crop_by_selector(
         ):
             return markup_part
         raise AttributeError(
-            "Failed crop part from markup, check params or markup attribute"
+            "Failed crop part from markup, check params or markup attributes"
         )
 
     return wrapper
@@ -97,7 +99,9 @@ def crop_by_selector_all(
     _expr: Optional[str] = None,
     huge_tree: bool = LXML_SUPPORTS_HUGE_TREE,
 ):
-    def wrapper(markup: str) -> List[str]:
+    def wrapper(markup: Union[str, Selector]) -> List[str]:
+        if isinstance(markup, Selector):
+            return markup.css(query).getall()
         return (
             Selector(
                 text=markup,
@@ -130,8 +134,15 @@ def crop_by_xpath(
     huge_tree: bool = LXML_SUPPORTS_HUGE_TREE,
     **xpath_kwargs,
 ):
-    def wrapper(markup: str) -> str:
-        if (
+    def wrapper(markup: Union[str, Selector]) -> str:
+        if isinstance(markup, Selector):
+            return (
+                markup.xpath(
+                    query=query, namespaces=xpath_namespaces, **xpath_kwargs
+                ).get()
+                or ""
+            )
+        elif (
             markup_part := Selector(
                 text=markup,
                 type=type,
@@ -167,7 +178,11 @@ def crop_by_xpath_all(
     huge_tree: bool = LXML_SUPPORTS_HUGE_TREE,
     **xpath_kwargs,
 ):
-    def wrapper(markup: str) -> List[str]:
+    def wrapper(markup: Union[str, Selector]) -> List[str]:
+        if isinstance(markup, Selector):
+            return markup.xpath(
+                query=query, namespaces=namespaces, **xpath_kwargs
+            ).getall()
         return (
             Selector(
                 text=markup,

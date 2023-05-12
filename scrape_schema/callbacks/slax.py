@@ -15,7 +15,9 @@ def crop_by_slax(query: str, **slax_config) -> Callable[[str], str]:
     :param slax_config: any selectolax.parser.HTMLParser kwargs
     """
 
-    def wrapper(markup: str) -> str:
+    def wrapper(markup: Union[str, HTMLParser]) -> str:
+        if isinstance(markup, HTMLParser):
+            return markup.css_first(query).html
         parser = HTMLParser(markup, **slax_config)
         return parser.css_first(query).html
 
@@ -29,7 +31,9 @@ def crop_by_slax_all(query: str, **slax_config) -> Callable[[str], List[str]]:
     :param slax_config: any selectolax.parser.HTMLParser kwargs
     """
 
-    def wrapper(markup: str) -> List[str]:
+    def wrapper(markup: Union[str, HTMLParser]) -> List[str]:
+        if isinstance(markup, HTMLParser):
+            return [m.html for m in markup.css(query)]
         parser = HTMLParser(markup, **slax_config)
         return [m.html for m in parser.css(query)]
 

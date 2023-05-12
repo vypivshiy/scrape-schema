@@ -100,7 +100,9 @@ def crop_by_tag_all(
     if isinstance(element, str):
         element = element_to_dict(element)
 
-    def wrapper(markup: str) -> List[str]:
+    def wrapper(markup: Union[str, BeautifulSoup]) -> List[str]:
+        if isinstance(markup, BeautifulSoup):
+            return [str(tag) for tag in markup.find_all(**element)]
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return [str(tag) for tag in soup.find_all(**element)]
 
@@ -119,7 +121,9 @@ def crop_by_tag(
     if isinstance(element, str):
         element = element_to_dict(element)
 
-    def wrapper(markup: str) -> str:
+    def wrapper(markup: Union[str, BeautifulSoup]) -> str:
+        if isinstance(markup, BeautifulSoup):
+            return str(markup.find(**element))
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return str(soup.find(**element))
 
@@ -165,7 +169,9 @@ def crop_by_selector_all(
     :param soup_config: any BeautifulSoup kwargs config
     """
 
-    def wrapper(markup: str) -> List[str]:
+    def wrapper(markup: Union[str, BeautifulSoup]) -> List[str]:
+        if isinstance(markup, BeautifulSoup):
+            return [str(tag) for tag in markup.select(selector, namespaces)]
         soup = BeautifulSoup(markup, features=features, **soup_config)
         return [str(tag) for tag in soup.select(selector, namespaces)]
 
