@@ -19,6 +19,7 @@ class Nested(BaseNested):
         schema: Type[BaseSchema],
         *,
         crop_rule: Callable[[str], str],
+        parser: Optional[Type[Any]] = None,
         factory: Optional[Callable[[BaseSchema], Any]] = None,
     ):
         """Nested - serialise markup part to `schema` object
@@ -30,6 +31,7 @@ class Nested(BaseNested):
         super().__init__(factory=factory)
         self._schema = schema
         self.crop_rule = crop_rule
+        self._parser = parser
 
     def __call__(
         self, instance: BaseSchema, name: str, markup: str
@@ -43,7 +45,15 @@ class Nested(BaseNested):
             self.factory,
         )
         markup = self._parse(markup)
-        value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)
+        if self._parser:
+            if cached_markup := instance.cache_parsers.get(self._parser):
+                value = self._schema.from_crop_rule(
+                    cached_markup, crop_rule=self.crop_rule
+                )
+            else:
+                raise TypeError(f"{self._parser} not cached in {self._schema.__name__}")
+        else:
+            value = self._schema.from_crop_rule(markup, crop_rule=self.crop_rule)
         logger.debug("{}.{} create schema: {}", instance.__schema_name__, name, value)
         return self._factory(value)
 
@@ -57,6 +67,7 @@ class NestedList(BaseNested):
         schema: Type[BaseSchema],
         *,
         crop_rule: Callable[[str], List[str]],
+        parser: Optional[Type[Any]] = None,
         factory: Optional[Callable[[List[BaseSchema]], Any]] = None,
     ):
         """NestedList - convert markup parts to list of `schema` objects
@@ -68,7 +79,7 @@ class NestedList(BaseNested):
         super().__init__(factory=factory)
         self.crop_rule = crop_rule
         self._schema = schema
-        self.crop_rule = crop_rule
+        self._parser = parser
 
     def __call__(
         self, instance: BaseSchema, name: str, markup: str
@@ -82,7 +93,16 @@ class NestedList(BaseNested):
             self.factory,
         )
         markup = self._parse(markup)
-        value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
+        if self._parser:
+            if cached_markup := instance.cache_parsers.get(self._parser):
+                value = self._schema.from_crop_rule_list(
+                    cached_markup, crop_rule=self.crop_rule
+                )
+            else:
+                raise TypeError(f"{self._parser} not cached in {self._schema.__name__}")
+        else:
+            value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
+
         logger.debug("{}.{} create schemas: {}", instance.__schema_name__, name, value)
         return self._factory(value)
 
