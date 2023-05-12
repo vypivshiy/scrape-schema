@@ -1,4 +1,4 @@
-from httpx import Client, AsyncClient
+from httpx import AsyncClient, Client
 
 __all__ = ["send_request", "a_send_request"]
 

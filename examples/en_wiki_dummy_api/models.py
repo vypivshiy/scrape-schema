@@ -1,21 +1,19 @@
 import re
 from typing import List, Optional
 
+from _http import send_request
 from bs4 import BeautifulSoup
 
-from scrape_schema import ScField, BaseSchema, BaseSchemaConfig
-from scrape_schema.fields.soup import SoupSelect, SoupSelectList
-from scrape_schema.callbacks.soup import get_attr, get_text
+from scrape_schema import BaseSchema, BaseSchemaConfig, ScField
 from scrape_schema.callbacks.soup import crop_by_selector_all as cbsa
+from scrape_schema.callbacks.soup import get_attr, get_text
 from scrape_schema.fields.nested import NestedList
-
-
-from _http import send_request
+from scrape_schema.fields.soup import SoupSelect, SoupSelectList
 
 __all__ = ["IS_REFER", "PageRefer", "PageContent"]
 
 
-IS_REFER = re.compile(r'.*? may refer to:')
+IS_REFER = re.compile(r".*? may refer to:")
 
 
 class SchemaConfig(BaseSchema):
@@ -24,8 +22,7 @@ class SchemaConfig(BaseSchema):
 
 
 class Referer(SchemaConfig):
-    _path_href: ScField[str, SoupSelect("a",
-                                        callback=get_attr("href"))]
+    _path_href: ScField[str, SoupSelect("a", callback=get_attr("href"))]
     name: ScField[str, SoupSelect("a", callback=get_attr("title"))]
     description: ScField[str, SoupSelect("a")]
 
@@ -41,16 +38,26 @@ class Referer(SchemaConfig):
 
 
 class PageRefer(SchemaConfig):
-    categories: ScField[List[Referer], NestedList(Referer,
-                                                  crop_rule=cbsa("#mw-normal-catlinks > ul > li"))]
-    referrers: ScField[List[Referer], NestedList(Referer,
-                                                 crop_rule=cbsa('#mw-content-text > div.mw-parser-output > ul > li'))]
+    categories: ScField[
+        List[Referer],
+        NestedList(Referer, crop_rule=cbsa("#mw-normal-catlinks > ul > li")),
+    ]
+    referrers: ScField[
+        List[Referer],
+        NestedList(
+            Referer, crop_rule=cbsa("#mw-content-text > div.mw-parser-output > ul > li")
+        ),
+    ]
 
     def _render_ref(self):
-        return '\n'.join([f"{i} {ref.view()}" for i, ref in enumerate(self.referrers, 1)])
+        return "\n".join(
+            [f"{i} {ref.view()}" for i, ref in enumerate(self.referrers, 1)]
+        )
 
     def _render_cat(self):
-        return '\n'.join([f"{i} {cat.view()}" for i, cat in enumerate(self.categories, 1)])
+        return "\n".join(
+            [f"{i} {cat.view()}" for i, cat in enumerate(self.categories, 1)]
+        )
 
     def view(self):
         return f"""
@@ -64,8 +71,13 @@ categories:
 
 
 class PageThumbnail(SchemaConfig):
-    _thumb_path: ScField[str, SoupSelect('div.thumbinner > a', callback=get_attr("href"))]
-    description: ScField[str, SoupSelect('div.thumbinner > div.thumbcaption', callback=get_text(strip=True))]
+    _thumb_path: ScField[
+        str, SoupSelect("div.thumbinner > a", callback=get_attr("href"))
+    ]
+    description: ScField[
+        str,
+        SoupSelect("div.thumbinner > div.thumbcaption", callback=get_text(strip=True)),
+    ]
 
     @property
     def url(self):
@@ -76,9 +88,19 @@ class PageThumbnail(SchemaConfig):
 
 
 class PageReference(SchemaConfig):
-    ref_id: ScField[str, SoupSelect('li', callback=get_attr('id'))]
-    _href_paths: ScField[List[str], SoupSelectList('span.mw-cite-backlink > a', callback=get_attr('href'), default=[])]
-    text: ScField[str, SoupSelect('span.reference-text > cite', callback=get_text(separator=" ", strip=True))]
+    ref_id: ScField[str, SoupSelect("li", callback=get_attr("id"))]
+    _href_paths: ScField[
+        List[str],
+        SoupSelectList(
+            "span.mw-cite-backlink > a", callback=get_attr("href"), default=[]
+        ),
+    ]
+    text: ScField[
+        str,
+        SoupSelect(
+            "span.reference-text > cite", callback=get_text(separator=" ", strip=True)
+        ),
+    ]
 
     @property
     def urls(self) -> List[str]:
@@ -92,11 +114,22 @@ class PageReference(SchemaConfig):
 class PageContent(SchemaConfig):
     title: ScField[str, SoupSelect("h1#firstHeading")]
     note: ScField[Optional[str], SoupSelect("div.hatnote.navigation-not-searchable")]
-    _note_href: ScField[Optional[str], SoupSelect("div.hatnote.navigation-not-searchable > a",
-                                                  callback=get_attr("href"))]
-    _text_chunks: ScField[List[str], SoupSelectList("#mw-content-text > div.mw-parser-output > p")]
-    thumbnails: ScField[List[PageThumbnail], NestedList(PageThumbnail, crop_rule=cbsa('div.thumbinner'))]
-    references: ScField[List[PageReference], NestedList(PageReference, crop_rule=cbsa('div.reflist > div > ol > li'))]
+    _note_href: ScField[
+        Optional[str],
+        SoupSelect(
+            "div.hatnote.navigation-not-searchable > a", callback=get_attr("href")
+        ),
+    ]
+    _text_chunks: ScField[
+        List[str], SoupSelectList("#mw-content-text > div.mw-parser-output > p")
+    ]
+    thumbnails: ScField[
+        List[PageThumbnail], NestedList(PageThumbnail, crop_rule=cbsa("div.thumbinner"))
+    ]
+    references: ScField[
+        List[PageReference],
+        NestedList(PageReference, crop_rule=cbsa("div.reflist > div > ol > li")),
+    ]
 
     @property
     def note_url(self):
@@ -110,7 +143,12 @@ class PageContent(SchemaConfig):
         return "\n\n".join([t.view() for t in self.thumbnails])
 
     def _render_references(self):
-        return '\n'.join([f"{i} {ref.text} {' '.join(ref.urls)}" for i, ref in enumerate(self.references, 1)])
+        return "\n".join(
+            [
+                f"{i} {ref.text} {' '.join(ref.urls)}"
+                for i, ref in enumerate(self.references, 1)
+            ]
+        )
 
     def view(self) -> str:
         return f"""{self.title}

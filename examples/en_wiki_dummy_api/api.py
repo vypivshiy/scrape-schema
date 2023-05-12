@@ -1,9 +1,10 @@
+import logging
 from typing import Union
 
-from _http import send_request, a_send_request
+from _http import a_send_request, send_request
 from models import IS_REFER, PageContent, PageRefer
-import logging
-logger = logging.getLogger('scrape_schema')
+
+logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.ERROR)
 
 
