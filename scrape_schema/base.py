@@ -365,6 +365,13 @@ class BaseSchema(metaclass=SchemaMetaClass):
     def _get_parser(self, field_parser_class: Type) -> Optional[Dict[str, Any]]:
         return self.Config.parsers_config.get(field_parser_class, None)
 
+    @property
+    def cache_parsers(self) -> Dict[Type, Any]:
+        return self._cache_parsers
+
+    def clear_cache(self):
+        self._cache_parsers.clear()
+
     def _check_parser_config(self, field: BaseField, field_parser: Type) -> bool:
         if self._get_parser(field_parser) is None:
             try:
@@ -385,21 +392,8 @@ class BaseSchema(metaclass=SchemaMetaClass):
             or not value
         )
 
-    def _cache_parser(
-        self,
-        *,
-        markup: str,
-        field_parser: Type[Any],
-        cached_parsers: Dict[Type[Any], Any],
-    ) -> Dict[Type[Any], Any]:
-        if not cached_parsers.get(field_parser):
-            parser_kwargs = self.Config.parsers_config.get(field_parser)
-            cached_parsers[field_parser] = field_parser(markup, **parser_kwargs)
-        return cached_parsers
-
     def _parse_field_value(
         self,
-        cached_parsers: Dict[Type[Any], Any],
         name: str,
         _fields: Tuple[BaseField, ...],
         markup: str,
@@ -408,12 +402,12 @@ class BaseSchema(metaclass=SchemaMetaClass):
         for field in _fields:
             if field_parser := field.Config.parser:
                 self._check_parser_config(field=field, field_parser=field_parser)
-                cached_parsers = self._cache_parser(
-                    markup=markup,
-                    field_parser=field_parser,
-                    cached_parsers=cached_parsers,
-                )
-                value = field(self, name, cached_parsers[field_parser])
+                if self._cache_parsers.get(field_parser, None) is None:
+                    parser_kwargs = self.Config.parsers_config.get(field_parser)
+                    self._cache_parsers[field_parser] = field_parser(
+                        markup, **parser_kwargs
+                    )
+                value = field(self, name, self._cache_parsers[field_parser])
             else:
                 value = field(self, name, markup)
             # get next field if this return default value
@@ -475,7 +469,6 @@ class BaseSchema(metaclass=SchemaMetaClass):
         """
         :param str markup: text target
         """
-        _parsers: Dict[Type[Any], Any] = {}
         _fails_counter = 0
         logger.info(
             "Start parse `{}`. Fields count: {}",
@@ -485,7 +478,7 @@ class BaseSchema(metaclass=SchemaMetaClass):
 
         for name, fields in self.__schema_fields__.items():
             field, value = self._parse_field_value(
-                cached_parsers=_parsers, name=name, _fields=fields, markup=markup
+                name=name, _fields=fields, markup=markup
             )
             _fails_counter = self._calculate_attempt_parse_errors(
                 fails_counter=_fails_counter, field=field, attr_name=name, value=value
@@ -500,6 +493,10 @@ class BaseSchema(metaclass=SchemaMetaClass):
         :param kwargs: any kwargs attrs
         """
         # TODO rewrite init constructor
+        self._cache_parsers: Dict[Type, Any] = {
+            parser: parser(markup, **kw)
+            for parser, kw in self.Config.parsers_config.items()
+        }
         if parse_markup:
             self.__init_fields__(markup)
 
@@ -564,7 +561,11 @@ class BaseSchema(metaclass=SchemaMetaClass):
 
     def raw_dict(self) -> Dict[str, Any]:
         """convert schema object to python dict"""
-        return {k: self._to_dict(v) for k, v in self.__dict__.items() if k != "Config"}
+        return {
+            k: self._to_dict(v)
+            for k, v in self.__dict__.items()
+            if k not in ("Config", "_cache_parsers")
+        }
 
     def dict(self) -> Dict[str, Any]:
         # parse properties
