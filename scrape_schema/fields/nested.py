@@ -99,7 +99,7 @@ class NestedList(BaseNested):
                     cached_markup, crop_rule=self.crop_rule
                 )
             else:
-                raise TypeError(f"{self._parser} not cached in {self._schema.__name__}")
+                raise AttributeError(f"{self._parser} not cached in {self._schema.__name__}")
         else:
             value = self._schema.from_crop_rule_list(markup, crop_rule=self.crop_rule)
 
