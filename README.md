@@ -39,30 +39,18 @@ ____
 ____
 # Install
 
-zero dependencies: regex, nested fields (and typing_extension if python < 3.11)
+zero dependencies: regex, nested fields support (and typing_extension if python < 3.11)
 ```shell
 pip install scrape-schema
 ```
 
-add bs4 fields
-```shell
-pip install scrape-schema[bs4]
-```
+# Dependencies
+The following are optional:
+- [bs4](https://www.crummy.com/software/BeautifulSoup/)  - add bs4 fields support: `pip install scrape-schema[bs4]`
+- [parsel](https://github.com/scrapy/parsel) - add parsel fields support: `pip install scrape-schema[parsel]`
+- [selectolax](https://github.com/rushter/selectolax) - add selectolax fields support: `pip install scrape-schema[selectolax]`
+- add ALL available dependencies `pip install scrape-schema[all]`
 
-add selectolax fields
-```shell
-pip install scrape-schema[selectolax]
-```
-
-add parsel fields
-```shell
-pip install scrape-schema[parsel]
-```
-
-add all fields
-```shell
-pip install scrape-schema[all]
-```
 ____
 # Code comparison
 Before scrape_schema: harder to maintain, change logic
