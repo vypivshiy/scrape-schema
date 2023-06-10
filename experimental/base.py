@@ -1,21 +1,30 @@
 from enum import Enum
+from abc import abstractmethod
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    NamedTuple
+)
 
-from typing import Dict, Type, Any, Optional, NamedTuple, Tuple, List, Callable, Set, Union
-from typing_extensions import Self, Annotated, get_origin, get_args, get_type_hints
+from experimental._typing import Self, get_args, get_origin, get_type_hints, Annotated
 
-
-from bs4 import BeautifulSoup
 
 from scrape_schema._type_caster import TypeCaster
 
 
 class SpecialMethods(Enum):
-    filter = "%filter%"
-    sort = "%sort%"
+    filter = 0
+    sort = 1
 
 
 class MarkupMethod(NamedTuple):
-    method_name: Union[str, SpecialMethods]
+    METHOD_NAME: Union[str, SpecialMethods]
     args: Tuple[Any, ...] = ()
     kwargs: Dict[str, Any] = {}
 
@@ -25,43 +34,71 @@ class FieldConfig:
     defaults: Dict[str, Any] = {}
 
 
+class _FieldParam(property):
+    pass
+
+
+field_param = _FieldParam
+
+
 class BaseField:
     class Config(FieldConfig):
         pass
 
-    def __init__(self, cast_type: bool = True):
-        """
+    def _prepare_markup(self, markup):
+        """convert string/bytes to parser class context"""
+        if isinstance(self.Config.instance, type(None)):
+            return markup
+        elif isinstance(markup, (str, bytes)):
+            return self.Config.instance(markup)(**self.Config.defaults)
+        return markup
 
-        :rtype: Any
-        """
+    @abstractmethod
+    def parse(self, markup, type_: Optional[Type] = None):
+        pass
+
+
+class Field(BaseField):
+    class Config(FieldConfig):
+        pass
+
+    def __init__(self, cast_type: bool = True):
         self._cast_type = cast_type
         self._t_caster = TypeCaster()
         self._methods_stack: List[MarkupMethod] = []
 
     def _prepare_markup(self, markup):
-        if isinstance(self.Config.instance, type(None)):
+        """convert string/bytes to parser class context"""
+        if self.Config.instance is type(None):
             return markup
-        elif isinstance(markup, str):
+        elif isinstance(markup, (str, bytes)):
             return self.Config.instance(markup)(**self.Config.defaults)
         return markup
 
     @staticmethod
     def _special_method(markup, method: MarkupMethod):
-        if method.method_name == SpecialMethods.filter and isinstance(markup, list):
+        if method.METHOD_NAME == SpecialMethods.filter and isinstance(markup, list):
             return [r for r in markup if method.kwargs['func'](r)]
 
-        elif method.method_name == SpecialMethods.sort and isinstance(markup, list):
+        elif method.METHOD_NAME == SpecialMethods.sort and isinstance(markup, list):
             return sorted(markup, **method.kwargs)
-
         return markup
+
+    @staticmethod
+    def _accept_method(markup, method: MarkupMethod):
+        if isinstance(markup, list) and method.METHOD_NAME != "__getitem__":
+            return [
+                getattr(r, method.METHOD_NAME)(*method.args, **method.kwargs) for r in markup  # type: ignore
+            ]
+        return getattr(markup, method.METHOD_NAME)(*method.args, **method.kwargs)  # type: ignore
 
     def _call_stack_methods(self, markup) -> Any:
         result = markup
         for method in self._methods_stack:
-            if method.method_name is SpecialMethods:
+            if method.METHOD_NAME is SpecialMethods:
                 result = self._special_method(result, method)
             else:
-                result = getattr(result, method.method_name)(*method.args, **method.kwargs)
+                result = self._accept_method(result, method)
         return result
 
     def parse(self, markup, type_: Optional[Type] = None) -> Any:
@@ -93,73 +130,6 @@ class BaseField:
 
     def __getitem__(self, item) -> Self:
         return self.add_method("__getitem__", item)
-
-
-class Soup(BaseField):
-    class Config(FieldConfig):
-        instance = BeautifulSoup
-        defaults = {"features": "html.parser"}
-
-    def find(self, name=None, attrs=None, recursive=True, string=None, **kwargs):
-        """Look in the children of this PageElement and find the first
-               PageElement that matches the given criteria.
-
-               All find_* methods take a common set of arguments. See the online
-               documentation for detailed explanations.
-
-               :param name: A filter on tag name.
-               :param attrs: A dictionary of filters on attribute values.
-               :param recursive: If this is True, find() will perform a
-                   recursive search of this PageElement's children. Otherwise,
-                   only the direct children will be considered.
-               :param limit: Stop looking after finding this many results.
-               :kwargs: A dictionary of filters on attribute values.
-               :return: A PageElement.
-               :rtype: bs4.element.Tag | bs4.element.NavigableString
-               """
-        if attrs is None:
-            attrs = {}
-        # BeautifulSoup.find()
-        return self.add_method("find", name=name, attrs=attrs, recursive=recursive, string=string, **kwargs)
-
-    def find_all(self, name=None, attrs=None, recursive=True, string=None, limit=None, **kwargs):
-        """Look in the children of this PageElement and find all
-                PageElements that match the given criteria.
-
-                All find_* methods take a common set of arguments. See the online
-                documentation for detailed explanations.
-
-                :param name: A filter on tag name.
-                :param attrs: A dictionary of filters on attribute values.
-                :param recursive: If this is True, find_all() will perform a
-                    recursive search of this PageElement's children. Otherwise,
-                    only the direct children will be considered.
-                :param limit: Stop looking after finding this many results.
-                :kwargs: A dictionary of filters on attribute values.
-                :return: A ResultSet of PageElements.
-                :rtype: bs4.element.ResultSet
-                """
-        if attrs is None:
-            attrs = {}
-        return self.add_method("find_all", name=name, attrs=attrs, recursive=recursive, string=string, limit=limit, **kwargs)
-
-    def find_parent(self, *args, **kwargs):
-        return self.add_method('find_parent', *args, **kwargs)
-
-    def find_parents(self, *args, **kwargs):
-        return self.add_method('find_parents', *args, **kwargs)
-
-    def select(self, *args, **kwargs):
-        return self.add_method('select', *args, **kwargs)
-
-    def select_one(self, *args, **kwargs):
-        return self.add_method('select_one', *args, **kwargs)
-
-    def get(self, key: str, default=None):
-        return self.add_method('get', key=key, default=default)
-
-    def get_text(self, *args, **kwargs):
-        return self.add_method('get_text', *args, **kwargs)
 
 
 class SchemaMeta(type):
@@ -214,10 +184,13 @@ class BaseSchema(metaclass=SchemaMeta):
 
     def __init__(self, markup):
         self.__raw__ = markup
+        for cls_parser in self.__parsers__.values():
+            if not self.Config.parsers.get(cls_parser, None) and cls_parser != type(None):
+                raise AttributeError(f"Config.parser required {cls_parser.__name__}")
         # cache parsers
-        self.cached_parsers: Dict[str, Any] = {  # type: ignore
-            k: v(markup, **self.Config.parsers[v])
-            for k, v in self.__parsers__.items()
+        self.cached_parsers: Dict[str, Any] = {
+            cls_parser.__name__: cls_parser(markup, **kw)
+            for cls_parser, kw in self.Config.parsers.items() if cls_parser != type(None)
         }
         self.__init_fields__()
 
@@ -226,20 +199,57 @@ class BaseSchema(metaclass=SchemaMeta):
 
     def __init_fields__(self):
         for name, field in self.__schema_fields__.items():
-            cache_key = field.Config.instance.__name__
             field_type = self.__schema_annotations__[name]
-            setattr(self, name, field.parse(self.cached_parsers[cache_key], field_type))
+            if field.Config.instance != type(None):
+                cache_key = field.Config.instance.__name__
+                value = field.parse(self.cached_parsers[cache_key], field_type)
+            else:
+                value = field.parse(self.__raw__, field_type)
+            setattr(self, name, value)
 
+    @staticmethod
+    def _to_dict(value: Union["BaseSchema", List, Dict, Any]):
+        if isinstance(value, BaseSchema):
+            return value.dict()
 
-if __name__ == '__main__':
-    class Schema(BaseSchema):
-        class Config:
-            parsers = {BeautifulSoup: {"features": 'html.parser'}}
+        elif isinstance(value, list):
+            if all(isinstance(val, BaseSchema) for val in value):
+                return [val.dict() for val in value]
+        return value
 
-        title: Annotated[str, Soup().find("title").get_text()]
-        href: Annotated[str, Soup().find("div").find("a").get('href')]
-        a_text: Annotated[float, Soup().find("a").get_text()]
+    def dict(self):
+        result: Dict[str, Any] = {  # type: ignore
+            k: getattr(self, k)
+            for k, v in self.__class__.__dict__.items()
+            if isinstance(v, _FieldParam)
+        }
+        # parse public field keys
+        for k, v in self.__dict__.items():
+            if not k.startswith("_") and self.__schema_fields__.get(k):
+                result[k] = self._to_dict(v)
+        return result
 
+    def __repr__(self):
+        return f'{self.__schema_name__}({", ".join(self.__repr_args__())})'
 
-    sc = Schema('<title>"test title"</title>\n<div><a href="example.com">123</a><\div>\n')
-    print(sc.title, sc.href, sc.a_text)
+    def __repr_args__(self):
+        args: Dict[str, Any] = {  # type: ignore
+            k: getattr(self, k)
+            for k, v in self.__class__.__dict__.items()
+            if isinstance(v, _FieldParam)
+        }
+        # parse public field keys
+        for k, v in self.__dict__.items():
+            if not k.startswith("_") and self.__schema_fields__.get(k):
+                args[k] = v
+
+        return [
+            f"{k}={repr(v)}"
+            if isinstance(v, BaseSchema)
+            else f"{k}:{type(v).__name__}={repr(v)}"
+            for k, v in args.items()
+        ]
+
+    @property
+    def __schema_name__(self):
+        return self.__class__.__name__
