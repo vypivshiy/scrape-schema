@@ -11,6 +11,12 @@ class Parsel(Field):
     class Config(FieldConfig):
         instance = Selector
 
+    def __init__(self, auto_type: bool = True, default: Any = ..., *, raw: bool = False):
+
+        super().__init__(auto_type=auto_type, default=default)
+        if raw:
+            self.xpath("//p/text()").get()
+
     def css(self, query: str):
         """Apply the given CSS selector and return a SelectorList instance.
 
@@ -19,6 +25,16 @@ class Parsel(Field):
         In the background, CSS queries are translated into XPath queries using cssselect  library and run .xpath() method.
         """
         return self.add_method("css", query)
+
+    @property
+    def raw_text(self):
+        """Shortcut `Parsel().xpath('//p/text()')` call.
+
+        This method for getting raw text (not html), when calling `parsel.Selector` methods will raise an error
+        """
+        # Parsel is not meant for raw text: it will try to "fix" html and parse as html usage `raw_text` property
+        # or `xpath(//p/text()).get()` or raw=True in init constructor
+        return self.xpath("//p/text()").get()
 
     def xpath(
         self, query: str, namespaces: Optional[Mapping[str, str]] = None, **kwargs: Any
@@ -40,6 +56,7 @@ class Parsel(Field):
 
             selector.xpath('//a[href=$url]', url="http://www.example.com")
         """
+
         return self.add_method("xpath", query=query, namespaces=namespaces, **kwargs)
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True):
