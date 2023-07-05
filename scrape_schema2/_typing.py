@@ -1,5 +1,7 @@
 import sys
+from typing import Type
 
+NoneType: Type = type(None)
 
 if sys.version_info >= (3, 9):
     from typing import Annotated
@@ -16,6 +18,12 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import Self
 
-# aliases
-ScField, Sc = Annotated, Annotated
-
+__all__ = [
+    "NoneType",
+    "Annotated",
+    "TypeAlias",
+    "get_args",
+    "get_origin",
+    "get_type_hints",
+    "Self"
+]

@@ -1,26 +1,14 @@
-from enum import Enum
 from abc import abstractmethod
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-    NamedTuple
-)
+from enum import Enum
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union
 
-from experimental._typing import Self, get_args, get_origin, get_type_hints, Annotated
-
-
-from scrape_schema._type_caster import TypeCaster
+from parsel import Selector
+from scrape_schema2._typing import Annotated, Self, get_args, get_origin, get_type_hints, NoneType
+from scrape_schema2.type_caster import TypeCaster
 
 
 class SpecialMethods(Enum):
-    filter = 0
-    sort = 1
+    FN = 0
 
 
 class MarkupMethod(NamedTuple):
@@ -30,31 +18,32 @@ class MarkupMethod(NamedTuple):
 
 
 class FieldConfig:
-    instance: Type[Any] = type(None)
+    instance: Type[Any] = NoneType
     defaults: Dict[str, Any] = {}
 
 
-class _FieldParam(property):
+class sc_param(property):
     pass
-
-
-field_param = _FieldParam
 
 
 class BaseField:
     class Config(FieldConfig):
         pass
 
+    def __init__(self, auto_type: bool = True, **kwargs):
+        self._stack_methods: List[MarkupMethod] = []
+        self.auto_type = auto_type
+
     def _prepare_markup(self, markup):
         """convert string/bytes to parser class context"""
-        if isinstance(self.Config.instance, type(None)):
+        if isinstance(self.Config.instance, NoneType):
             return markup
         elif isinstance(markup, (str, bytes)):
-            return self.Config.instance(markup)(**self.Config.defaults)
+            return self.Config.instance(markup, **self.Config.defaults)
         return markup
 
     @abstractmethod
-    def parse(self, markup, type_: Optional[Type] = None):
+    def sc_parse(self, markup: Any):
         pass
 
 
@@ -62,70 +51,54 @@ class Field(BaseField):
     class Config(FieldConfig):
         pass
 
-    def __init__(self, cast_type: bool = True):
-        self._cast_type = cast_type
-        self._t_caster = TypeCaster()
-        self._methods_stack: List[MarkupMethod] = []
-
     def _prepare_markup(self, markup):
         """convert string/bytes to parser class context"""
-        if self.Config.instance is type(None):
+        if isinstance(self.Config.instance, NoneType):
             return markup
         elif isinstance(markup, (str, bytes)):
-            return self.Config.instance(markup)(**self.Config.defaults)
+            return self.Config.instance(markup, **self.Config.defaults)
         return markup
 
     @staticmethod
     def _special_method(markup, method: MarkupMethod):
-        if method.METHOD_NAME == SpecialMethods.filter and isinstance(markup, list):
-            return [r for r in markup if method.kwargs['func'](r)]
-
-        elif method.METHOD_NAME == SpecialMethods.sort and isinstance(markup, list):
-            return sorted(markup, **method.kwargs)
+        if method.METHOD_NAME == SpecialMethods.FN:
+            return method.kwargs["function"](markup)
         return markup
 
     @staticmethod
-    def _accept_method(markup, method: MarkupMethod):
-        if isinstance(markup, list) and method.METHOD_NAME != "__getitem__":
-            return [
-                getattr(r, method.METHOD_NAME)(*method.args, **method.kwargs) for r in markup  # type: ignore
-            ]
-        return getattr(markup, method.METHOD_NAME)(*method.args, **method.kwargs)  # type: ignore
+    def _accept_method(markup, method: MarkupMethod) -> Any:
+        if isinstance(method.METHOD_NAME, str):
+            class_method = getattr(markup, method.METHOD_NAME)
+            if isinstance(class_method, property):
+                return class_method
+            return getattr(markup, method.METHOD_NAME)(*method.args, **method.kwargs)
+        raise TypeError(
+            f"`{type(markup).__name__}` is not contains `{method.METHOD_NAME}`"
+        )
 
     def _call_stack_methods(self, markup) -> Any:
         result = markup
-        for method in self._methods_stack:
-            if method.METHOD_NAME is SpecialMethods:
+        for method in self._stack_methods:
+            if isinstance(method.METHOD_NAME, SpecialMethods):
                 result = self._special_method(result, method)
             else:
                 result = self._accept_method(result, method)
         return result
 
-    def parse(self, markup, type_: Optional[Type] = None) -> Any:
+    def sc_parse(self, markup: Any) -> Any:
         markup = self._prepare_markup(markup)
-        result = self._call_stack_methods(markup)
-        if self._cast_type and type_:
-            return self._t_caster.cast(type_, result)
-        return result
+        return self._call_stack_methods(markup)
 
     # build in methods
 
-    def filter(self, filter_: Callable[..., bool]) -> Self:
-        return self.add_method(
-            SpecialMethods.filter, func=filter_
-        )
+    def fn(self, function: Callable[..., Any]) -> Self:
+        self.add_method(SpecialMethods.FN, function=function)
+        return self
 
-    def sort(self, key: Any, reverse: bool = False) -> Self:
-        return self.add_method(SpecialMethods.sort, key=key, reverse=reverse)
-
-    def add_method(self, method_name: Union[str, SpecialMethods], *args, **kwargs) -> Self:
-        self._methods_stack.append(
-            MarkupMethod(
-                method_name,
-                args=args,
-                kwargs=kwargs
-            )
-        )
+    def add_method(
+        self, method_name: Union[str, SpecialMethods], *args, **kwargs
+    ) -> Self:
+        self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
         return self
 
     def __getitem__(self, item) -> Self:
@@ -166,7 +139,10 @@ class SchemaMeta(type):
             if mcs._is_type_field(value):
                 field_type, field = mcs._extract_annotated(value)
 
-                if field.Config.instance and field.Config.instance.__name__ not in __parsers__:
+                if (
+                    field.Config.instance
+                    and field.Config.instance.__name__ not in __parsers__
+                ):
                     __parsers__[field.Config.instance.__name__] = field.Config.instance
 
                 __schema_fields__[name] = field
@@ -180,17 +156,21 @@ class SchemaMeta(type):
 
 class BaseSchema(metaclass=SchemaMeta):
     class Config:
-        parsers: Dict[Type[Any], Dict[str, Any]] = {}
+        parsers: Dict[Type[Any], Dict[str, Any]] = {Selector: {}}
+        type_caster: Optional[TypeCaster] = TypeCaster()  # TODO add interface
 
     def __init__(self, markup):
         self.__raw__ = markup
         for cls_parser in self.__parsers__.values():
-            if not self.Config.parsers.get(cls_parser, None) and cls_parser != type(None):
+            if self.Config.parsers.get(cls_parser, None) is None and cls_parser != type(
+                None
+            ):
                 raise AttributeError(f"Config.parser required {cls_parser.__name__}")
         # cache parsers
-        self.cached_parsers: Dict[str, Any] = {
+        self.cached_parsers: Dict[str, Any] = {  # type: ignore
             cls_parser.__name__: cls_parser(markup, **kw)
-            for cls_parser, kw in self.Config.parsers.items() if cls_parser != type(None)
+            for cls_parser, kw in self.Config.parsers.items()
+            if not isinstance(cls_parser, NoneType)
         }
         self.__init_fields__()
 
@@ -200,11 +180,17 @@ class BaseSchema(metaclass=SchemaMeta):
     def __init_fields__(self):
         for name, field in self.__schema_fields__.items():
             field_type = self.__schema_annotations__[name]
-            if field.Config.instance != type(None):
+
+            if field.__class__.__name__ == "Nested":  # fixme
+                field.type_ = field_type
+
+            if isinstance(field.Config.instance, NoneType):
                 cache_key = field.Config.instance.__name__
-                value = field.parse(self.cached_parsers[cache_key], field_type)
+                value = field.sc_parse(self.cached_parsers[cache_key])
             else:
-                value = field.parse(self.__raw__, field_type)
+                value = field.sc_parse(self.__raw__)
+                if self.Config.type_caster and field.auto_type:  # fixme
+                    value = self.Config.type_caster.cast(field_type, value)
             setattr(self, name, value)
 
     @staticmethod
@@ -221,7 +207,7 @@ class BaseSchema(metaclass=SchemaMeta):
         result: Dict[str, Any] = {  # type: ignore
             k: getattr(self, k)
             for k, v in self.__class__.__dict__.items()
-            if isinstance(v, _FieldParam)
+            if isinstance(v, sc_param)
         }
         # parse public field keys
         for k, v in self.__dict__.items():
@@ -236,7 +222,7 @@ class BaseSchema(metaclass=SchemaMeta):
         args: Dict[str, Any] = {  # type: ignore
             k: getattr(self, k)
             for k, v in self.__class__.__dict__.items()
-            if isinstance(v, _FieldParam)
+            if isinstance(v, sc_param)
         }
         # parse public field keys
         for k, v in self.__dict__.items():
