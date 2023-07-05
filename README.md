@@ -5,10 +5,10 @@
 ![Version](https://img.shields.io/pypi/v/scrape-schema)
 ![Python-versions](https://img.shields.io/pypi/pyversions/scrape_schema)
 [![codecov](https://codecov.io/gh/vypivshiy/scrape-schema/branch/master/graph/badge.svg?token=jqSNuE7g5l)](https://codecov.io/gh/vypivshiy/scrape-schema)
+
 # Scrape-schema
 This library is designed to write structured, readable, 
-reusable parsers for unstructured text data (like html, stdout or any text) and
-is inspired by dataclasses
+reusable parsers for html, raw text and is inspired by dataclasses
 
 # Motivation
 Simplifying parsers support, where it is difficult to use 
@@ -19,41 +19,103 @@ for third-party serialization libraries: json, dataclasses, pydantic, etc
 
 _____
 # Features
-* python 3.8+ support
-* decrease lines of code for your parsers
-* partial support type-casting from annotations (str, int, float, bool, list, dict, Optional)
-* interacting with values with callbacks, filters, factories
-* logging to quickly find problems in extracted values
-* optional success-attempts parse values checker from fields objects
-* standardization, modularity* of structures-parsers
-*If you usage schema-structures and they are separated from the logic of getting the text
-(stdout output, HTTP requests, etc)
+- [Parsel](https://github.com/scrapy/parsel) backend.
+- [Fluent interface](https://en.wikipedia.org/wiki/Fluent_interface#Python) simulate original parsel.Selector API for easy to use. 
+- Python 3.8+ support
+- Dataclass-like structure
+- Partial support auto type-casting from annotations (str, int, float, bool, list, dict, Optional)
+- logging to quickly find problems in extracted values
 ____
-# Build-in libraries parsers support:
-- [x] re
-- [x] bs4
-- [x] selectolax(Modest)
-- [x] parsel
-- [ ] selenium
-- [ ] playwright
-____
+
 # Install
 
-zero dependencies: regex, nested fields support (and typing_extension if python < 3.11)
 ```shell
 pip install scrape-schema
 ```
 
-# Dependencies
-The following are optional:
-- [bs4](https://www.crummy.com/software/BeautifulSoup/)  - add bs4 fields support: `pip install scrape-schema[bs4]`
-- [parsel](https://github.com/scrapy/parsel) - add parsel fields support: `pip install scrape-schema[parsel]`
-- [selectolax](https://github.com/rushter/selectolax) - add selectolax fields support: `pip install scrape-schema[selectolax]`
-- add ALL available dependencies `pip install scrape-schema[all]`
-
 ____
 # Code comparison
-Before scrape_schema: harder to maintain, change logic
+## html
+
+parsel:
+```python
+from parsel import Selector
+import pprint
+import requests
+
+
+def original_parsel(resp: str):
+    sel = Selector(resp)
+    __RATINGS = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    data: dict[str, list[dict]] = {"books": []}
+    for book_sel in sel.xpath(".//section/div/ol[@class='row']/li"):
+        if url := book_sel.xpath('//div[@class="image_container"]/a/@href').get():
+            url = f"https://books.toscrape.com/catalogue/{url}"
+        if image := book_sel.xpath('//div[@class="image_container"]/a/img/@src').get():
+            image = f"https://books.toscrape.com{image[2:]}"
+        if price := book_sel.xpath('//div[@class="product_price"]/p[@class="price_color"]/text()').get():
+            price = float(price[2:])
+        else:
+            price = .0
+        name = book_sel.xpath("//h3/a/@title").get()
+        available = book_sel.xpath('//div[@class="product_price"]/p[@class="instock availability"]/i').attrib.get('class')
+        available = ('icon-ok' in available)
+        rating = book_sel.xpath('//p[contains(@class, "star-rating")]').attrib.get('class')
+        rating = __RATINGS.get(rating.split()[-1], 0)
+        data['books'].append(dict(url=url, image=image, price=price, name=name, available=available, rating=rating))
+    return data
+
+
+if __name__ == '__main__':
+    response = requests.get("https://books.toscrape.com/catalogue/page-2.html").text
+    pprint.pprint(original_parsel(response), compact=True)
+```
+
+scrape_schema:
+```python
+from typing import List
+import pprint
+import requests
+from scrape_schema2 import BaseSchema, Sc, Nested, sc_param, Parsel
+
+
+class Book(BaseSchema):
+    __RATINGS = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+    url: Sc[str, (Parsel()
+                  .xpath('//div[@class="image_container"]/a/@href')
+                  .get()
+                  .concat_l("https://books.toscrape.com/catalogue/"))]
+    image: Sc[str, (Parsel()
+              .xpath('//div[@class="image_container"]/a/img/@src')
+              .get()[2:]
+              .concat_l("https://books.toscrape.com"))]
+    price: Sc[float, (Parsel(default=.0)
+                      .xpath('//div[@class="product_price"]/p[@class="price_color"]/text()')
+                      .get()[2:])]
+    name: Sc[str, Parsel().xpath("//h3/a/@title").get()]
+    available: Sc[bool, (Parsel()
+                         .xpath('//div[@class="product_price"]/p[@class="instock availability"]/i')
+                         .attrib['class']
+                         .fn(lambda s: s == 'icon-ok')  # check available tag
+                         )]
+    _rating: Sc[str, Parsel().xpath('//p[contains(@class, "star-rating")]').attrib.get(key='class')]
+
+    @sc_param
+    def rating(self) -> int:
+        return self.__RATINGS.get(self._rating.split()[-1], 0)
+
+
+class MainPage(BaseSchema):
+    books: Sc[List[Book], Nested(Parsel().xpath(".//section/div/ol[@class='row']/li"))]
+
+    
+if __name__ == '__main__':
+    response = requests.get("https://books.toscrape.com/catalogue/page-2.html").text
+    pprint.pprint(MainPage(response).dict(), compact=True)
+```
+
+## raw text
+original re: harder to maintain, change logic:
 ```python
 import re
 import pprint
@@ -107,13 +169,12 @@ if __name__ == '__main__':
     #                  'dolor'],
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
-After scrape_schema: easy change of logic, support, portability
+scrape_schema: easy change of logic, support, portability
 ```python
-from typing import List  # if you usage python3.8 - usage GenericAliases
+from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
-
-from scrape_schema import BaseSchema, ScField
-from scrape_schema.fields.regex import ReMatch, ReMatchList
+from scrape_schema2 import Parsel, BaseSchema, Sc, sc_param
+# Note: `Sc` is shortcut typing.Annotated
 
 TEXT = """
 banana potato BANANA POTATO
@@ -124,35 +185,33 @@ lorem upsum dolor
 """
 
 
-class Schema(BaseSchema):
-    ipv4: ScField[str, ReMatch(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")]
-    failed_value: ScField[bool, ReMatchList(r"(ora)", default=False)]
-    digits: ScField[List[int], ReMatchList(r"(\d+)")]
-    digits_float: ScField[List[float], ReMatchList(r"(\d+)", 
-                                                     callback=lambda s: f"{s}.5")]
-    words_lower: ScField[List[str], ReMatchList(r"([a-z]+)")]
-    words_upper: ScField[List[str], ReMatchList(r"([A-Z]+)")]
-    
-    @property
-    def max_digit(self) -> int:
-        return max(self.digits)
-    
-    @property
-    def all_words(self) -> List[str]:
+class MySchema(BaseSchema):
+    ipv4: Sc[str, Parsel(raw=True).re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]]
+    failed_value: Sc[bool, Parsel(default=False, raw=True).re_search(r"(ora)")[1]]
+    digits: Sc[List[int], Parsel(raw=True).re_findall(r"(\d+)")]
+    digits_float: Sc[List[float], Parsel(raw=True).re_findall(r"(\d+)").fn(lambda lst: [f"{s}.5" for s in lst])]
+    words_lower: Sc[List[str], Parsel(raw=True).re_findall("([a-z]+)")]
+    words_upper: Sc[List[str], Parsel(raw=True).re_findall(r"([A-Z]+)")]
+
+    @sc_param
+    def sum(self):
+        return sum(self.digits)
+
+    @sc_param
+    def all_words(self):
         return self.words_lower + self.words_upper
-    
+
 if __name__ == '__main__':
-    schema = Schema(TEXT)
-    pprint.pprint(schema.dict(), compact=True)
-    # {'all_words': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor',
-    #           'BANANA', 'POTATO'],
-    #  'digits': [10, 20, 192, 168, 0, 1],
-    #  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5, 1.5],
-    #  'failed_value': False,
-    #  'ipv4': '192.168.0.1',
-    #  'max_digit': 192,
-    #  'words_lower': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor'],
-    #  'words_upper': ['BANANA', 'POTATO']}
+    pprint.pprint(MySchema(TEXT).dict(), compact=True)
+# {'all_words': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor',
+#                'BANANA', 'POTATO'],
+#  'digits': [10, 20, 192, 168, 0, 1],
+#  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5, 1.5],
+#  'failed_value': False,
+#  'ipv4': '192.168.0.1',
+#  'sum': 391,
+#  'words_lower': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor'],
+#  'words_upper': ['BANANA', 'POTATO']}
 ```
 
 _____
