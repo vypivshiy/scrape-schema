@@ -24,7 +24,8 @@ classifiers = [
   "Topic :: Text Processing"
 ]
 dependencies = [
-  'colorama',
+  'colorlog',
+  'parsel',
   'typing_extensions; python_version < "3.11"'
 ]
 dynamic = ["version"]
@@ -37,11 +38,7 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 
 
 [project.optional-dependencies]
-selectolax = ["selectolax"]
-bs4 = ["bs4"]
-parsel = ["parsel"]
-all = ["selectolax", "bs4", "parsel"]
-dev = ["bs4", "selectolax", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
+dev = ["flake8", "black", "isort", "pytest", "mypy", "parsel"]
 ci = ["hatch", "bs4", "selectolax", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
 docs = ["mkdocs-material"]
 
