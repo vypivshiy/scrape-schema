@@ -1,7 +1,7 @@
 from typing import Any, Optional, Type, get_args
 
 from scrape_schema2._typing import get_origin
-from scrape_schema2.base import BaseField, BaseSchema
+from scrape_schema2.base import BaseField, BaseSchema, FieldConfig
 
 
 class Nested(BaseField):
@@ -18,9 +18,12 @@ class Nested(BaseField):
         self._crop_field = field
         self.Config.instance = markup_parser
 
+    def _prepare_markup(self, markup):
+        raise NotImplementedError("_prepare_markup not allowed in Nested")  # pragma: no cover
+
     def sc_parse(self, markup) -> Any:
         if not self.type_:
-            raise AttributeError("Nested required annotation")
+            raise AttributeError("Nested required annotation or `type_` param")
         elif get_origin(self.type_) is list and (
             len(get_args(self.type_)) != 0
             and issubclass(get_args(self.type_)[0], BaseSchema)

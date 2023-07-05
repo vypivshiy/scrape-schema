@@ -5,16 +5,24 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type,
 from parsel import Selector
 from scrape_schema2._typing import Annotated, Self, get_args, get_origin, get_type_hints, NoneType
 from scrape_schema2.type_caster import TypeCaster
+from scrape_schema2._logger import _logger
 
 
 class SpecialMethods(Enum):
+    # special methods for another methods
     FN = 0
+    CONCAT_L = 1
+    CONCAT_R = 2
+    REPLACE = 3
 
 
 class MarkupMethod(NamedTuple):
     METHOD_NAME: Union[str, SpecialMethods]
     args: Tuple[Any, ...] = ()
     kwargs: Dict[str, Any] = {}
+
+    def __repr__(self):
+        return f"{self.METHOD_NAME} args={self.args}, kwargs={self.kwargs}"
 
 
 class FieldConfig:
@@ -23,6 +31,7 @@ class FieldConfig:
 
 
 class sc_param(property):
+    """Shortcut for adding property-like descriptors in BaseSchema"""
     pass
 
 
@@ -30,17 +39,15 @@ class BaseField:
     class Config(FieldConfig):
         pass
 
-    def __init__(self, auto_type: bool = True, **kwargs):
+    def __init__(self, auto_type: bool = True, default: Any = ..., **kwargs):
         self._stack_methods: List[MarkupMethod] = []
+        self.default = default
         self.auto_type = auto_type
+        self.is_default = False  # flag check failed parsed value
 
+    @abstractmethod
     def _prepare_markup(self, markup):
-        """convert string/bytes to parser class context"""
-        if isinstance(self.Config.instance, NoneType):
-            return markup
-        elif isinstance(markup, (str, bytes)):
-            return self.Config.instance(markup, **self.Config.defaults)
-        return markup
+        pass
 
     @abstractmethod
     def sc_parse(self, markup: Any):
@@ -56,6 +63,8 @@ class Field(BaseField):
         if isinstance(self.Config.instance, NoneType):
             return markup
         elif isinstance(markup, (str, bytes)):
+            _logger.debug("Convert raw markup to %s with kwargs %s", self.Config.instance.__name__,
+                          self.Config.defaults)
             return self.Config.instance(markup, **self.Config.defaults)
         return markup
 
@@ -63,13 +72,26 @@ class Field(BaseField):
     def _special_method(markup, method: MarkupMethod):
         if method.METHOD_NAME == SpecialMethods.FN:
             return method.kwargs["function"](markup)
-        return markup
+        elif method.METHOD_NAME == SpecialMethods.CONCAT_R:
+            if isinstance(markup, list):
+                return [m + method.args[0] for m in markup]
+            return markup + method.args[0]
+        elif method.METHOD_NAME == SpecialMethods.CONCAT_L:
+            if isinstance(markup, list):
+                return [method.args[0] + m for m in markup]
+            return method.args[0] + markup
+        elif method.METHOD_NAME == SpecialMethods.REPLACE:
+            __old, __new, __count = method.args[0], method.args[1], method.args[2]
+            if isinstance(markup, list):
+                return [m.replace(__old, __new, __count) for m in markup]
+            return markup.replace(__old, __new, __count)
+        raise TypeError("Unknown special method")
 
     @staticmethod
     def _accept_method(markup, method: MarkupMethod) -> Any:
         if isinstance(method.METHOD_NAME, str):
             class_method = getattr(markup, method.METHOD_NAME)
-            if isinstance(class_method, property):
+            if isinstance(class_method, (property, dict)):  # attrib check
                 return class_method
             return getattr(markup, method.METHOD_NAME)(*method.args, **method.kwargs)
         raise TypeError(
@@ -78,11 +100,22 @@ class Field(BaseField):
 
     def _call_stack_methods(self, markup) -> Any:
         result = markup
+        _logger.info("start call methods. stack count: %s", len(self._stack_methods))
         for method in self._stack_methods:
-            if isinstance(method.METHOD_NAME, SpecialMethods):
-                result = self._special_method(result, method)
-            else:
-                result = self._accept_method(result, method)
+            try:
+                if isinstance(method.METHOD_NAME, SpecialMethods):
+                    result = self._special_method(result, method)
+                else:
+                    result = self._accept_method(result, method)
+            except Exception as e:
+                _logger.error("Method `%s` return traceback %s", method, e)
+                _logger.exception(e)
+                if self.default is Ellipsis:
+                    raise e
+                _logger.warning("Set default value %s and disable type_casting", self.default)
+                self.is_default = True
+                return self.default
+        _logger.info("Call methods done. result=%s", result)
         return result
 
     def sc_parse(self, markup: Any) -> Any:
@@ -92,12 +125,25 @@ class Field(BaseField):
     # build in methods
 
     def fn(self, function: Callable[..., Any]) -> Self:
-        self.add_method(SpecialMethods.FN, function=function)
-        return self
+        """call another function and return result"""
+        return self.add_method(SpecialMethods.FN, function=function)
+
+    def concat_l(self, left_string: str) -> Self:
+        """add string to left. Last argument should be string"""
+        return self.add_method(SpecialMethods.CONCAT_L, left_string)
+
+    def concat_r(self, right_string: str) -> Self:
+        """add string to right. Last argument should be string"""
+        return self.add_method(SpecialMethods.CONCAT_R, right_string)
+
+    def sc_replace(self, old: str, new: str, count: int = -1) -> Self:
+        """replace string method. Last argument should be string"""
+        return self.add_method(SpecialMethods.REPLACE, old, new, count)
 
     def add_method(
         self, method_name: Union[str, SpecialMethods], *args, **kwargs
     ) -> Self:
+        """low-level interface adding methods to call stack"""
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
         return self
 
@@ -122,6 +168,7 @@ class SchemaMeta(type):
         return args[0], tuple(arg for arg in args[1:] if isinstance(arg, BaseField))[0]
 
     def __new__(mcs, name, bases, attrs):
+        # cache fields, annotations and used parsers for more simplify access
         __schema_fields__: Dict[str, BaseField] = {}  # type: ignore
         __schema_annotations__: Dict[str, Type] = {}  # type: ignore
         __parsers__: Dict[str, Type] = {}  # type: ignore
@@ -157,14 +204,13 @@ class SchemaMeta(type):
 class BaseSchema(metaclass=SchemaMeta):
     class Config:
         parsers: Dict[Type[Any], Dict[str, Any]] = {Selector: {}}
-        type_caster: Optional[TypeCaster] = TypeCaster()  # TODO add interface
+        type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
 
     def __init__(self, markup):
         self.__raw__ = markup
         for cls_parser in self.__parsers__.values():
-            if self.Config.parsers.get(cls_parser, None) is None and cls_parser != type(
-                None
-            ):
+            if self.Config.parsers.get(cls_parser, None) is None and cls_parser != NoneType:
+                _logger.error("Config.parser required %s", cls_parser.__name__)
                 raise AttributeError(f"Config.parser required {cls_parser.__name__}")
         # cache parsers
         self.cached_parsers: Dict[str, Any] = {  # type: ignore
@@ -172,25 +218,34 @@ class BaseSchema(metaclass=SchemaMeta):
             for cls_parser, kw in self.Config.parsers.items()
             if not isinstance(cls_parser, NoneType)
         }
+        # initialize and parse fields
         self.__init_fields__()
 
     def clear_cache(self):
         self.cached_parsers.clear()
 
     def __init_fields__(self):
+        _logger.info("[%s] Start parse fields count: %s", self.__schema_name__, len(self.__schema_fields__.keys()))
         for name, field in self.__schema_fields__.items():
             field_type = self.__schema_annotations__[name]
-
-            if field.__class__.__name__ == "Nested":  # fixme
+            _logger.debug("%s.%s start parse", self.__schema_name__, name)
+            if field.__class__.__name__ == "Nested":  # todo fix
                 field.type_ = field_type
 
-            if isinstance(field.Config.instance, NoneType):
-                cache_key = field.Config.instance.__name__
-                value = field.sc_parse(self.cached_parsers[cache_key])
+            # todo refactoring
+            if field.Config.instance == NoneType and field.__class__.__name__ == "Nested":
+                value = field.sc_parse(self.cached_parsers["Selector"])
             else:
-                value = field.sc_parse(self.__raw__)
-                if self.Config.type_caster and field.auto_type:  # fixme
-                    value = self.Config.type_caster.cast(field_type, value)
+                cache_key = field.Config.instance.__name__
+                value = field.sc_parse(self.cached_parsers[cache_key])  # self.__raw__
+
+            if self.Config.type_caster and field.auto_type and not field.is_default:
+                value = self.Config.type_caster.cast(field_type, value)
+            # disable default value flag
+            if field.is_default:
+                field.is_default = False
+
+            _logger.info("%s.%s = %s", self.__schema_name__, name, value)
             setattr(self, name, value)
 
     @staticmethod
@@ -218,7 +273,7 @@ class BaseSchema(metaclass=SchemaMeta):
     def __repr__(self):
         return f'{self.__schema_name__}({", ".join(self.__repr_args__())})'
 
-    def __repr_args__(self):
+    def __repr_args__(self) -> List[str]:
         args: Dict[str, Any] = {  # type: ignore
             k: getattr(self, k)
             for k, v in self.__class__.__dict__.items()
@@ -226,7 +281,7 @@ class BaseSchema(metaclass=SchemaMeta):
         }
         # parse public field keys
         for k, v in self.__dict__.items():
-            if not k.startswith("_") and self.__schema_fields__.get(k):
+            if not k.startswith("_") and self.__schema_fields__.get(k):  # type: ignore
                 args[k] = v
 
         return [

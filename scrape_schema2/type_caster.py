@@ -1,9 +1,9 @@
 import sys
 from typing import Any, Type, Union
 
-from scrape_schema2.base import get_args, get_origin
+from scrape_schema2._typing import get_args, get_origin
 
-from scrape_schema._logger import logger
+from scrape_schema2._logger import _logger
 
 NoneType = type(None)
 
@@ -26,8 +26,8 @@ class TypeCaster:
 
         origin = get_origin(type_hint)
         args = get_args(type_hint)
-        logger.info(
-            "`{}` Cast type start. `value={}`, type_annotation={}, `origin={}`, `args={}`",
+        _logger.debug(
+            "`%s` Cast type start. `value=%s`, type_annotation=%s, `origin=%s`, `args=%s`",
             self.__class__.__name__,
             value,
             type_hint,
@@ -41,8 +41,8 @@ class TypeCaster:
         if origin is not None and args:
             # list
             if origin is list:
-                logger.debug(
-                    "List cast {} -> arg={}, value={}",
+                _logger.debug(
+                    "List cast %s %s -> %s",
                     self.__class__.__name__,
                     args[0],
                     value,
@@ -51,8 +51,8 @@ class TypeCaster:
             # dict
             elif origin is dict:
                 key_type, value_type = args
-                logger.debug(
-                    "Dict cast {} -> key={}, value={}  `{}`",
+                _logger.debug(
+                    "Dict cast %s key=%s, value=%s -> %s",
                     self.__class__.__name__,
                     key_type.__name__,
                     value_type.__name__,
@@ -67,8 +67,8 @@ class TypeCaster:
             # Optional
             elif origin is Union:
                 if value is None and NoneType in args:
-                    logger.debug(
-                        "Optional cast {} -> {}", self.__class__.__name__, value
+                    _logger.debug(
+                        "Optional cast %s -> %s", self.__class__.__name__, value
                     )
                     return None
                 # in python3.8 raise TypeError: issubclass() arg 1 must be a class
@@ -78,11 +78,11 @@ class TypeCaster:
                     return self.cast(type_hint=non_none_args[0], value=value)
         # bool cast
         elif type_hint is bool:
-            logger.debug("Cast {} `{}()` -> bool", self.__class__.__name__, value)
+            _logger.debug("Bool cast %s -> %s", self.__class__.__name__, value)
             return bool(value)
         else:
             # direct cast
-            logger.debug(
-                "Cast `{}` := `{}({})`", self.__class__.__name__, type_hint, value
+            _logger.debug(
+                "Direct cast %s %s -> %s", self.__class__.__name__, type_hint, value
             )
             return type_hint(value)

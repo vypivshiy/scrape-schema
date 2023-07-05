@@ -1,6 +1,8 @@
 from typing import Any, Hashable, Mapping, Optional, Pattern, Union, overload
 
 from parsel import Selector
+
+from scrape_schema2._logger import _logger
 from scrape_schema2.base import Field, FieldConfig
 from scrape_schema2._typing import Self
 
@@ -57,16 +59,9 @@ class Parsel(Field):
 
     def _is_attrib(self):
         if (method := self._stack_methods[-1].METHOD_NAME) != "attrib":
+            _logger.error("Last method should be `attrib, not %s", method)
             raise TypeError(f"Last method should be `attrib`, not `{method}`")
         return True
-
-    @overload
-    def get(self, default: Optional[str] = None) -> Self:
-        pass
-
-    @overload
-    def get(self, key: Hashable) -> Self:
-        pass
 
     def get(self, default: Optional[str] = None, key: Optional[Hashable] = None) -> Self:  # type: ignore
         """
@@ -75,7 +70,8 @@ class Parsel(Field):
         If `key` param passed - get value from attrib property. attrib should be called in chain methods
         """
         if key and default:
-            raise TypeError("__key param should be call after `attrib` property")
+            _logger.error("get should be accept `key` OR `default` param, not `key` AND `default`")
+            raise TypeError("get should be accept `key` OR `default` param, not `key` AND `default`")
         elif key:
             if self._is_attrib():
                 return self.add_method("get", key)
