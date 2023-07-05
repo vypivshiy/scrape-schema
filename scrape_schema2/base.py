@@ -1,6 +1,8 @@
+import re
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union, Pattern
+from re import RegexFlag
 
 from parsel import Selector
 from scrape_schema2._typing import Annotated, Self, get_args, get_origin, get_type_hints, NoneType
@@ -14,7 +16,8 @@ class SpecialMethods(Enum):
     CONCAT_L = 1
     CONCAT_R = 2
     REPLACE = 3
-
+    REGEX_SEARCH = 4
+    REGEX_FINDALL = 5
 
 class MarkupMethod(NamedTuple):
     METHOD_NAME: Union[str, SpecialMethods]
@@ -85,6 +88,23 @@ class Field(BaseField):
             if isinstance(markup, list):
                 return [m.replace(__old, __new, __count) for m in markup]
             return markup.replace(__old, __new, __count)
+
+        elif method.METHOD_NAME == SpecialMethods.REGEX_SEARCH:
+            pattern, groupdict = method.args
+            if groupdict:
+                if not pattern.groupindex:
+                    raise TypeError(f"Pattern `{pattern.pattern}` is not contains groups")
+                return pattern.search(markup).groupdict()
+            return pattern.search(markup)
+
+        elif method.METHOD_NAME == SpecialMethods.REGEX_FINDALL:
+            pattern, groupdict = method.args
+            if groupdict:
+                if not pattern.groupindex:
+                    raise TypeError(f"Pattern `{pattern.pattern}` is not contains groups")
+                return [match.groupdict() for match in pattern.finditer(markup)]
+            return pattern.findall(markup)
+
         raise TypeError("Unknown special method")
 
     @staticmethod
@@ -139,6 +159,30 @@ class Field(BaseField):
     def sc_replace(self, old: str, new: str, count: int = -1) -> Self:
         """replace string method. Last argument should be string"""
         return self.add_method(SpecialMethods.REPLACE, old, new, count)
+
+    def re_search(self, pattern: Union[str, Pattern[str]], flags: Union[int, RegexFlag] = 0, groupdict: bool = False) -> Self:
+        """re.search method for text result.
+
+        Last chain should be return string.
+
+        :param pattern: regex pattern
+        :param flags: compilation flags
+        :param groupdict: accept groupdict method. patter required named groups. default False
+        """
+        pattern = re.compile(pattern, flags=flags)
+        return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)
+
+    def re_findall(self, pattern: Union[str, Pattern[str]], flags: Union[int, RegexFlag] = 0, groupdict: bool = False):
+        """[match for match in re.finditer(...)] method for text result.
+
+        Last chain should be return string.
+
+        :param pattern: regex pattern
+        :param flags: compilation flags
+        :param groupdict: accept groupdict method. patter required named groups. default False
+        """
+        pattern = re.compile(pattern, flags=flags)
+        return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)
 
     def add_method(
         self, method_name: Union[str, SpecialMethods], *args, **kwargs
@@ -206,18 +250,30 @@ class BaseSchema(metaclass=SchemaMeta):
         parsers: Dict[Type[Any], Dict[str, Any]] = {Selector: {}}
         type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
 
-    def __init__(self, markup):
-        self.__raw__ = markup
-        for cls_parser in self.__parsers__.values():
-            if self.Config.parsers.get(cls_parser, None) is None and cls_parser != NoneType:
-                _logger.error("Config.parser required %s", cls_parser.__name__)
-                raise AttributeError(f"Config.parser required {cls_parser.__name__}")
-        # cache parsers
-        self.cached_parsers: Dict[str, Any] = {  # type: ignore
-            cls_parser.__name__: cls_parser(markup, **kw)
-            for cls_parser, kw in self.Config.parsers.items()
-            if not isinstance(cls_parser, NoneType)
-        }
+    def __init__(self, markup: Any):
+        self.cached_parsers: Dict[str, Any] = {}
+        if isinstance(markup, (str, bytes)):
+            self.__raw__ = markup
+            for cls_parser in self.__parsers__.values():
+                if self.Config.parsers.get(cls_parser, None) is None and cls_parser != NoneType:
+                    _logger.error("Config.parser required %s", cls_parser.__name__)
+                    raise AttributeError(f"Config.parser required {cls_parser.__name__}")
+
+            # cache parsers
+            self.cached_parsers.update({  # type: ignore
+                cls_parser.__name__: cls_parser(markup, **kw)
+                for cls_parser, kw in self.Config.parsers.items()
+                if not isinstance(cls_parser, NoneType)
+            })
+
+        # TODO write adapter for another backends
+        elif isinstance(markup, Selector):
+            self.__raw__ = markup.get()
+            self.cached_parsers["Selector"] = markup
+
+        else:
+            raise TypeError(f"markup support only str,bytes or Selector types, not {type(markup).__name__}")
+
         # initialize and parse fields
         self.__init_fields__()
 
