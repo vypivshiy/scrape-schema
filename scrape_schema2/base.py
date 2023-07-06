@@ -1,13 +1,31 @@
 import re
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, Union, Pattern
 from re import RegexFlag
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Pattern,
+    Tuple,
+    Type,
+    Union,
+)
 
 from parsel import Selector
-from scrape_schema2._typing import Annotated, Self, get_args, get_origin, get_type_hints, NoneType
-from scrape_schema2.type_caster import TypeCaster
 from scrape_schema2._logger import _logger
+from scrape_schema2._typing import (
+    Annotated,
+    NoneType,
+    Self,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
+from scrape_schema2.type_caster import TypeCaster
 
 
 class SpecialMethods(Enum):
@@ -18,6 +36,7 @@ class SpecialMethods(Enum):
     REPLACE = 3
     REGEX_SEARCH = 4
     REGEX_FINDALL = 5
+
 
 class MarkupMethod(NamedTuple):
     METHOD_NAME: Union[str, SpecialMethods]
@@ -35,6 +54,7 @@ class FieldConfig:
 
 class sc_param(property):
     """Shortcut for adding property-like descriptors in BaseSchema"""
+
     pass
 
 
@@ -61,18 +81,21 @@ class Field(BaseField):
     class Config(FieldConfig):
         pass
 
-    def _prepare_markup(self, markup):
+    def _prepare_markup(self, markup: Any):
         """convert string/bytes to parser class context"""
         if isinstance(self.Config.instance, NoneType):
             return markup
         elif isinstance(markup, (str, bytes)):
-            _logger.debug("Convert raw markup to %s with kwargs %s", self.Config.instance.__name__,
-                          self.Config.defaults)
+            _logger.debug(
+                "Convert raw markup to %s with kwargs %s",
+                self.Config.instance.__name__,
+                self.Config.defaults,
+            )
             return self.Config.instance(markup, **self.Config.defaults)
         return markup
 
     @staticmethod
-    def _special_method(markup, method: MarkupMethod):
+    def _special_method(markup: Any, method: MarkupMethod):
         if method.METHOD_NAME == SpecialMethods.FN:
             return method.kwargs["function"](markup)
         elif method.METHOD_NAME == SpecialMethods.CONCAT_R:
@@ -88,27 +111,29 @@ class Field(BaseField):
             if isinstance(markup, list):
                 return [m.replace(__old, __new, __count) for m in markup]
             return markup.replace(__old, __new, __count)
-
         elif method.METHOD_NAME == SpecialMethods.REGEX_SEARCH:
             pattern, groupdict = method.args
             if groupdict:
                 if not pattern.groupindex:
-                    raise TypeError(f"Pattern `{pattern.pattern}` is not contains groups")
+                    raise TypeError(
+                        f"Pattern `{pattern.pattern}` is not contains groups"
+                    )
                 return pattern.search(markup).groupdict()
             return pattern.search(markup)
-
         elif method.METHOD_NAME == SpecialMethods.REGEX_FINDALL:
             pattern, groupdict = method.args
             if groupdict:
                 if not pattern.groupindex:
-                    raise TypeError(f"Pattern `{pattern.pattern}` is not contains groups")
+                    raise TypeError(
+                        f"Pattern `{pattern.pattern}` is not contains groups"
+                    )
                 return [match.groupdict() for match in pattern.finditer(markup)]
             return pattern.findall(markup)
 
         raise TypeError("Unknown special method")
 
     @staticmethod
-    def _accept_method(markup, method: MarkupMethod) -> Any:
+    def _accept_method(markup: Any, method: MarkupMethod) -> Any:
         if isinstance(method.METHOD_NAME, str):
             class_method = getattr(markup, method.METHOD_NAME)
             if isinstance(class_method, (property, dict)):  # attrib check
@@ -118,7 +143,7 @@ class Field(BaseField):
             f"`{type(markup).__name__}` is not contains `{method.METHOD_NAME}`"
         )
 
-    def _call_stack_methods(self, markup) -> Any:
+    def _call_stack_methods(self, markup: Any) -> Any:
         result = markup
         _logger.info("start call methods. stack count: %s", len(self._stack_methods))
         for method in self._stack_methods:
@@ -128,15 +153,20 @@ class Field(BaseField):
                 else:
                     result = self._accept_method(result, method)
             except Exception as e:
-                _logger.error("Method `%s` return traceback %s", method, e)
-                _logger.exception(e)
-                if self.default is Ellipsis:
-                    raise e
-                _logger.warning("Set default value %s and disable type_casting", self.default)
-                self.is_default = True
-                return self.default
+                return self._stack_method_handler(method, e)
         _logger.info("Call methods done. result=%s", result)
         return result
+
+    def _stack_method_handler(
+        self, method: Union[MarkupMethod, SpecialMethods], e: Exception
+    ):
+        _logger.error("Method `%s` return traceback %s", method, e)
+        _logger.exception(e)
+        if self.default is Ellipsis:
+            raise e
+        _logger.warning("Set default value %s and disable type_casting", self.default)
+        self.is_default = True
+        return self.default
 
     def sc_parse(self, markup: Any) -> Any:
         markup = self._prepare_markup(markup)
@@ -160,7 +190,12 @@ class Field(BaseField):
         """replace string method. Last argument should be string"""
         return self.add_method(SpecialMethods.REPLACE, old, new, count)
 
-    def re_search(self, pattern: Union[str, Pattern[str]], flags: Union[int, RegexFlag] = 0, groupdict: bool = False) -> Self:
+    def re_search(
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
+    ) -> Self:
         """re.search method for text result.
 
         Last chain should be return string.
@@ -172,7 +207,12 @@ class Field(BaseField):
         pattern = re.compile(pattern, flags=flags)
         return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)
 
-    def re_findall(self, pattern: Union[str, Pattern[str]], flags: Union[int, RegexFlag] = 0, groupdict: bool = False):
+    def re_findall(
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
+    ):
         """[match for match in re.finditer(...)] method for text result.
 
         Last chain should be return string.
@@ -196,6 +236,7 @@ class Field(BaseField):
 
 
 class SchemaMeta(type):
+    __meta_info__: Dict[str, Any]  # TODO standardise this
     __schema_fields__: Dict[str, BaseField]
     __schema_annotations__: Dict[str, Type]
     __parsers__: Dict[str, Type]
@@ -241,6 +282,7 @@ class SchemaMeta(type):
         setattr(cls_schema, "__schema_fields__", __schema_fields__)
         setattr(cls_schema, "__schema_annotations__", __schema_annotations__)
         setattr(cls_schema, "__parsers__", __parsers__)
+        setattr(cls_schema, "__meta_info__", {})
 
         return cls_schema
 
@@ -255,16 +297,23 @@ class BaseSchema(metaclass=SchemaMeta):
         if isinstance(markup, (str, bytes)):
             self.__raw__ = markup
             for cls_parser in self.__parsers__.values():
-                if self.Config.parsers.get(cls_parser, None) is None and cls_parser != NoneType:
+                if (
+                    self.Config.parsers.get(cls_parser, None) is None
+                    and cls_parser != NoneType
+                ):
                     _logger.error("Config.parser required %s", cls_parser.__name__)
-                    raise AttributeError(f"Config.parser required {cls_parser.__name__}")
+                    raise AttributeError(
+                        f"Config.parser required {cls_parser.__name__}"
+                    )
 
             # cache parsers
-            self.cached_parsers.update({  # type: ignore
-                cls_parser.__name__: cls_parser(markup, **kw)
-                for cls_parser, kw in self.Config.parsers.items()
-                if not isinstance(cls_parser, NoneType)
-            })
+            self.cached_parsers.update(
+                {  # type: ignore
+                    cls_parser.__name__: cls_parser(markup, **kw)
+                    for cls_parser, kw in self.Config.parsers.items()
+                    if not isinstance(cls_parser, NoneType)
+                }
+            )
 
         # TODO write adapter for another backends
         elif isinstance(markup, Selector):
@@ -272,7 +321,9 @@ class BaseSchema(metaclass=SchemaMeta):
             self.cached_parsers["Selector"] = markup
 
         else:
-            raise TypeError(f"markup support only str,bytes or Selector types, not {type(markup).__name__}")
+            raise TypeError(
+                f"markup support only str,bytes or Selector types, not {type(markup).__name__}"
+            )
 
         # initialize and parse fields
         self.__init_fields__()
@@ -281,7 +332,11 @@ class BaseSchema(metaclass=SchemaMeta):
         self.cached_parsers.clear()
 
     def __init_fields__(self):
-        _logger.info("[%s] Start parse fields count: %s", self.__schema_name__, len(self.__schema_fields__.keys()))
+        _logger.info(
+            "[%s] Start parse fields count: %s",
+            self.__schema_name__,
+            len(self.__schema_fields__.keys()),
+        )
         for name, field in self.__schema_fields__.items():
             field_type = self.__schema_annotations__[name]
             _logger.debug("%s.%s start parse", self.__schema_name__, name)
@@ -289,7 +344,10 @@ class BaseSchema(metaclass=SchemaMeta):
                 field.type_ = field_type
 
             # todo refactoring
-            if field.Config.instance == NoneType and field.__class__.__name__ == "Nested":
+            if (
+                field.Config.instance == NoneType
+                and field.__class__.__name__ == "Nested"
+            ):
                 value = field.sc_parse(self.cached_parsers["Selector"])
             else:
                 cache_key = field.Config.instance.__name__
