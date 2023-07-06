@@ -1,9 +1,8 @@
 import sys
 from typing import Any, Type, Union
 
-from scrape_schema2._typing import get_args, get_origin
-
 from scrape_schema2._logger import _logger
+from scrape_schema2._typing import get_args, get_origin
 
 NoneType = type(None)
 

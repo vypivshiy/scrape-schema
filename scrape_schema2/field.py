@@ -1,18 +1,18 @@
 from typing import Any, Hashable, Mapping, Optional, Pattern, Union, overload
 
 from parsel import Selector
-
 from scrape_schema2._logger import _logger
-from scrape_schema2.base import Field, FieldConfig
 from scrape_schema2._typing import Self
+from scrape_schema2.base import Field, FieldConfig
 
 
 class Parsel(Field):
     class Config(FieldConfig):
         instance = Selector
 
-    def __init__(self, auto_type: bool = True, default: Any = ..., *, raw: bool = False):
-
+    def __init__(
+        self, auto_type: bool = True, default: Any = ..., *, raw: bool = False
+    ):
         super().__init__(auto_type=auto_type, default=default)
         if raw:
             self.xpath("//p/text()").get()
@@ -87,8 +87,12 @@ class Parsel(Field):
         If `key` param passed - get value from attrib property. attrib should be called in chain methods
         """
         if key and default:
-            _logger.error("get should be accept `key` OR `default` param, not `key` AND `default`")
-            raise TypeError("get should be accept `key` OR `default` param, not `key` AND `default`")
+            _logger.error(
+                "get should be accept `key` OR `default` param, not `key` AND `default`"
+            )
+            raise TypeError(
+                "get should be accept `key` OR `default` param, not `key` AND `default`"
+            )
         elif key:
             if self._is_attrib():
                 return self.add_method("get", key)

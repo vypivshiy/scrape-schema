@@ -25,5 +25,5 @@ __all__ = [
     "get_args",
     "get_origin",
     "get_type_hints",
-    "Self"
+    "Self",
 ]

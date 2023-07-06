@@ -19,7 +19,9 @@ class Nested(BaseField):
         self.Config.instance = markup_parser
 
     def _prepare_markup(self, markup):
-        raise NotImplementedError("_prepare_markup not allowed in Nested")  # pragma: no cover
+        raise NotImplementedError(
+            "_prepare_markup not allowed in Nested"
+        )  # pragma: no cover
 
     def sc_parse(self, markup) -> Any:
         if not self.type_:
