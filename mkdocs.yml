@@ -27,16 +27,4 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Tutorial:
-      - regex - make stdout parser: tutorial/stdout_parse.md
-      - web-scraper - make web scraper: tutorial/web_scraper.md
-      - unofficial API - make HTTP API wrapper: tutorial/unofficial_api.md
-  - BaseSchema: schema.md
-  - Fields:
-      - regex: fields/regex.md
-      - nested: fields/nested.md
-      - soup: fields/soup.md
-      - slax: fields/slax.md
-      - parsel: fields/parsel.md
-      - custom: fields/custom.md
-  - Hooks: hooks.md
+  - Usage: usage.md

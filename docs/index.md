@@ -37,7 +37,10 @@ class Schema(BaseSchema):
     words: Sc[list[str], Parsel().xpath('//h1/text()').re(r'\w+')]
     urls: Sc[list[str], Parsel().css('ul > li').xpath('.//@href').getall()]
     sample_jmespath_1: Sc[str, Parsel().css('script::text').jmespath("a").get()]
-    sample_jmespath_2: Sc[list[str], Parsel().css('script::text').jmespath("a").getall()]
+    sample_jmespath_2: Sc[list[str], (Parsel()
+                                      .css('script::text')
+                                      .jmespath("a")
+                                      .getall())]
 
 
 text = """

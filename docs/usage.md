@@ -1,7 +1,7 @@
 # Quickstart
 The fields interface is similar to the [original parsel](https://parsel.readthedocs.io/en/latest/)
 
->[!example] Example from parsel documentation
+> Example from parsel documentation
 ```
 >>> from parsel import Selector
 >>> text = """
@@ -30,8 +30,8 @@ http://scrapy.org
 ['b', 'c']
 ```
 
->[!example] quickstart.py
 
+> Same solution, but in scrape-schema
 ```python
 from scrape_schema import BaseSchema, Parsel, Sc
 
@@ -79,7 +79,7 @@ from scrape_schema import Sc
 assert Annotated == Sc  # OK
 ```
 
->[!note] typing.Annotated does not guarantee type correctness at runtime, it is intended to indicate to 
+> typing.Annotated does not guarantee type correctness at runtime, it is intended to indicate to 
 > the static type checker and IDE the intended type.
 
 ```python
@@ -133,7 +133,8 @@ from scrape_schema import BaseSchema, Parsel, Nested, Sc, sc_param
 class SubSchema(BaseSchema):
     item: Sc[str, Parsel().xpath("//p/text()").get()]
     price: Sc[int, Parsel().xpath("//div[@class='price']/text()").get()]
-    _available: Sc[str, Parsel().xpath("//div[contains(@class, 'available')]").attrib.get(key='class')]
+    _available: Sc[str, (Parsel().xpath("//div[contains(@class, 'available')]")
+                         .attrib.get(key='class'))]
 
     @sc_param
     def available(self) -> bool:
@@ -141,9 +142,9 @@ class SubSchema(BaseSchema):
 
 
 class Schema(BaseSchema):
-    first_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li").getall()[0])]
-    last_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li").getall()[-1])]
-    items: Sc[list[SubSchema], Nested(Parsel().xpath("//body/ul").xpath("./li").getall())]
+    first_item: Sc[SubSchema, Nested(Parsel().xpath("//ul/li").getall()[0])]
+    last_item: Sc[SubSchema, Nested(Parsel().xpath("//ul/li").getall()[-1])]
+    items: Sc[list[SubSchema], Nested(Parsel().xpath("//ul/li").getall())]
 
 
 text = """
@@ -243,7 +244,9 @@ class Schema(BaseSchema):
     png_images: Sc[list[str], (Parsel()
                                .xpath("//img/@src")
                                .getall()
-                               .fn(lambda lst: [i for i in lst if i.endswith('.png')]))]
+                               .fn(
+        lambda lst: [i for i in lst if i.endswith('.png')])
+    )]
 
 
 text = """<img src="/one.png">
@@ -266,7 +269,10 @@ class Schema(BaseSchema):
                                .xpath("//img/@src")
                                .getall()
                                .concat_l("https://example.com"))]
-    url: Sc[str, Parsel().xpath("//a/@href").get().concat_l("https://example.com")]
+    url: Sc[str, (Parsel()
+                  .xpath("//a/@href")
+                  .get()
+                  .concat_l("https://example.com"))]
 
 text = """<img src="/one.png">
 <img src="/two.gif">
@@ -289,9 +295,16 @@ from scrape_schema import BaseSchema, Sc, Parsel
 
 class Schema(BaseSchema):
     item: Sc[str, Parsel().xpath("//div[@class='item']/text()").get()]
-    price_str: Sc[str, (Parsel().xpath("//div[@class='price']/text()").get().concat_r(" $"))]
+    price_str: Sc[str, (Parsel()
+                        .xpath("//div[@class='price']/text()")
+                        .get()
+                        .concat_r(" $"))]
+    
     # convert str float directly to int raise ValueError: invalid literal for int() with base 10: '500.0'
-    price_int: Sc[int, Parsel().xpath("//div[@class='price']/text()").get().fn(float)]  
+    price_int: Sc[int, (Parsel()
+                        .xpath("//div[@class='price']/text()")
+                        .get()
+                        .fn(float))]    
     
 text = """<div class="item">low orbit ion cannon</p>
 <div class="price">500.0</div>"""
@@ -311,7 +324,10 @@ from scrape_schema import BaseSchema, Sc, Parsel
 
 class Schema(BaseSchema):
     item: Sc[str, Parsel().xpath("//div[@class='item']/text()").get()]
-    price: Sc[int, Parsel().xpath("//div[@class='price']/text()").get().sc_replace("$", "")]
+    price: Sc[int, (Parsel()
+                    .xpath("//div[@class='price']/text()")
+                    .get()
+                    .sc_replace("$", ""))]
     
 text = """<div class="item">low orbit ion cannon</p>
 <div class="price">500$</div>"""
@@ -336,7 +352,7 @@ Simular `[match for match in re.finditer()]` method. Last chain method result sh
 - flags: Union[int, RegexFlag] = 0,
 - groupdict: bool = False - accept `groupdict` method. pattern required named groups. default False
 - 
->[!tip] Recommended usage this method with string values. if you works with Selector type, usage `re` method
+> Recommended usage this method with string values. if you works with Selector type, usage `re` method
 
 
 # Cases
@@ -357,7 +373,7 @@ There are several ways to get text:
 - shortcut `Parsel(raw=True)` 
 - shortcut `Parsel().raw_text`
 
->[!note] `re` method belongs to the Selector object, use **re_search** or **re_findall**
+> `re` method belongs to the Selector object, use **re_search** or **re_findall**
 
 ```python
 from typing import List
@@ -367,12 +383,19 @@ from scrape_schema import BaseSchema, Parsel, Sc, sc_param
 
 
 class MySchema(BaseSchema):
-    ipv4: Sc[str, Parsel(raw=True).re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]]
-    failed_value: Sc[bool, Parsel(default=False, raw=True).re_search(r"(ora)")[1]]
+    ipv4: Sc[str, (Parsel(raw=True)
+                    .re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1])]
+    failed_value: Sc[bool, (Parsel(default=False, raw=True)
+                            .re_search(r"(ora)")[1])]
+    # digits: Sc[List[int], Parsel(raw=True).re(r"(\d+)")  # throw error
     digits: Sc[List[int], Parsel(raw=True).re_findall(r"(\d+)")]
-    digits_float: Sc[List[float], Parsel(raw=True).re_findall(r"(\d+)").fn(lambda lst: [f"{s}.5" for s in lst])]
-    words_lower: Sc[List[str], Parsel(raw=True).re_findall("([a-z]+)")]
-    words_upper: Sc[List[str], Parsel(raw=True).re_findall(r"([A-Z]+)")]
+    digits_float: Sc[List[float], (Parsel(raw=True)
+                                   .re_findall(r"(\d+)")
+                                   .fn(lambda lst: [f"{s}.5" for s in lst]))]
+    words_lower: Sc[List[str], (Parsel(raw=True)
+                                .re_findall("([a-z]+)"))]
+    words_upper: Sc[List[str], (Parsel(raw=True)
+                                .re_findall(r"([A-Z]+)"))]
 
     @sc_param
     def sum(self):
