@@ -1,8 +1,7 @@
 from typing import Optional
 
 from parsel import SelectorList
-
-from scrape_schema2 import Sc, BaseSchema, sc_param, Parsel, Nested
+from scrape_schema import Sc, BaseSchema, sc_param, Parsel, Nested
 
 
 class SubSchema(BaseSchema):
@@ -13,6 +12,7 @@ class SubSchema(BaseSchema):
 class Sample(BaseSchema):
     title: Sc[str, Parsel().xpath("//head/title/text()").get()]
     charset: Sc[str, Parsel().xpath("//head/meta/@charset").get()]
+    # if not set default value - throw exception and close program
     failed: Sc[Optional[str], Parsel(default=None).xpath("unknownlol > p::text").get()]
 
     _images: Sc[SelectorList, Parsel(auto_type=False).xpath("//img")]
