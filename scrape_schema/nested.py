@@ -1,7 +1,7 @@
 from typing import Any, Optional, Type, get_args
 
-from scrape_schema2._typing import get_origin
-from scrape_schema2.base import BaseField, BaseSchema, FieldConfig
+from scrape_schema._typing import get_origin
+from scrape_schema.base import BaseField, BaseSchema, FieldConfig
 
 
 class Nested(BaseField):

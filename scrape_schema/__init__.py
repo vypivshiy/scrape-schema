@@ -1,11 +1,5 @@
-from scrape_schema import fields
-from scrape_schema.base import Annotated as ScField
-from scrape_schema.base import (
-    BaseField,
-    BaseFieldConfig,
-    BaseSchema,
-    BaseSchemaConfig,
-    extract_fields,
-)
-
-version = "0.2.4"
+# Annotated shortcut alias
+from scrape_schema._typing import Annotated as Sc  # pragma: no cover
+from scrape_schema.base import BaseSchema, sc_param
+from scrape_schema.field import Parsel
+from scrape_schema.nested import Nested

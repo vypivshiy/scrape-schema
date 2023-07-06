@@ -27,8 +27,9 @@ pip install scrape-schema
 ```
 
 # Example
+
 ```python
-from scrape_schema2 import BaseSchema, Parsel, Sc
+from scrape_schema import BaseSchema, Parsel, Sc
 
 
 class Schema(BaseSchema):

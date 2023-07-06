@@ -31,8 +31,9 @@ http://scrapy.org
 ```
 
 >[!example] quickstart.py
+
 ```python
-from scrape_schema2 import BaseSchema, Parsel, Sc
+from scrape_schema import BaseSchema, Parsel, Sc
 
 
 class Schema(BaseSchema):
@@ -70,9 +71,11 @@ typehint for annotation fields in runtime and make the static type checker happy
 and didn't need write a mypy plugin 🤯.
 
 This project have `Annotated` shortcut `Sc`
+
 ```python
 from typing import Annotated
-from scrape_schema2 import Sc
+from scrape_schema import Sc
+
 assert Annotated == Sc  # OK
 ```
 
@@ -124,7 +127,7 @@ Splits a html by a given field and creates additional nested schemas. `Sc` (Anno
 
 ```python
 import pprint
-from scrape_schema2 import BaseSchema, Parsel, Nested, Sc, sc_param
+from scrape_schema import BaseSchema, Parsel, Nested, Sc, sc_param
 
 
 class SubSchema(BaseSchema):
@@ -188,11 +191,12 @@ pprint.pprint(Schema(text).dict(), compact=True)
 ```
 ## sc_param
 property descriptor for dict() view. Useful for additional conversion or reuse of a value from a field
+
 ```python
 import pprint
 
 from parsel import Selector
-from scrape_schema2 import BaseSchema, Sc, Parsel, sc_param
+from scrape_schema import BaseSchema, Sc, Parsel, sc_param
 
 
 class Schema(BaseSchema):
@@ -230,14 +234,17 @@ pprint.pprint(Schema(text).dict(), compact=True)
 ## fn
 - function: Callable[..., Any] 
 execute function for prev method chain and return result
+
 ```python
-from scrape_schema2 import BaseSchema, Sc, Parsel
+from scrape_schema import BaseSchema, Sc, Parsel
+
 
 class Schema(BaseSchema):
     png_images: Sc[list[str], (Parsel()
                                .xpath("//img/@src")
                                .getall()
                                .fn(lambda lst: [i for i in lst if i.endswith('.png')]))]
+
 
 text = """<img src="/one.png">
 <img src="/two.gif">
@@ -250,8 +257,9 @@ print(Schema(text).dict())
 ## concat_l
 - left_string: str 
 concat new string to left. Last chain method result should be string"""
+
 ```python
-from scrape_schema2 import BaseSchema, Sc, Parsel
+from scrape_schema import BaseSchema, Sc, Parsel
 
 class Schema(BaseSchema):
     png_images: Sc[list[str], (Parsel()
@@ -274,8 +282,9 @@ print(Schema(text).dict())
 ## concat_r
 - right_string: str 
 concat new string to right. Last chain method result should be string
+
 ```python
-from scrape_schema2 import BaseSchema, Sc, Parsel
+from scrape_schema import BaseSchema, Sc, Parsel
 
 
 class Schema(BaseSchema):
@@ -297,7 +306,7 @@ print(Schema(text).dict())
 replace string method. Last chain method result should be string
 
 ```python
-from scrape_schema2 import BaseSchema, Sc, Parsel
+from scrape_schema import BaseSchema, Sc, Parsel
 
 
 class Schema(BaseSchema):
@@ -333,9 +342,8 @@ Simular `[match for match in re.finditer()]` method. Last chain method result sh
 # Cases
 ## html
 
-
 ```python
-from scrape_schema2 import BaseSchema, Parsel, Sc
+from scrape_schema import BaseSchema, Parsel, Sc
 ```
 
 ## raw text parse (regex)
@@ -351,12 +359,12 @@ There are several ways to get text:
 
 >[!note] `re` method belongs to the Selector object, use **re_search** or **re_findall**
 
-
 ```python
 from typing import List
 import pprint
 
-from scrape_schema2 import BaseSchema, Parsel, Sc, sc_param
+from scrape_schema import BaseSchema, Parsel, Sc, sc_param
+
 
 class MySchema(BaseSchema):
     ipv4: Sc[str, Parsel(raw=True).re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]]
@@ -373,7 +381,8 @@ class MySchema(BaseSchema):
     @sc_param
     def all_words(self):
         return self.words_lower + self.words_upper
-    
+
+
 TEXT = """
 banana potato BANANA POTATO
 -foo:10
@@ -381,7 +390,6 @@ banana potato BANANA POTATO
 lorem upsum dolor
 192.168.0.1
 """
-
 
 pprint.pprint(MySchema(TEXT).dict(), compact=True)
 # {'all_words': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor',

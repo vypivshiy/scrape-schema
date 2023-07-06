@@ -1,9 +1,9 @@
 from typing import Any, Hashable, Mapping, Optional, Pattern, Union, overload
 
 from parsel import Selector
-from scrape_schema2._logger import _logger
-from scrape_schema2._typing import Self
-from scrape_schema2.base import Field, FieldConfig
+from scrape_schema._logger import _logger
+from scrape_schema._typing import Self
+from scrape_schema.base import Field, FieldConfig
 
 
 class Parsel(Field):

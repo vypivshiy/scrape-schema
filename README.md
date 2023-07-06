@@ -66,7 +66,7 @@ http://scrapy.org
 ```
 
 ```python
-from scrape_schema2 import BaseSchema, Parsel, Sc
+from scrape_schema import BaseSchema, Parsel, Sc
 
 
 class Schema(BaseSchema):
@@ -136,11 +136,12 @@ if __name__ == '__main__':
 ```
 
 scrape_schema:
+
 ```python
 from typing import List
 import pprint
 import requests
-from scrape_schema2 import BaseSchema, Sc, Nested, sc_param, Parsel
+from scrape_schema import BaseSchema, Sc, Nested, sc_param, Parsel
 
 
 class Book(BaseSchema):
@@ -150,9 +151,9 @@ class Book(BaseSchema):
                   .get()
                   .concat_l("https://books.toscrape.com/catalogue/"))]
     image: Sc[str, (Parsel()
-              .xpath('//div[@class="image_container"]/a/img/@src')
-              .get()[2:]
-              .concat_l("https://books.toscrape.com"))]
+                    .xpath('//div[@class="image_container"]/a/img/@src')
+                    .get()[2:]
+                    .concat_l("https://books.toscrape.com"))]
     price: Sc[float, (Parsel(default=.0)
                       .xpath('//div[@class="product_price"]/p[@class="price_color"]/text()')
                       .get()[2:])]
@@ -172,7 +173,7 @@ class Book(BaseSchema):
 class MainPage(BaseSchema):
     books: Sc[List[Book], Nested(Parsel().xpath(".//section/div/ol[@class='row']/li").getall())]
 
-    
+
 if __name__ == '__main__':
     response = requests.get("https://books.toscrape.com/catalogue/page-2.html").text
     pprint.pprint(MainPage(response).dict(), compact=True)
@@ -234,10 +235,12 @@ if __name__ == '__main__':
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
 scrape_schema:
+
 ```python
 from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
-from scrape_schema2 import Parsel, BaseSchema, Sc, sc_param
+from scrape_schema import Parsel, BaseSchema, Sc, sc_param
+
 # Note: `Sc` is shortcut typing.Annotated
 
 TEXT = """
@@ -264,6 +267,7 @@ class MySchema(BaseSchema):
     @sc_param
     def all_words(self):
         return self.words_lower + self.words_upper
+
 
 if __name__ == '__main__':
     pprint.pprint(MySchema(TEXT).dict(), compact=True)

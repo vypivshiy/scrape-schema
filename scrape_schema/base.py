@@ -1,326 +1,246 @@
-import sys
-import warnings
-from abc import ABC, abstractmethod
+import re
+from abc import abstractmethod
+from enum import Enum
+from re import RegexFlag
 from typing import (
     Any,
-    ByteString,
     Callable,
     Dict,
-    Iterable,
     List,
+    NamedTuple,
     Optional,
+    Pattern,
     Tuple,
     Type,
-    TypeVar,
     Union,
 )
 
-if sys.version_info >= (3, 9):
-    from typing import Annotated
-else:
-    from typing_extensions import Annotated
-
-if sys.version_info >= (3, 10):
-    from typing import TypeAlias, get_args, get_origin, get_type_hints
-else:
-    from typing_extensions import TypeAlias, get_args, get_origin, get_type_hints
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
-
-from scrape_schema._base_configs import BaseFieldConfig, BaseSchemaConfig
-from scrape_schema._logger import logger
-from scrape_schema._type_caster import TypeCaster
-from scrape_schema.exceptions import MarkupNotFoundError, ParseFailAttemptsError
-
-T = TypeVar("T")
-MARKUP_TYPE: TypeAlias = Any
+from parsel import Selector
+from scrape_schema._logger import _logger
+from scrape_schema._typing import (
+    Annotated,
+    NoneType,
+    Self,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
+from scrape_schema.type_caster import TypeCaster
 
 
-def extract_fields(markup: MARKUP_TYPE, **fields: "BaseField") -> Dict[str, Any]:
-    return {key: field.extract(markup) for key, field in fields.items()}
+class SpecialMethods(Enum):
+    # special methods for another methods
+    FN = 0
+    CONCAT_L = 1
+    CONCAT_R = 2
+    REPLACE = 3
+    REGEX_SEARCH = 4
+    REGEX_FINDALL = 5
 
 
-class ABCField(ABC):
-    @abstractmethod
-    def _parse(self, markup: MARKUP_TYPE) -> Any:
-        pass
-
-    @abstractmethod
-    def _filter(
-        self,
-        value: T,
-        *,
-        schema_instance: Optional["BaseSchema"] = None,
-        name: Optional[str] = None,
-    ) -> bool:
-        pass
-
-    @abstractmethod
-    def _factory(
-        self,
-        value: T,
-        *,
-        schema_instance: Optional["BaseSchema"] = None,
-        name: Optional[str] = None,
-    ) -> T:
-        pass
-
-    @abstractmethod
-    def _callback(
-        self,
-        value: T,
-        *,
-        schema_instance: Optional["BaseSchema"] = None,
-        name: Optional[str] = None,
-    ) -> T:
-        pass
-
-    @abstractmethod
-    def _typing(self, instance: "BaseSchema", name: str, value: T) -> T:
-        pass
-
-
-class BaseField(ABCField):
-    class Config(BaseFieldConfig):
-        pass
-
-    def __init__(
-        self,
-        *,
-        default: Optional[Any] = None,
-        filter_: Optional[Callable[[T], bool]] = None,
-        callback: Optional[Callable[..., T]] = None,
-        factory: Optional[Callable[..., T]] = None,
-        **kwargs,
-    ):
-        """BaseField object.
-
-        :param default: default value if parser return None or empty value. Default None
-        :param filter_: (for iterables only) filter value by function. If None - ignore
-        :param callback: function for evaluate parsed value
-        :param factory: function for evaluate result value. If passed - **ignore auto-typing feature**
-        :param kwargs: any params for create fields
-        """
-        self.factory = factory
-        self.callback = callback
-        self.filter_ = filter_
-        self.default = default
-        self._type_caster = TypeCaster()
-
-    @abstractmethod
-    def _parse(self, markup: MARKUP_TYPE) -> Any:
-        """first parser entrypoint
-
-        :param markup: parser class object or string. this value can be config in Config class
-        :return: first parsed value
-        """
-        ...
-
-    @staticmethod
-    def _is_iterable_and_not_string_type(value_type: Type) -> bool:
-        return issubclass(value_type, Iterable) and not issubclass(
-            value_type, (ByteString, str)
-        )
-
-    @staticmethod
-    def _is_iterable_and_not_string_value(value: T) -> bool:
-        return isinstance(value, Iterable) and not (
-            isinstance(value, (ByteString, str))
-        )
-
-    def extract(self, markup: MARKUP_TYPE, *, type_: Optional[Type] = None) -> Any:
-        """parse markup without BaseSchema Instance
-
-        :param markup: string target
-        :param type_: optional type for type-casting
-        """
-        logger.info(
-            "{}[{}] start extract value. Field attrs: factory={}, callback={}, filter_={}, default={}",
-            self.__class__.__name__,
-            self.Config.parser or "str",
-            repr(self.factory),
-            repr(self.callback),
-            repr(self.filter_),
-            self.default,
-        )
-        if self.Config.parser and not isinstance(markup, self.Config.parser):
-            raise TypeError(
-                f"markup argument excepted {self.Config.parser.__name__} "
-                f"not {type(markup).__name__}"
-            )
-        value = self._parse(markup)
-        if not value:
-            logger.debug(
-                "{}.extract value not found, set default `{}` value",
-                self.__class__.__name__,
-                self.default,
-            )
-            value = self.default
-        if self._is_iterable_and_not_string_value(value):
-            if self.filter_:
-                logger.debug("{}.extract `filter_({})`", self.__class__.__name__, value)
-            value = self._filter(value)
-        if self.callback:
-            logger.debug("{}.extract `callback({})`", self.__class__.__name__, value)
-            value = self._callback(value)
-        if self.factory:
-            logger.debug("{}.extract `factory({})`", self.__class__.__name__, value)
-            value = self._factory(value)
-        elif type_:
-            value = self._type_caster.cast(type_, value)
-        logger.info(
-            "{}.extract return `{}[{}]`",
-            self.__class__.__name__,
-            value,
-            type(value).__name__,
-        )
-        return value
-
-    def __call__(self, instance: "BaseSchema", name: str, markup: MARKUP_TYPE) -> Any:
-        """parser entrypoint inside a BaseSchema object"""
-        logger.info(
-            "{}.{}[{}]: Field attrs: factory={}, callback={}, filter_={}, default={}",
-            instance.__schema_name__,
-            name,
-            self.Config.parser or "str",
-            repr(self.factory),
-            repr(self.callback),
-            repr(self.filter_),
-            self.default,
-        )
-        value = self._parse(markup)
-        if not value:
-            logger.debug(
-                "{}.{}: value is {}, set default `{}`",
-                instance.__schema_name__,
-                name,
-                value,
-                self.default,
-            )
-            value = self.default
-        else:
-            logger.debug(
-                "{}.{} := {} raw value(s)", instance.__schema_name__, name, value
-            )
-
-        value = self._filter(value, schema_instance=instance, name=name)
-        value = self._callback(value, schema_instance=instance, name=name)
-        if self.factory:
-            value = self._factory(value, schema_instance=instance, name=name)
-        else:
-            value = self._typing(instance, name, value)
-        logger.info("{}.{} = `{}` Done", instance.__class__.__name__, name, value)
-        return value
-
-    def _filter(
-        self,
-        value: T,
-        *,
-        schema_instance: Optional["BaseSchema"] = None,
-        name: Optional[str] = None,
-    ) -> Any:
-        """filter parsed value by filter_ function, if it passed
-
-        :param value: list or dict value. dict filter by values
-        :return: filtered value
-        """
-        filter_ = self.filter_
-
-        if filter_ and self._is_iterable_and_not_string_value(value):
-            logger.debug(
-                "{}.{} := filter_({})",
-                schema_instance.__schema_name__
-                if schema_instance
-                else self.__class__.__name__,
-                name or "extract",
-                value,
-            )
-            if isinstance(value, list):
-                return list(filter(filter_, value))
-            elif isinstance(value, dict):
-                return {k: v for k, v in value.items() if filter_(v)}
-        return value
-
-    def _factory(
-        self,
-        value: T,
-        *,
-        schema_instance: Optional["BaseSchema"] = None,
-        name: Optional[str] = None,
-    ) -> Any:
-        """factory result value entrypoint
-
-        :param value: parsed value
-        :return:
-        """
-        factory = self.factory
-        if factory:
-            logger.debug(
-                "{}.{} := factory({})",
-                schema_instance.__schema_name__
-                if schema_instance
-                else self.__class__.__name__,
-                name or "extract",
-                value,
-            )
-        return factory(value) if factory else value
-
-    def _callback(
-        self,
-        value: T,
-        *,
-        schema_instance: Optional["BaseSchema"] = None,
-        name: Optional[str] = None,
-    ) -> Any:
-        """eval value by callback function
-
-        :param value:
-        :return:
-        """
-        callback = self.callback
-
-        if not callback:
-            return value
-        logger.debug(
-            "{}.{} := callback({})",
-            schema_instance.__schema_name__
-            if schema_instance
-            else self.__class__.__name__,
-            name or "extract",
-            value,
-        )
-        if not self._is_iterable_and_not_string_value(value):
-            return callback(value)
-        if isinstance(value, list):
-            return [callback(i) for i in value]
-        elif isinstance(value, dict):
-            return {k: callback(v) for k, v in value}
-        return callback(value)
-
-    def _typing(self, instance: "BaseSchema", name: str, value: T) -> Any:
-        """auto type-cast method
-
-        :param instance: BaseSchema instance
-        :param name: field name
-        :param value: field value
-        :return: typed value
-        """
-        if instance.Config.type_cast:
-            if type_annotation := instance.__schema_annotations__.get(name):
-                value = self._type_caster.cast(type_annotation, value)
-        return value
+class MarkupMethod(NamedTuple):
+    METHOD_NAME: Union[str, SpecialMethods]
+    args: Tuple[Any, ...] = ()
+    kwargs: Dict[str, Any] = {}
 
     def __repr__(self):
-        return (
-            f"{self.__class__.__name__}(default={self.default}, callback={self.callback}, "
-            f"filter_={self.filter_}, factory={self.factory})"
+        return f"{self.METHOD_NAME} args={self.args}, kwargs={self.kwargs}"
+
+
+class FieldConfig:
+    instance: Type[Any] = NoneType
+    defaults: Dict[str, Any] = {}
+
+
+class sc_param(property):
+    """Shortcut for adding property-like descriptors in BaseSchema"""
+
+    pass
+
+
+class BaseField:
+    class Config(FieldConfig):
+        pass
+
+    def __init__(self, auto_type: bool = True, default: Any = ..., **kwargs):
+        self._stack_methods: List[MarkupMethod] = []
+        self.default = default
+        self.auto_type = auto_type
+        self.is_default = False  # flag check failed parsed value
+
+    @abstractmethod
+    def _prepare_markup(self, markup):
+        pass
+
+    @abstractmethod
+    def sc_parse(self, markup: Any):
+        pass
+
+
+class Field(BaseField):
+    class Config(FieldConfig):
+        pass
+
+    def _prepare_markup(self, markup: Any):
+        """convert string/bytes to parser class context"""
+        if isinstance(self.Config.instance, NoneType):
+            return markup
+        elif isinstance(markup, (str, bytes)):
+            _logger.debug(
+                "Convert raw markup to %s with kwargs %s",
+                self.Config.instance.__name__,
+                self.Config.defaults,
+            )
+            return self.Config.instance(markup, **self.Config.defaults)
+        return markup
+
+    @staticmethod
+    def _special_method(markup: Any, method: MarkupMethod):
+        if method.METHOD_NAME == SpecialMethods.FN:
+            return method.kwargs["function"](markup)
+        elif method.METHOD_NAME == SpecialMethods.CONCAT_R:
+            if isinstance(markup, list):
+                return [m + method.args[0] for m in markup]
+            return markup + method.args[0]
+        elif method.METHOD_NAME == SpecialMethods.CONCAT_L:
+            if isinstance(markup, list):
+                return [method.args[0] + m for m in markup]
+            return method.args[0] + markup
+        elif method.METHOD_NAME == SpecialMethods.REPLACE:
+            __old, __new, __count = method.args[0], method.args[1], method.args[2]
+            if isinstance(markup, list):
+                return [m.replace(__old, __new, __count) for m in markup]
+            return markup.replace(__old, __new, __count)
+        elif method.METHOD_NAME == SpecialMethods.REGEX_SEARCH:
+            pattern, groupdict = method.args
+            if groupdict:
+                if not pattern.groupindex:
+                    raise TypeError(
+                        f"Pattern `{pattern.pattern}` is not contains groups"
+                    )
+                return pattern.search(markup).groupdict()
+            return pattern.search(markup)
+        elif method.METHOD_NAME == SpecialMethods.REGEX_FINDALL:
+            pattern, groupdict = method.args
+            if groupdict:
+                if not pattern.groupindex:
+                    raise TypeError(
+                        f"Pattern `{pattern.pattern}` is not contains groups"
+                    )
+                return [match.groupdict() for match in pattern.finditer(markup)]
+            return pattern.findall(markup)
+
+        raise TypeError("Unknown special method")
+
+    @staticmethod
+    def _accept_method(markup: Any, method: MarkupMethod) -> Any:
+        if isinstance(method.METHOD_NAME, str):
+            class_method = getattr(markup, method.METHOD_NAME)
+            if isinstance(class_method, (property, dict)):  # attrib check
+                return class_method
+            return getattr(markup, method.METHOD_NAME)(*method.args, **method.kwargs)
+        raise TypeError(
+            f"`{type(markup).__name__}` is not contains `{method.METHOD_NAME}`"
         )
 
+    def _call_stack_methods(self, markup: Any) -> Any:
+        result = markup
+        _logger.info("start call methods. stack count: %s", len(self._stack_methods))
+        for method in self._stack_methods:
+            try:
+                if isinstance(method.METHOD_NAME, SpecialMethods):
+                    result = self._special_method(result, method)
+                else:
+                    result = self._accept_method(result, method)
+            except Exception as e:
+                return self._stack_method_handler(method, e)
+        _logger.info("Call methods done. result=%s", result)
+        return result
 
-class SchemaMetaClass(type):
+    def _stack_method_handler(
+        self, method: Union[MarkupMethod, SpecialMethods], e: Exception
+    ):
+        _logger.error("Method `%s` return traceback %s", method, e)
+        _logger.exception(e)
+        if self.default is Ellipsis:
+            raise e
+        _logger.warning("Set default value %s and disable type_casting", self.default)
+        self.is_default = True
+        return self.default
+
+    def sc_parse(self, markup: Any) -> Any:
+        markup = self._prepare_markup(markup)
+        return self._call_stack_methods(markup)
+
+    # build in methods
+
+    def fn(self, function: Callable[..., Any]) -> Self:
+        """call another function and return result"""
+        return self.add_method(SpecialMethods.FN, function=function)
+
+    def concat_l(self, left_string: str) -> Self:
+        """add string to left. Last argument should be string"""
+        return self.add_method(SpecialMethods.CONCAT_L, left_string)
+
+    def concat_r(self, right_string: str) -> Self:
+        """add string to right. Last argument should be string"""
+        return self.add_method(SpecialMethods.CONCAT_R, right_string)
+
+    def sc_replace(self, old: str, new: str, count: int = -1) -> Self:
+        """replace string method. Last argument should be string"""
+        return self.add_method(SpecialMethods.REPLACE, old, new, count)
+
+    def re_search(
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
+    ) -> Self:
+        """re.search method for text result.
+
+        Last chain should be return string.
+
+        :param pattern: regex pattern
+        :param flags: compilation flags
+        :param groupdict: accept groupdict method. patter required named groups. default False
+        """
+        pattern = re.compile(pattern, flags=flags)
+        return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)
+
+    def re_findall(
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
+    ):
+        """[match for match in re.finditer(...)] method for text result.
+
+        Last chain should be return string.
+
+        :param pattern: regex pattern
+        :param flags: compilation flags
+        :param groupdict: accept groupdict method. patter required named groups. default False
+        """
+        pattern = re.compile(pattern, flags=flags)
+        return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)
+
+    def add_method(
+        self, method_name: Union[str, SpecialMethods], *args, **kwargs
+    ) -> Self:
+        """low-level interface adding methods to call stack"""
+        self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
+        return self
+
+    def __getitem__(self, item) -> Self:
+        return self.add_method("__getitem__", item)
+
+
+class SchemaMeta(type):
+    __meta_info__: Dict[str, Any]  # TODO standardise this
+    __schema_fields__: Dict[str, BaseField]
+    __schema_annotations__: Dict[str, Type]
+    __parsers__: Dict[str, Type]
+
     @staticmethod
     def _is_type_field(attr: Type) -> bool:
         return get_origin(attr) is Annotated and all(
@@ -328,13 +248,16 @@ class SchemaMetaClass(type):
         )
 
     @staticmethod
-    def _extract_annotated(attr: Type) -> Tuple[Type, Tuple[BaseField, ...]]:
+    def _extract_annotated(attr: Type) -> Tuple[Type, BaseField]:
         args = get_args(attr)
-        return args[0], tuple(arg for arg in args[1:] if isinstance(arg, BaseField))
+        return args[0], tuple(arg for arg in args[1:] if isinstance(arg, BaseField))[0]
 
     def __new__(mcs, name, bases, attrs):
-        __schema_fields__: Dict[str, Tuple[BaseField, ...]] = {}  # type: ignore
+        # cache fields, annotations and used parsers for more simplify access
+        __schema_fields__: Dict[str, BaseField] = {}  # type: ignore
         __schema_annotations__: Dict[str, Type] = {}  # type: ignore
+        __parsers__: Dict[str, Type] = {}  # type: ignore
+
         cls_schema = super().__new__(mcs, name, bases, attrs)
         if cls_schema.__name__ == "BaseSchema":
             return cls_schema
@@ -343,211 +266,101 @@ class SchemaMetaClass(type):
         for name, value in get_type_hints(
             cls_schema, localns={}, include_extras=True
         ).items():
-            if name in ("__schema_fields__", "__schema_annotations__"):
+            if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
                 continue
             if mcs._is_type_field(value):
-                field_type, fields = mcs._extract_annotated(value)
-                __schema_fields__[name] = fields
+                field_type, field = mcs._extract_annotated(value)
+
+                if (
+                    field.Config.instance
+                    and field.Config.instance.__name__ not in __parsers__
+                ):
+                    __parsers__[field.Config.instance.__name__] = field.Config.instance
+
+                __schema_fields__[name] = field
                 __schema_annotations__[name] = field_type
         setattr(cls_schema, "__schema_fields__", __schema_fields__)
         setattr(cls_schema, "__schema_annotations__", __schema_annotations__)
+        setattr(cls_schema, "__parsers__", __parsers__)
+        setattr(cls_schema, "__meta_info__", {})
 
         return cls_schema
 
 
-class BaseSchema(metaclass=SchemaMetaClass):
-    __schema_fields__: Dict[str, Tuple[BaseField, ...]]
-    __schema_annotations__: Dict[str, Type]
+class BaseSchema(metaclass=SchemaMeta):
+    class Config:
+        parsers: Dict[Type[Any], Dict[str, Any]] = {Selector: {}}
+        type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
 
-    class Config(BaseSchemaConfig):
-        pass
+    def __init__(self, markup: Any):
+        self.cached_parsers: Dict[str, Any] = {}
+        if isinstance(markup, (str, bytes)):
+            self.__raw__ = markup
+            for cls_parser in self.__parsers__.values():
+                if (
+                    self.Config.parsers.get(cls_parser, None) is None
+                    and cls_parser != NoneType
+                ):
+                    _logger.error("Config.parser required %s", cls_parser.__name__)
+                    raise AttributeError(
+                        f"Config.parser required {cls_parser.__name__}"
+                    )
 
-    def _get_parser(self, field_parser_class: Type) -> Optional[Dict[str, Any]]:
-        return self.Config.parsers_config.get(field_parser_class, None)
+            # cache parsers
+            self.cached_parsers.update(
+                {  # type: ignore
+                    cls_parser.__name__: cls_parser(markup, **kw)
+                    for cls_parser, kw in self.Config.parsers.items()
+                    if not isinstance(cls_parser, NoneType)
+                }
+            )
 
-    @property
-    def cache_parsers(self) -> Dict[Type, Any]:
-        return self._cache_parsers
+        # TODO write adapter for another backends
+        elif isinstance(markup, Selector):
+            self.__raw__ = markup.get()
+            self.cached_parsers["Selector"] = markup
+
+        else:
+            raise TypeError(
+                f"markup support only str,bytes or Selector types, not {type(markup).__name__}"
+            )
+
+        # initialize and parse fields
+        self.__init_fields__()
 
     def clear_cache(self):
-        self._cache_parsers.clear()
+        self.cached_parsers.clear()
 
-    def _check_parser_config(self, field: BaseField, field_parser: Type) -> bool:
-        if self._get_parser(field_parser) is None:
-            try:
-                raise MarkupNotFoundError(
-                    f"{field.__class__.__name__} required {type(field_parser).__name__} configuration"
-                )
-            except MarkupNotFoundError as e:
-                logger.exception("{}", e)
-                raise
-        return True
-
-    @staticmethod
-    def _success_field_parse(field: BaseField, value) -> bool:
-        return (
-            hasattr(field, "default")
-            and value != field.default
-            or value == field.default
-            or not value
-        )
-
-    def _parse_field_value(
-        self,
-        name: str,
-        _fields: Tuple[BaseField, ...],
-        markup: str,
-    ) -> Tuple[BaseField, Any]:
-        value: Any = None
-        for field in _fields:
-            if field_parser := field.Config.parser:
-                self._check_parser_config(field=field, field_parser=field_parser)
-                if self._cache_parsers.get(field_parser, None) is None:
-                    parser_kwargs = self.Config.parsers_config.get(field_parser)
-                    self._cache_parsers[field_parser] = field_parser(
-                        markup, **parser_kwargs
-                    )
-                value = field(self, name, self._cache_parsers[field_parser])
-            else:
-                value = field(self, name, markup)
-            # get next field if this return default value
-            if self._success_field_parse(field, value):
-                continue
-            else:
-                return field, value
-        return _fields[-1], value
-
-    def _is_attempt_fail(self, field: BaseField, value: Any) -> bool:
-        return (
-            self.Config.fails_attempt >= 0
-            and hasattr(field, "default")
-            and value == field.default
-        )
-
-    def _calculate_attempt_parse_errors(
-        self,
-        *,
-        fails_counter: int,
-        field: BaseField,
-        attr_name: str,
-        value: Any,
-    ) -> int:
-        # calculate fails - compare by default value
-        if self._is_attempt_fail(field, value):
-            fails_counter += 1
-            warnings.warn(
-                f"[{fails_counter}] Failed parse `{self.__class__.__name__}.{attr_name}` "
-                f"by {field.__class__.__name__} field, set `{value}`.",
-                stacklevel=2,
-                category=RuntimeWarning,
-            )
-
-            logger.warning(
-                "[{}] Failed parse `{}.{}` by `{}`, set `{}`",
-                fails_counter,
-                self.__class__.__name__,
-                attr_name,
-                field.__class__.__name__,
-                value,
-            )
-
-            if fails_counter > self.Config.fails_attempt:
-                raise ParseFailAttemptsError(
-                    f"{fails_counter} of {len(self.__schema_fields__.keys())} "
-                    "fields failed parse."
-                )
-        logger.debug(
-            "`{}.{}[{}] = {}`",
-            self.__class__.__name__,
-            attr_name,
-            field.__class__.__name__,
-            value,
-        )
-        return fails_counter
-
-    def __init_fields__(self, markup: str) -> None:
-        """
-        :param str markup: text target
-        """
-        _fails_counter = 0
-        logger.info(
-            "Start parse `{}`. Fields count: {}",
+    def __init_fields__(self):
+        _logger.info(
+            "[%s] Start parse fields count: %s",
             self.__schema_name__,
             len(self.__schema_fields__.keys()),
         )
+        for name, field in self.__schema_fields__.items():
+            field_type = self.__schema_annotations__[name]
+            _logger.debug("%s.%s start parse", self.__schema_name__, name)
+            if field.__class__.__name__ == "Nested":  # todo fix
+                field.type_ = field_type
 
-        for name, fields in self.__schema_fields__.items():
-            field, value = self._parse_field_value(
-                name=name, _fields=fields, markup=markup
-            )
-            _fails_counter = self._calculate_attempt_parse_errors(
-                fails_counter=_fails_counter, field=field, attr_name=name, value=value
-            )
+            # todo refactoring
+            if (
+                field.Config.instance == NoneType
+                and field.__class__.__name__ == "Nested"
+            ):
+                value = field.sc_parse(self.cached_parsers["Selector"])
+            else:
+                cache_key = field.Config.instance.__name__
+                value = field.sc_parse(self.cached_parsers[cache_key])  # self.__raw__
+
+            if self.Config.type_caster and field.auto_type and not field.is_default:
+                value = self.Config.type_caster.cast(field_type, value)
+            # disable default value flag
+            if field.is_default:
+                field.is_default = False
+
+            _logger.info("%s.%s = %s", self.__schema_name__, name, value)
             setattr(self, name, value)
-        logger.debug("{} done! Fields fails: {}", self.__schema_name__, _fails_counter)
-
-    def __init__(self, markup: str, *, parse_markup: bool = True, **kwargs):
-        """
-        :param markup: markup string target
-        :param parse_markup: parse field markups. Default True
-        :param kwargs: any kwargs attrs
-        """
-        # TODO rewrite init constructor
-        self._cache_parsers: Dict[Type, Any] = {
-            parser: parser(markup, **kw)
-            for parser, kw in self.Config.parsers_config.items()
-        }
-        if parse_markup:
-            self.__init_fields__(markup)
-
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
-    @classmethod
-    def from_list(cls, markups: Iterable[str], **kwargs) -> List[Self]:
-        """Init list of schemas by markups sequence
-
-        :param markups: iterable markups sequence
-        :param kwargs: any attrs
-        """
-        return [cls(markup, parse_markup=True, **kwargs) for markup in markups]
-
-    @classmethod
-    def from_crop_rule_list(
-        cls, markup: str, *, crop_rule: Callable[[str], Iterable[str]], **kwargs
-    ) -> List[Self]:
-        """Init list of schemas by crop_rule
-
-        :param markup: markup string
-        :param crop_rule: crop rule function to *parts*
-        """
-        return cls.from_list(crop_rule(markup), **kwargs)
-
-    @classmethod
-    def from_crop_rule(
-        cls, markup: str, *, crop_rule: Callable[[str], str], **kwargs
-    ) -> Self:
-        """Init single schema by crop_rule
-
-        :param markup: markup string
-        :param crop_rule: crop rule function to *part*.
-        """
-        return cls(crop_rule(markup), parse_markup=True, **kwargs)
-
-    @classmethod
-    def from_markup(cls, markup: str, **kwargs) -> Self:
-        return cls(markup, parse_markup=True, **kwargs)
-
-    @classmethod
-    def from_kwargs(cls, **kwargs) -> Self:
-        """Create new class without parse markup and fields
-
-        :param kwargs: any keyword arguments
-        """
-        if kwargs.get("parse_markup"):
-            kwargs.pop("parse_markup")
-
-        return cls("", parse_markup=False, **kwargs)
 
     @staticmethod
     def _to_dict(value: Union["BaseSchema", List, Dict, Any]):
@@ -559,20 +372,11 @@ class BaseSchema(metaclass=SchemaMetaClass):
                 return [val.dict() for val in value]
         return value
 
-    def raw_dict(self) -> Dict[str, Any]:
-        """convert schema object to python dict"""
-        return {
-            k: self._to_dict(v)
-            for k, v in self.__dict__.items()
-            if k not in ("Config", "_cache_parsers")
-        }
-
-    def dict(self) -> Dict[str, Any]:
-        # parse properties
-        result: Dict[str, Any] = {
+    def dict(self):
+        result: Dict[str, Any] = {  # type: ignore
             k: getattr(self, k)
             for k, v in self.__class__.__dict__.items()
-            if isinstance(v, property)
+            if isinstance(v, sc_param)
         }
         # parse public field keys
         for k, v in self.__dict__.items():
@@ -580,17 +384,18 @@ class BaseSchema(metaclass=SchemaMetaClass):
                 result[k] = self._to_dict(v)
         return result
 
-    def __repr_args__(self) -> List[str]:
-        # parse properties
+    def __repr__(self):
+        return f'{self.__schema_name__}({", ".join(self.__repr_args__())})'
 
-        args: Dict[str, Any] = {
+    def __repr_args__(self) -> List[str]:
+        args: Dict[str, Any] = {  # type: ignore
             k: getattr(self, k)
             for k, v in self.__class__.__dict__.items()
-            if isinstance(v, property)
+            if isinstance(v, sc_param)
         }
         # parse public field keys
         for k, v in self.__dict__.items():
-            if not k.startswith("_") and self.__schema_fields__.get(k):
+            if not k.startswith("_") and self.__schema_fields__.get(k):  # type: ignore
                 args[k] = v
 
         return [
@@ -600,9 +405,6 @@ class BaseSchema(metaclass=SchemaMetaClass):
             for k, v in args.items()
         ]
 
-    def __repr__(self):
-        return f'{self.__schema_name__}({", ".join(self.__repr_args__())})'
-
     @property
-    def __schema_name__(self) -> str:
+    def __schema_name__(self):
         return self.__class__.__name__
