@@ -57,7 +57,7 @@ class Parsel(Field):
             selector.xpath('//a[href=$url]', url="http://www.example.com")
         """
 
-        return self.add_method("xpath", query=query, namespaces=namespaces, **kwargs)
+        return self.add_method("xpath", query, namespaces, **kwargs)
 
     def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True):
         """
