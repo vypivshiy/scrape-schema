@@ -32,6 +32,70 @@ ____
 ```shell
 pip install scrape-schema
 ```
+# Example
+
+The fields interface is similar to the original [parsel](https://parsel.readthedocs.io/en/latest/)
+
+```
+# Example from parsel documentation
+>>> from parsel import Selector
+>>> text = """
+        <html>
+            <body>
+                <h1>Hello, Parsel!</h1>
+                <ul>
+                    <li><a href="http://example.com">Link 1</a></li>
+                    <li><a href="http://scrapy.org">Link 2</a></li>
+                </ul>
+                <script type="application/json">{"a": ["b", "c"]}</script>
+            </body>
+        </html>"""
+>>> selector = Selector(text=text)
+>>> selector.css('h1::text').get()
+'Hello, Parsel!'
+>>> selector.xpath('//h1/text()').re(r'\w+')
+['Hello', 'Parsel']
+>>> for li in selector.css('ul > li'):
+...     print(li.xpath('.//@href').get())
+http://example.com
+http://scrapy.org
+>>> selector.css('script::text').jmespath("a").get()
+'b'
+>>> selector.css('script::text').jmespath("a").getall()
+['b', 'c']
+```
+
+```python
+from scrape_schema2 import BaseSchema, Parsel, Sc
+
+
+class Schema(BaseSchema):
+    h1: Sc[str, Parsel().css('h1::text').get()]
+    words: Sc[list[str], Parsel().xpath('//h1/text()').re(r'\w+')]
+    urls: Sc[list[str], Parsel().css('ul > li').xpath('.//@href').getall()]
+    sample_jmespath_1: Sc[str, Parsel().css('script::text').jmespath("a").get()]
+    sample_jmespath_2: Sc[list[str], Parsel().css('script::text').jmespath("a").getall()]
+
+
+text = """
+        <html>
+            <body>
+                <h1>Hello, Parsel!</h1>
+                <ul>
+                    <li><a href="http://example.com">Link 1</a></li>
+                    <li><a href="http://scrapy.org">Link 2</a></li>
+                </ul>
+                <script type="application/json">{"a": ["b", "c"]}</script>
+            </body>
+        </html>"""
+
+print(Schema(text).dict())
+# {'h1': 'Hello, Parsel!',
+# 'words': ['Hello', 'Parsel'],
+# 'urls': ['http://example.com', 'http://scrapy.org'],
+# 'sample_jmespath_1': 'b',
+# 'sample_jmespath_2': ['b', 'c']}
+```
 
 ____
 # Code comparison
@@ -106,7 +170,7 @@ class Book(BaseSchema):
 
 
 class MainPage(BaseSchema):
-    books: Sc[List[Book], Nested(Parsel().xpath(".//section/div/ol[@class='row']/li"))]
+    books: Sc[List[Book], Nested(Parsel().xpath(".//section/div/ol[@class='row']/li").getall())]
 
     
 if __name__ == '__main__':
@@ -115,7 +179,7 @@ if __name__ == '__main__':
 ```
 
 ## raw text
-original re: harder to maintain, change logic:
+original re:
 ```python
 import re
 import pprint
@@ -169,7 +233,7 @@ if __name__ == '__main__':
     #                  'dolor'],
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
-scrape_schema: easy change of logic, support, portability
+scrape_schema:
 ```python
 from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
