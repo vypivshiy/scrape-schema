@@ -11,27 +11,55 @@ from scrape_schema import Sc, sc_param
 
 
 class Book(BaseSchema):
-    """Entrypoint https://books.toscrape.com/catalogue/page-\d+.html
-    """
-    __RATINGS = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}  # dict for convert str to int
-    url: Sc[str, (F()
-                  .xpath('//div[@class="image_container"]/a/@href')
-                  .get()
-                  .concat_l("https://books.toscrape.com/catalogue/"))]
+    """Entrypoint https://books.toscrape.com/catalogue/page-\d+.html"""
 
-    image: Sc[str, (F()
-                    .xpath('//div[@class="image_container"]/a/img/@src')
-                    .get()[2:]
-                    .concat_l("https://books.toscrape.com"))]
-    price: Sc[float, (F(default=.0)
-                      .xpath('//div[@class="product_price"]/p[@class="price_color"]/text()').get()[2:])]
+    __RATINGS = {
+        "One": 1,
+        "Two": 2,
+        "Three": 3,
+        "Four": 4,
+        "Five": 5,
+    }  # dict for convert str to int
+    url: Sc[
+        str,
+        (
+            F()
+            .xpath('//div[@class="image_container"]/a/@href')
+            .get()
+            .concat_l("https://books.toscrape.com/catalogue/")
+        ),
+    ]
+
+    image: Sc[
+        str,
+        (
+            F()
+            .xpath('//div[@class="image_container"]/a/img/@src')
+            .get()[2:]
+            .concat_l("https://books.toscrape.com")
+        ),
+    ]
+    price: Sc[
+        float,
+        (
+            F(default=0.0)
+            .xpath('//div[@class="product_price"]/p[@class="price_color"]/text()')
+            .get()[2:]
+        ),
+    ]
     name: Sc[str, F().xpath("//h3/a/@title").get()]
-    available: Sc[bool, (F()
-                         .xpath('//div[@class="product_price"]/p[@class="instock availability"]/i')
-                         .attrib['class']
-                         .fn(lambda s: s == 'icon-ok')  # check available tag
-                         )]
-    _rating: Sc[str, F().xpath('//p[contains(@class, "star-rating")]').attrib.get(key='class')]
+    available: Sc[
+        bool,
+        (
+            F()
+            .xpath('//div[@class="product_price"]/p[@class="instock availability"]/i')
+            .attrib["class"]
+            .fn(lambda s: s == "icon-ok")  # check available tag
+        ),
+    ]
+    _rating: Sc[
+        str, F().xpath('//p[contains(@class, "star-rating")]').attrib.get(key="class")
+    ]
 
     def __init__(self, markup):
         super().__init__(markup)
@@ -61,7 +89,10 @@ class Book(BaseSchema):
 
 class MainPage(BaseSchema):
     """https://books.toscrape.com/catalogue/page-\d+.html"""
-    books: Sc[List[Book], Nested(F().xpath(".//section/div/ol[@class='row']/li").getall())]
+
+    books: Sc[
+        List[Book], Nested(F().xpath(".//section/div/ol[@class='row']/li").getall())
+    ]
 
     def download_all_images(self):
         for book in self.books:
@@ -77,23 +108,37 @@ def original_parsel(resp: str):
             url = f"https://books.toscrape.com/catalogue/{url}"
         if image := book_sel.xpath('//div[@class="image_container"]/a/img/@src').get():
             image = f"https://books.toscrape.com{image[2:]}"
-        if price := book_sel.xpath('//div[@class="product_price"]/p[@class="price_color"]/text()').get():
+        if price := book_sel.xpath(
+            '//div[@class="product_price"]/p[@class="price_color"]/text()'
+        ).get():
             price = float(price[2:])
         else:
-            price = .0
+            price = 0.0
         name = book_sel.xpath("//h3/a/@title").get()
-        available = book_sel.xpath('//div[@class="product_price"]/p[@class="instock availability"]/i').attrib.get(
-            'class')
-        available = ('icon-ok' in available)
-        rating = book_sel.xpath('//p[contains(@class, "star-rating")]').attrib.get('class')
+        available = book_sel.xpath(
+            '//div[@class="product_price"]/p[@class="instock availability"]/i'
+        ).attrib.get("class")
+        available = "icon-ok" in available
+        rating = book_sel.xpath('//p[contains(@class, "star-rating")]').attrib.get(
+            "class"
+        )
         rating = __RATINGS.get(rating.split()[-1], 0)
-        data['books'].append(dict(url=url, image=image, price=price, name=name, available=available, rating=rating))
+        data["books"].append(
+            dict(
+                url=url,
+                image=image,
+                price=price,
+                name=name,
+                available=available,
+                rating=rating,
+            )
+        )
     return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # optional logging configuration
-    logger = logging.getLogger('scrape_schema')
+    logger = logging.getLogger("scrape_schema")
     # logger.setLevel(logging.INFO)
     response = requests.get("https://books.toscrape.com/catalogue/page-2.html").text
     result = MainPage(response)

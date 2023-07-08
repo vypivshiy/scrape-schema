@@ -28,7 +28,7 @@ class Sample(BaseSchema):
         return "foo"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     HTML = """
 <!DOCTYPE html>
 <html lang="en">

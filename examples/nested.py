@@ -6,7 +6,10 @@ from scrape_schema import BaseSchema, Nested, Parsel, Sc, sc_param
 class SubSchema(BaseSchema):
     item: Sc[str, Parsel().xpath("//p/text()").get()]
     price: Sc[int, Parsel().xpath("//div[@class='price']/text()").get()]
-    _available: Sc[str, Parsel().xpath("//div[contains(@class, 'available')]").attrib.get(key='class')]
+    _available: Sc[
+        str,
+        Parsel().xpath("//div[contains(@class, 'available')]").attrib.get(key="class"),
+    ]
 
     @sc_param
     def available(self) -> bool:
@@ -16,7 +19,9 @@ class SubSchema(BaseSchema):
 class Schema(BaseSchema):
     first_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li").getall()[0])]
     last_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li").getall()[-1])]
-    items: Sc[list[SubSchema], Nested(Parsel().xpath("//body/ul").xpath("./li").getall())]
+    items: Sc[
+        list[SubSchema], Nested(Parsel().xpath("//body/ul").xpath("./li").getall())
+    ]
 
 
 text = """
