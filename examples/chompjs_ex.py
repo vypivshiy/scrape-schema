@@ -1,15 +1,6 @@
 from typing import Any, TypedDict
-
+import pprint
 from scrape_schema import BaseSchema, Parsel, Sc, sc_param
-
-text = """
- <script>
-            var sampleParams = Sandbox.init(
-            {"key": "spam", "values": [1,2,3,4,5], "layer1": {"layer2": {"layer3": [null, null, true, false]}}}
-            );
-</script>
-"""
-
 
 ResultDict = TypedDict(
     "ResultDict", {"key": str, "values": list[int], "layer1": dict[str, Any]}
@@ -37,6 +28,21 @@ class ChompJSAddon(BaseSchema):
         return self.result["values"]
 
 
-print(ChompJSAddon(text).dict())
+if __name__ == '__main__':
+    text = """
+     <script>
+                var sampleParams = Sandbox.init(
+                {"key": "spam", "values": [1,2,3,4,5], "layer1": {"layer2": {"layer3": [null, null, true, false]}}}
+                );
+    </script>
+    """
 
-# {'key': 'spam', 'values': [1, 2, 3, 4, 5], 'layer1': {'layer2': {'layer3': [None, None, True, False]}}}
+    pprint.pprint(ChompJSAddon(text).dict(), compact=True)
+    # {'key': 'spam',
+    #  'result': {'key': 'spam',
+    #             'layer1': {'layer2': {'layer3': [None, None, True, False]}},
+    #             'values': [1, 2, 3, 4, 5]},
+    #  'typed_result': {'key': 'spam',
+    #                   'layer1': {'layer2': {'layer3': [None, None, True, False]}},
+    #                   'values': [1, 2, 3, 4, 5]},
+    #  'values': [1, 2, 3, 4, 5]}
