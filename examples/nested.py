@@ -1,5 +1,6 @@
 import pprint
-from scrape_schema import BaseSchema, Parsel, Nested, Sc, sc_param
+
+from scrape_schema import BaseSchema, Nested, Parsel, Sc, sc_param
 
 
 class SubSchema(BaseSchema):

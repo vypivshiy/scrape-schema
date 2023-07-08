@@ -1,6 +1,8 @@
-from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
-from scrape_schema import Parsel, BaseSchema, Sc, sc_param
+from typing import List  # if you usage python3.8. If python3.9 - use build-in list
+
+from scrape_schema import BaseSchema, Parsel, Sc, sc_param
+
 # Note: `Sc` is shortcut typing.Annotated
 
 TEXT = """

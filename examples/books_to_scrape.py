@@ -1,11 +1,13 @@
 import logging
-
-from typing import List  # or usage buildin list in python3.9+ versions
 import pprint
+from typing import List  # or usage buildin list in python3.9+ versions
+
 import requests  # or any http lib
-from scrape_schema import BaseSchema, Sc, Nested, sc_param
-from scrape_schema import Parsel as F  # type: ignore
 from parsel import Selector
+
+from scrape_schema import BaseSchema, Nested
+from scrape_schema import Parsel as F  # type: ignore
+from scrape_schema import Sc, sc_param
 
 
 class Book(BaseSchema):

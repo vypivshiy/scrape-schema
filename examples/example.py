@@ -1,7 +1,8 @@
 from typing import Optional
 
 from parsel import SelectorList
-from scrape_schema import Sc, BaseSchema, sc_param, Parsel, Nested
+
+from scrape_schema import BaseSchema, Nested, Parsel, Sc, sc_param
 
 
 class SubSchema(BaseSchema):
