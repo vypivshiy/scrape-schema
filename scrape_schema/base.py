@@ -15,6 +15,7 @@ from typing import (
     Union,
 )
 
+import chompjs
 from parsel import Selector
 
 from scrape_schema._logger import _logger
@@ -38,6 +39,8 @@ class SpecialMethods(Enum):
     REPLACE = 3
     REGEX_SEARCH = 4
     REGEX_FINDALL = 5
+    CHOMP_JS_PARSE = 6
+    CHOMP_JS_PARSE_ALL = 7
 
 
 class MarkupMethod(NamedTuple):
@@ -132,6 +135,12 @@ class Field(BaseField):
                 return [match.groupdict() for match in pattern.finditer(markup)]
             return pattern.findall(markup)
 
+        elif method.METHOD_NAME == SpecialMethods.CHOMP_JS_PARSE:
+            return chompjs.parse_js_object(markup, *method.args)
+
+        elif method.METHOD_NAME == SpecialMethods.CHOMP_JS_PARSE_ALL:
+            return chompjs.parse_js_objects(markup, *method.args)
+
         raise TypeError("Unknown special method")
 
     @staticmethod
@@ -225,6 +234,44 @@ class Field(BaseField):
         """
         pattern = re.compile(pattern, flags=flags)
         return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
+
+    def chomp_js_parse(
+        self, unicode_escape: Any = False, json_params: Any = None
+    ) -> SpecialMethodsProtocol:
+        """Extracts first JSON object encountered in the input string
+
+        Params:
+            string – Input string
+            unicode_escape – Attempt to fix input string if it contains escaped special characters
+            json_params – Allow passing down standard json.loads options
+
+        Returns:
+            Extracted JSON object
+        """
+        return self.add_method(
+            SpecialMethods.CHOMP_JS_PARSE, unicode_escape, json_params
+        )
+
+    def chomp_js_parse_all(
+        self,
+        unicode_escape: Any = False,
+        omitempty: Any = False,
+        json_params: Any = None,
+    ) -> SpecialMethodsProtocol:
+        """Returns a list extracting all JSON objects encountered in the input string. Can be used to read JSON Lines
+
+        Params:
+            string – Input string
+            unicode_escape – Attempt to fix input string if it contains escaped special characters
+            omitempty – Skip empty dictionaries and lists
+            json_params – Allow passing down standard json.loads flags
+
+        Returns:
+            Iterating over it yields all encountered JSON objects
+        """
+        return self.add_method(
+            SpecialMethods.CHOMP_JS_PARSE_ALL, unicode_escape, omitempty, json_params
+        )
 
     def add_method(
         self, method_name: Union[str, SpecialMethods], *args, **kwargs

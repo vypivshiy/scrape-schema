@@ -1,11 +1,7 @@
 from re import RegexFlag
-from typing import Any, Callable, Hashable, KeysView, Pattern, Protocol, Union
-
-from parsel import Selector
+from typing import Any, Callable, Hashable, Pattern, Protocol, Union
 
 from scrape_schema._typing import Self
-
-Selector().attrib.keys()
 
 
 class SpecialMethodsProtocol(Protocol):
@@ -37,7 +33,20 @@ class SpecialMethodsProtocol(Protocol):
         pattern: Union[str, Pattern[str]],
         flags: Union[int, RegexFlag] = 0,
         groupdict: bool = False,
-    ):
+    ) -> Self:
+        pass
+
+    def chomp_js_parse(
+        self, unicode_escape: Any = False, json_params: Any = None
+    ) -> Self:
+        pass
+
+    def chomp_js_parse_all(
+        self,
+        unicode_escape: Any = False,
+        omitempty: Any = False,
+        json_params: Any = None,
+    ) -> Self:
         pass
 
     def __getitem__(self, item) -> Self:

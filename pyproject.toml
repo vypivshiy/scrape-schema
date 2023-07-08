@@ -26,6 +26,7 @@ classifiers = [
 dependencies = [
   'colorlog',
   'parsel',
+  'chompjs',
   'typing_extensions; python_version < "3.11"'
 ]
 dynamic = ["version"]
