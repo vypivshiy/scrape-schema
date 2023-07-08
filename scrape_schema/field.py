@@ -1,9 +1,11 @@
-from typing import Any, Hashable, Mapping, Optional, Pattern, Union, overload
+from typing import Any, Hashable, Mapping, Optional, Pattern, Union
 
 from parsel import Selector
+
 from scrape_schema._logger import _logger
 from scrape_schema._typing import Self
 from scrape_schema.base import Field, FieldConfig
+from scrape_schema.field_protocols import AttribProtocol, SpecialMethodsProtocol
 
 
 class Parsel(Field):
@@ -17,7 +19,7 @@ class Parsel(Field):
         if raw:
             self.xpath("//p/text()").get()
 
-    def css(self, query: str):
+    def css(self, query: str) -> Self:
         """Apply the given CSS selector and return a SelectorList instance.
 
         query is a string containing the CSS selector to apply.
@@ -27,7 +29,7 @@ class Parsel(Field):
         return self.add_method("css", query)
 
     @property
-    def raw_text(self):
+    def raw_text(self) -> SpecialMethodsProtocol:
         """Shortcut `Parsel().xpath('//p/text()')` call.
 
         This method for getting raw text (not html), when calling `parsel.Selector` methods will raise an error
@@ -38,7 +40,7 @@ class Parsel(Field):
 
     def xpath(
         self, query: str, namespaces: Optional[Mapping[str, str]] = None, **kwargs: Any
-    ):
+    ) -> Self:
         """
         Find nodes matching the xpath ``query`` and return the result as a
         :class:`SelectorList` instance with all elements flattened. List
@@ -59,7 +61,9 @@ class Parsel(Field):
 
         return self.add_method("xpath", query, namespaces, **kwargs)
 
-    def re(self, regex: Union[str, Pattern[str]], replace_entities: bool = True):
+    def re(
+        self, regex: Union[str, Pattern[str]], replace_entities: bool = True
+    ) -> SpecialMethodsProtocol:
         """
         Apply the given regex and return a list of strings with the
         matches.
@@ -72,7 +76,7 @@ class Parsel(Field):
         Passing ``replace_entities`` as ``False`` switches off these
         replacements.
         """
-        return self.add_method("re", regex=regex, replace_entities=replace_entities)
+        return self.add_method("re", regex=regex, replace_entities=replace_entities)  # type: ignore
 
     def _is_attrib(self):
         if (method := self._stack_methods[-1].METHOD_NAME) != "attrib":
@@ -80,7 +84,9 @@ class Parsel(Field):
             raise TypeError(f"Last method should be `attrib`, not `{method}`")
         return True
 
-    def get(self, default: Optional[str] = None, key: Optional[Hashable] = None) -> Self:  # type: ignore
+    def get(
+        self, default: Optional[str] = None, key: Optional[Hashable] = None
+    ) -> SpecialMethodsProtocol:  # type: ignore
         """
         Serialize and return the matched nodes in a single string. Percent encoded content is unquoted.
 
@@ -95,10 +101,10 @@ class Parsel(Field):
             )
         elif key:
             if self._is_attrib():
-                return self.add_method("get", key)
-        return self.add_method("get", default)
+                return self.add_method("get", key)  # type: ignore
+        return self.add_method("get", default)  # type: ignore
 
-    def jmespath(self, query: str, **kwargs: Any):
+    def jmespath(self, query: str, **kwargs: Any) -> Self:
         """
         Find objects matching the JMESPath ``query`` and return the result as a
         :class:`SelectorList` instance with all elements flattened. List
@@ -114,20 +120,20 @@ class Parsel(Field):
         """
         return self.add_method("jmespath", query, **kwargs)
 
-    def getall(self):
+    def getall(self) -> SpecialMethodsProtocol:
         """Call the .get() method for each element is this list
         and return their results flattened, as a list of strings."""
 
-        return self.add_method("getall")
+        return self.add_method("getall")  # type: ignore
 
     @property
-    def attrib(self):
+    def attrib(self) -> AttribProtocol:
         """
         Return the attributes dictionary for the first element.
 
         If the list is empty, return an empty dict.
         """
-        return self.add_method("attrib")
+        return self.add_method("attrib")  # type: ignore
 
     def keys(self):
         if self._is_attrib():

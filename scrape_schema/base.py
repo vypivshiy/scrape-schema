@@ -16,6 +16,7 @@ from typing import (
 )
 
 from parsel import Selector
+
 from scrape_schema._logger import _logger
 from scrape_schema._typing import (
     Annotated,
@@ -25,6 +26,7 @@ from scrape_schema._typing import (
     get_origin,
     get_type_hints,
 )
+from scrape_schema.field_protocols import SpecialMethodsProtocol
 from scrape_schema.type_caster import TypeCaster
 
 
@@ -174,28 +176,28 @@ class Field(BaseField):
 
     # build in methods
 
-    def fn(self, function: Callable[..., Any]) -> Self:
+    def fn(self, function: Callable[..., Any]) -> SpecialMethodsProtocol:
         """call another function and return result"""
-        return self.add_method(SpecialMethods.FN, function=function)
+        return self.add_method(SpecialMethods.FN, function=function)  # type: ignore
 
-    def concat_l(self, left_string: str) -> Self:
+    def concat_l(self, left_string: str) -> SpecialMethodsProtocol:
         """add string to left. Last argument should be string"""
-        return self.add_method(SpecialMethods.CONCAT_L, left_string)
+        return self.add_method(SpecialMethods.CONCAT_L, left_string)  # type: ignore
 
-    def concat_r(self, right_string: str) -> Self:
+    def concat_r(self, right_string: str) -> SpecialMethodsProtocol:
         """add string to right. Last argument should be string"""
-        return self.add_method(SpecialMethods.CONCAT_R, right_string)
+        return self.add_method(SpecialMethods.CONCAT_R, right_string)  # type: ignore
 
-    def sc_replace(self, old: str, new: str, count: int = -1) -> Self:
+    def sc_replace(self, old: str, new: str, count: int = -1) -> SpecialMethodsProtocol:
         """replace string method. Last argument should be string"""
-        return self.add_method(SpecialMethods.REPLACE, old, new, count)
+        return self.add_method(SpecialMethods.REPLACE, old, new, count)  # type: ignore
 
     def re_search(
         self,
         pattern: Union[str, Pattern[str]],
         flags: Union[int, RegexFlag] = 0,
         groupdict: bool = False,
-    ) -> Self:
+    ) -> SpecialMethodsProtocol:
         """re.search method for text result.
 
         Last chain should be return string.
@@ -205,14 +207,14 @@ class Field(BaseField):
         :param groupdict: accept groupdict method. patter required named groups. default False
         """
         pattern = re.compile(pattern, flags=flags)
-        return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)
+        return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
 
     def re_findall(
         self,
         pattern: Union[str, Pattern[str]],
         flags: Union[int, RegexFlag] = 0,
         groupdict: bool = False,
-    ):
+    ) -> SpecialMethodsProtocol:
         """[match for match in re.finditer(...)] method for text result.
 
         Last chain should be return string.
@@ -222,7 +224,7 @@ class Field(BaseField):
         :param groupdict: accept groupdict method. patter required named groups. default False
         """
         pattern = re.compile(pattern, flags=flags)
-        return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)
+        return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
 
     def add_method(
         self, method_name: Union[str, SpecialMethods], *args, **kwargs
@@ -296,7 +298,7 @@ class BaseSchema(metaclass=SchemaMeta):
         self.cached_parsers: Dict[str, Any] = {}
         if isinstance(markup, (str, bytes)):
             self.__raw__ = markup
-            for cls_parser in self.__parsers__.values():
+            for cls_parser in self.__parsers__.values():  # type: ignore
                 if (
                     self.Config.parsers.get(cls_parser, None) is None
                     and cls_parser != NoneType
