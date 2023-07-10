@@ -3,7 +3,8 @@
 This library is designed to write structured, readable, 
 reusable parsers for html, raw text and is inspired by dataclasses
 
-# Motivation
+
+## Motivation
 Simplifying parsers support, where it is difficult to use 
 or the complete absence of the **API interfaces** and decrease lines of code
 
@@ -11,22 +12,24 @@ Also structuring, data serialization and use as an intermediate layer
 for third-party serialization libraries: json, dataclasses, pydantic, etc
 
 _____
-# Features
+## Features
 - [Parsel](https://github.com/scrapy/parsel) backend.
+- re, css, xpath, jmespath, chompjs features
 - [Fluent interface](https://en.wikipedia.org/wiki/Fluent_interface#Python) simulate original parsel.Selector API for easy to use. 
+- does not depend on the http client implementation, use any!
 - Python 3.8+ support
 - Dataclass-like structure
 - Partial support auto type-casting from annotations (str, int, float, bool, list, dict, Optional)
 - logging to quickly find problems in extracted values
 ____
 
-# Install
+## Install
 
 ```shell
 pip install scrape-schema
 ```
 
-# Example
+## Example
 
 ```python
 from scrape_schema import BaseSchema, Parsel, Sc

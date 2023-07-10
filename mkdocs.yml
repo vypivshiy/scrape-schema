@@ -28,3 +28,4 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Usage: usage.md
+  - Examples: examples.md

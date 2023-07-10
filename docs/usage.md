@@ -65,7 +65,7 @@ print(Schema(text).dict())
 ```
 
 
-# About typing.Annotated
+## About typing.Annotated
 This project usage Annotated [(PEP 593)](https://docs.python.org/3/library/typing.html#typing.Annotated) 
 typehint for annotation fields in runtime and make the static type checker happy 😀 
 and didn't need write a mypy plugin 🤯.
@@ -97,9 +97,9 @@ class A:
     d: Annotated[list[dict[str, int]], spam(float("inf"))]  # mypy OK
 ```
 
-# features
+## Features
 
-## logging
+### logging
 for config or disable logging get logger by `scrape_schema` name
 ```python
 import logging
@@ -107,34 +107,39 @@ logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
 ...
 ```
-## BaseSchema
+### BaseSchema
 base schema-like class 
 
 Params:
+
 - text - bytes, str or Selector object
 
-## Parsel
+### Parsel
 Field for pulling values from html. Methods have a similar interface to `parsel.Selector`.
 params:
+
 - raw - if you works with raw text (not HTML), automatically accept xpath(//p/text()).get() methods
 - auto_type automatically type-cast from first annotated argument. Default True.
 - default - default value. If during operation it throws an error or does not find a value, 
 it will set it (without type conversion). If it is not specified, it will throw exception. 
 
-## Nested
+### Nested
 Splits a html by a given field and creates additional nested schemas. `Sc` (Annotated) first argument should be
 `BaseSchema` or `list[BaseSchema]` type
 
 ```python
 import pprint
-from scrape_schema import BaseSchema, Parsel, Nested, Sc, sc_param
+
+from scrape_schema import BaseSchema, Nested, Parsel, Sc, sc_param
 
 
 class SubSchema(BaseSchema):
     item: Sc[str, Parsel().xpath("//p/text()").get()]
     price: Sc[int, Parsel().xpath("//div[@class='price']/text()").get()]
-    _available: Sc[str, (Parsel().xpath("//div[contains(@class, 'available')]")
-                         .attrib.get(key='class'))]
+    _available: Sc[
+        str,
+        Parsel().xpath("//div[contains(@class, 'available')]").attrib.get(key="class"),
+    ]
 
     @sc_param
     def available(self) -> bool:
@@ -142,9 +147,13 @@ class SubSchema(BaseSchema):
 
 
 class Schema(BaseSchema):
-    first_item: Sc[SubSchema, Nested(Parsel().xpath("//ul/li").getall()[0])]
-    last_item: Sc[SubSchema, Nested(Parsel().xpath("//ul/li").getall()[-1])]
-    items: Sc[list[SubSchema], Nested(Parsel().xpath("//ul/li").getall())]
+    first_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li")[0])]
+    last_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li")[-1])]
+    items: Sc[list[SubSchema], Nested(Parsel().xpath("//body/ul").xpath("./li"))]
+
+    @sc_param
+    def max_price_item(self):
+        return max(self.items, key=lambda obj: obj.price)
 
 
 text = """
@@ -188,9 +197,10 @@ pprint.pprint(Schema(text).dict(), compact=True)
 #            {'available': True, 'item': 'bentley', 'price': 50000},
 #            {'available': True, 'item': 'ford', 'price': 20000},
 #            {'available': True, 'item': 'suzuki', 'price': 25000}],
-#  'last_item': {'available': True, 'item': 'suzuki', 'price': 25000}}
+#  'last_item': {'available': True, 'item': 'suzuki', 'price': 25000},
+#  'max_price_item': {'available': False, 'item': 'ferrari', 'price': 99999999}}
 ```
-## sc_param
+### sc_param
 property descriptor for dict() view. Useful for additional conversion or reuse of a value from a field
 
 ```python
@@ -231,8 +241,8 @@ pprint.pprint(Schema(text).dict(), compact=True)
 # 'url_path': '/image.png'}
 
 ```
-# extra Field buildin methods
-## fn
+## Extra Field buildin methods
+### fn
 - function: Callable[..., Any] 
 execute function for prev method chain and return result
 
@@ -257,7 +267,7 @@ print(Schema(text).dict())
 # {'png_images': ['/one.png', '/real_png.png']}
 ```
 
-## concat_l
+### concat_l
 - left_string: str 
 concat new string to left. Last chain method result should be string"""
 
@@ -285,7 +295,7 @@ print(Schema(text).dict())
 # 'url': 'https://example.com/login'}
 
 ```
-## concat_r
+### concat_r
 - right_string: str 
 concat new string to right. Last chain method result should be string
 
@@ -312,7 +322,7 @@ print(Schema(text).dict())
 # {'item': 'low orbit ion cannon\n', 'price_str': '500.0 $', 'price_int': 500}
 
 ```
-## sc_replace
+### sc_replace
 - old: str, 
 - new: str, 
 - count: int = -1 
@@ -335,9 +345,10 @@ print(Schema(text).dict())
 # {'item': 'low orbit ion cannon\n', 'price': 500}
 ```
 
-## re_search
+### re_search
 simular `re.search` function. Last chain method result should be return string.
->[!tip] Recommended usage this method with string values. if you works with Selector type, usage `re` method
+
+> Recommended usage this method with string values. if you works with Selector type, usage `re` method
 
 - pattern: Union[str, Pattern[str]]
 - flags: Union[int, RegexFlag] = 0, 
@@ -345,7 +356,15 @@ simular `re.search` function. Last chain method result should be return string.
     ) -> Self:
 re.search method for text result.
 
-## chompjs_parse
+### re_findall
+Simular `[match for match in re.finditer()]` method. Last chain method result should be return string.
+- pattern: Union[str, Pattern[str]],
+- flags: Union[int, RegexFlag] = 0,
+- groupdict: bool = False - accept `groupdict` method. pattern required named groups. default False
+- 
+> Recommended usage this method with string values. if you works with Selector type, usage `re` method
+
+### chompjs_parse
 Simular [chompjs.parse_js_object()](https://github.com/Nykakin/chompjs) method. 
 Last chain method result should be return string
 
@@ -403,28 +422,18 @@ if __name__ == '__main__':
     #  'values': [1, 2, 3, 4, 5]}
 ```
 
-## chompjs_parse_all
+### chompjs_parse_all
 Simular [chompjs.parse_js_objects()](https://github.com/Nykakin/chompjs) method. 
 Last chain method result should be return string
 
-
-## re_findall
-Simular `[match for match in re.finditer()]` method. Last chain method result should be return string.
-- pattern: Union[str, Pattern[str]],
-- flags: Union[int, RegexFlag] = 0,
-- groupdict: bool = False - accept `groupdict` method. pattern required named groups. default False
-- 
-> Recommended usage this method with string values. if you works with Selector type, usage `re` method
-
-
-# Cases
-## html
+## Cases
+### html
 
 ```python
 from scrape_schema import BaseSchema, Parsel, Sc
 ```
 
-## raw text parse (regex)
+### raw text parse (regex)
 parsel.Selector is designed to work with xml/html documents and wraps it in a tag when passing raw text:
 
 `<html><body><p>%TEXT%</p></body></html>`
