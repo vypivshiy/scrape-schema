@@ -5,7 +5,7 @@ from parsel import Selector
 from scrape_schema._logger import _logger
 from scrape_schema._typing import Self
 from scrape_schema.base import Field
-from scrape_schema.field_protocols import AttribProtocol, SpecialMethodsProtocol
+from scrape_schema._protocols import AttribProtocol, SpecialMethodsProtocol
 
 
 class Parsel(Field):

@@ -7,7 +7,7 @@ from parsel import Selector, SelectorList
 
 from scrape_schema._logger import _logger
 from scrape_schema._typing import Annotated, Self, get_args, get_origin, get_type_hints
-from scrape_schema.field_protocols import SpecialMethodsProtocol
+from scrape_schema._protocols import SpecialMethodsProtocol
 from scrape_schema.special_methods import (
     DEFAULT_SPEC_METHOD_HANDLER,
     MarkupMethod,
