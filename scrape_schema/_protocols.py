@@ -6,19 +6,19 @@ from scrape_schema._typing import Self
 
 class SpecialMethodsProtocol(Protocol):
     def sc_parse(self, markup: Any) -> Any:
-        pass
+        pass  # pragma: no cover
 
     def fn(self, function: Callable[..., Any]) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def concat_l(self, left_string: str) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def concat_r(self, right_string: str) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def sc_replace(self, old: str, new: str, count: int = -1) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def re_search(
         self,
@@ -26,7 +26,7 @@ class SpecialMethodsProtocol(Protocol):
         flags: Union[int, RegexFlag] = 0,
         groupdict: bool = False,
     ) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def re_findall(
         self,
@@ -34,12 +34,12 @@ class SpecialMethodsProtocol(Protocol):
         flags: Union[int, RegexFlag] = 0,
         groupdict: bool = False,
     ) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def chomp_js_parse(
         self, unicode_escape: Any = False, json_params: Any = None
     ) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def chomp_js_parse_all(
         self,
@@ -47,21 +47,21 @@ class SpecialMethodsProtocol(Protocol):
         omitempty: Any = False,
         json_params: Any = None,
     ) -> Self:
-        pass
+        pass  # pragma: no cover
 
     def __getitem__(self, item) -> Self:
-        pass
+        pass  # pragma: no cover
 
 
 class AttribProtocol(SpecialMethodsProtocol):
-    def get(self, *, key: Hashable) -> Any:
-        pass
+    def get(self, *, key: Hashable) -> SpecialMethodsProtocol:  # type: ignore
+        pass  # pragma: no cover
 
-    def keys(self) -> Any:
-        pass
+    def keys(self) -> SpecialMethodsProtocol:  # type: ignore
+        pass  # pragma: no cover
 
-    def values(self) -> Any:
-        pass
+    def values(self) -> SpecialMethodsProtocol:  # type: ignore
+        pass  # pragma: no cover
 
-    def items(self) -> Any:
-        pass
+    def items(self) -> SpecialMethodsProtocol:  # type: ignore
+        pass  # pragma: no cover

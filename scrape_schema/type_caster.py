@@ -1,3 +1,4 @@
+# pragma: no cover
 import sys
 from typing import Any, Type, Union
 

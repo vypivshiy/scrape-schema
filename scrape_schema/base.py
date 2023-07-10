@@ -19,8 +19,7 @@ from scrape_schema.type_caster import TypeCaster
 
 class sc_param(property):
     """Shortcut for adding property-like descriptors in BaseSchema"""
-
-    pass
+    pass  # pragma: no cover
 
 
 class BaseField:
@@ -33,11 +32,11 @@ class BaseField:
 
     @abstractmethod
     def _prepare_markup(self, markup):
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def sc_parse(self, markup: Any):
-        pass
+        pass  # pragma: no cover
 
 
 class Field(BaseField):
@@ -227,7 +226,7 @@ class SchemaMeta(type):
             cls_schema, localns={}, include_extras=True
         ).items():
             if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
-                continue
+                continue  # pragma: no cover
             if mcs.__is_type_field(value):
                 field_type, field = mcs.__parse_annotated_field(value)
                 __schema_fields__[name] = field
