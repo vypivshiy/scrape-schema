@@ -1,21 +1,8 @@
 import re
 from abc import abstractmethod
-from enum import Enum
 from re import RegexFlag
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Pattern,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
-import chompjs
 from parsel import Selector
 
 from scrape_schema._logger import _logger
@@ -28,28 +15,13 @@ from scrape_schema._typing import (
     get_type_hints,
 )
 from scrape_schema.field_protocols import SpecialMethodsProtocol
+from scrape_schema.special_methods import (
+    DEFAULT_SPEC_METHOD_HANDLER,
+    MarkupMethod,
+    SpecialMethods,
+    SpecialMethodsHandler,
+)
 from scrape_schema.type_caster import TypeCaster
-
-
-class SpecialMethods(Enum):
-    # special methods for another methods
-    FN = 0
-    CONCAT_L = 1
-    CONCAT_R = 2
-    REPLACE = 3
-    REGEX_SEARCH = 4
-    REGEX_FINDALL = 5
-    CHOMP_JS_PARSE = 6
-    CHOMP_JS_PARSE_ALL = 7
-
-
-class MarkupMethod(NamedTuple):
-    METHOD_NAME: Union[str, SpecialMethods]
-    args: Tuple[Any, ...] = ()
-    kwargs: Dict[str, Any] = {}
-
-    def __repr__(self):
-        return f"{self.METHOD_NAME} args={self.args}, kwargs={self.kwargs}"
 
 
 class FieldConfig:
@@ -72,6 +44,7 @@ class BaseField:
         self.default = default
         self.auto_type = auto_type
         self.is_default = False  # flag check failed parsed value
+        self._spec_method_handler: SpecialMethodsHandler = DEFAULT_SPEC_METHOD_HANDLER
 
     @abstractmethod
     def _prepare_markup(self, markup):
@@ -99,49 +72,8 @@ class Field(BaseField):
             return self.Config.instance(markup, **self.Config.defaults)
         return markup
 
-    @staticmethod
-    def _special_method(markup: Any, method: MarkupMethod):
-        if method.METHOD_NAME == SpecialMethods.FN:
-            return method.kwargs["function"](markup)
-        elif method.METHOD_NAME == SpecialMethods.CONCAT_R:
-            if isinstance(markup, list):
-                return [m + method.args[0] for m in markup]
-            return markup + method.args[0]
-        elif method.METHOD_NAME == SpecialMethods.CONCAT_L:
-            if isinstance(markup, list):
-                return [method.args[0] + m for m in markup]
-            return method.args[0] + markup
-        elif method.METHOD_NAME == SpecialMethods.REPLACE:
-            __old, __new, __count = method.args[0], method.args[1], method.args[2]
-            if isinstance(markup, list):
-                return [m.replace(__old, __new, __count) for m in markup]
-            return markup.replace(__old, __new, __count)
-        elif method.METHOD_NAME == SpecialMethods.REGEX_SEARCH:
-            pattern, groupdict = method.args
-            if groupdict:
-                if not pattern.groupindex:
-                    raise TypeError(
-                        f"Pattern `{pattern.pattern}` is not contains groups"
-                    )
-                return pattern.search(markup).groupdict()
-            return pattern.search(markup)
-        elif method.METHOD_NAME == SpecialMethods.REGEX_FINDALL:
-            pattern, groupdict = method.args
-            if groupdict:
-                if not pattern.groupindex:
-                    raise TypeError(
-                        f"Pattern `{pattern.pattern}` is not contains groups"
-                    )
-                return [match.groupdict() for match in pattern.finditer(markup)]
-            return pattern.findall(markup)
-
-        elif method.METHOD_NAME == SpecialMethods.CHOMP_JS_PARSE:
-            return chompjs.parse_js_object(markup, *method.args)
-
-        elif method.METHOD_NAME == SpecialMethods.CHOMP_JS_PARSE_ALL:
-            return chompjs.parse_js_objects(markup, *method.args)
-
-        raise TypeError("Unknown special method")
+    def _special_method(self, markup: Any, method: MarkupMethod) -> Any:
+        return self._spec_method_handler.handle(method, markup)
 
     @staticmethod
     def _accept_method(markup: Any, method: MarkupMethod) -> Any:
