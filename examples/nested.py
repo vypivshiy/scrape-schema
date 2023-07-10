@@ -17,11 +17,13 @@ class SubSchema(BaseSchema):
 
 
 class Schema(BaseSchema):
-    first_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li").getall()[0])]
-    last_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li").getall()[-1])]
-    items: Sc[
-        list[SubSchema], Nested(Parsel().xpath("//body/ul").xpath("./li").getall())
-    ]
+    first_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li")[0])]
+    last_item: Sc[SubSchema, Nested(Parsel().xpath("//ul").xpath("./li")[-1])]
+    items: Sc[list[SubSchema], Nested(Parsel().xpath("//body/ul").xpath("./li"))]
+
+    @sc_param
+    def max_price_item(self):
+        return max(self.items, key=lambda obj: obj.price)
 
 
 text = """

@@ -1,5 +1,6 @@
-from typing import Any, TypedDict
 import pprint
+from typing import Any, TypedDict
+
 from scrape_schema import BaseSchema, Parsel, Sc, sc_param
 
 ResultDict = TypedDict(
@@ -28,7 +29,7 @@ class ChompJSAddon(BaseSchema):
         return self.result["values"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     text = """
      <script>
                 var sampleParams = Sandbox.init(
