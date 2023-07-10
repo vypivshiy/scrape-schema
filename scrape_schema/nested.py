@@ -1,7 +1,9 @@
 from typing import Any, Optional, Type, get_args
 
+from parsel import Selector, SelectorList
+
 from scrape_schema._typing import get_origin
-from scrape_schema.base import BaseField, BaseSchema, FieldConfig
+from scrape_schema.base import BaseField, BaseSchema
 
 
 class Nested(BaseField):
@@ -10,13 +12,11 @@ class Nested(BaseField):
         field: BaseField,
         *,
         type_: Optional[Type] = None,
-        markup_parser: Type = type(None),
     ):
         super().__init__()
         self.auto_type = False
         self.type_ = type_
         self._crop_field = field
-        self.Config.instance = markup_parser
 
     def _prepare_markup(self, markup):
         raise NotImplementedError(
@@ -36,9 +36,6 @@ class Nested(BaseField):
                 f"type should be List[BaseSchema] or BaseSchema, not {self.type_}"
             )
 
-        # self.Config = self._crop_field.Config
-        # markup = self._prepare_markup(markup)
-
         if len(get_args(self.type_)) != 0 and issubclass(
             get_args(self.type_)[0], BaseSchema
         ):
@@ -47,6 +44,10 @@ class Nested(BaseField):
             cls_schema = self.type_
 
         chunks = self._crop_field.sc_parse(markup)
-        if get_origin(self.type_) is list:
+        if isinstance(chunks, SelectorList) and get_origin(self.type_) is list:
+            return [cls_schema(chunk.get()) for chunk in chunks]
+        elif get_origin(self.type_) is list:
             return [cls_schema(chunk) for chunk in chunks]
+        elif isinstance(chunks, Selector) and get_origin(self.type_) is not list:
+            return cls_schema(chunks.get())
         return cls_schema(chunks)

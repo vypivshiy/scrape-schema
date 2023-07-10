@@ -3,17 +3,10 @@ from abc import abstractmethod
 from re import RegexFlag
 from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
-from parsel import Selector
+from parsel import Selector, SelectorList
 
 from scrape_schema._logger import _logger
-from scrape_schema._typing import (
-    Annotated,
-    NoneType,
-    Self,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from scrape_schema._typing import Annotated, Self, get_args, get_origin, get_type_hints
 from scrape_schema.field_protocols import SpecialMethodsProtocol
 from scrape_schema.special_methods import (
     DEFAULT_SPEC_METHOD_HANDLER,
@@ -24,11 +17,6 @@ from scrape_schema.special_methods import (
 from scrape_schema.type_caster import TypeCaster
 
 
-class FieldConfig:
-    instance: Type[Any] = NoneType
-    defaults: Dict[str, Any] = {}
-
-
 class sc_param(property):
     """Shortcut for adding property-like descriptors in BaseSchema"""
 
@@ -36,9 +24,6 @@ class sc_param(property):
 
 
 class BaseField:
-    class Config(FieldConfig):
-        pass
-
     def __init__(self, auto_type: bool = True, default: Any = ..., **kwargs):
         self._stack_methods: List[MarkupMethod] = []
         self.default = default
@@ -56,21 +41,18 @@ class BaseField:
 
 
 class Field(BaseField):
-    class Config(FieldConfig):
-        pass
-
-    def _prepare_markup(self, markup: Any):
+    def _prepare_markup(self, markup: Union[str, bytes, Selector, SelectorList]):
         """convert string/bytes to parser class context"""
-        if isinstance(self.Config.instance, NoneType):
+        if isinstance(markup, (Selector, SelectorList)):
             return markup
-        elif isinstance(markup, (str, bytes)):
+        elif isinstance(markup, str):
             _logger.debug(
-                "Convert raw markup to %s with kwargs %s",
-                self.Config.instance.__name__,
-                self.Config.defaults,
+                "Convert raw markup to parsel.Selector",
             )
-            return self.Config.instance(markup, **self.Config.defaults)
-        return markup
+            return Selector(markup)
+        elif isinstance(markup, bytes):
+            return Selector(body=markup)
+        raise TypeError("Uncorrected markup type")
 
     def _special_method(self, markup: Any, method: MarkupMethod) -> Any:
         return self._spec_method_handler.handle(method, markup)
@@ -180,7 +162,7 @@ class Field(BaseField):
         Returns:
             Extracted JSON object
         """
-        return self.add_method(
+        return self.add_method(  # type: ignore
             SpecialMethods.CHOMP_JS_PARSE, unicode_escape, json_params
         )
 
@@ -217,19 +199,17 @@ class Field(BaseField):
 
 
 class SchemaMeta(type):
-    __meta_info__: Dict[str, Any]  # TODO standardise this
     __schema_fields__: Dict[str, BaseField]
     __schema_annotations__: Dict[str, Type]
-    __parsers__: Dict[str, Type]
 
     @staticmethod
-    def _is_type_field(attr: Type) -> bool:
+    def __is_type_field(attr: Type) -> bool:
         return get_origin(attr) is Annotated and all(
             isinstance(arg, BaseField) for arg in get_args(attr)[1:]
         )
 
     @staticmethod
-    def _extract_annotated(attr: Type) -> Tuple[Type, BaseField]:
+    def __parse_annotated_field(attr: Type) -> Tuple[Type, BaseField]:
         args = get_args(attr)
         return args[0], tuple(arg for arg in args[1:] if isinstance(arg, BaseField))[0]
 
@@ -237,7 +217,6 @@ class SchemaMeta(type):
         # cache fields, annotations and used parsers for more simplify access
         __schema_fields__: Dict[str, BaseField] = {}  # type: ignore
         __schema_annotations__: Dict[str, Type] = {}  # type: ignore
-        __parsers__: Dict[str, Type] = {}  # type: ignore
 
         cls_schema = super().__new__(mcs, name, bases, attrs)
         if cls_schema.__name__ == "BaseSchema":
@@ -249,68 +228,49 @@ class SchemaMeta(type):
         ).items():
             if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
                 continue
-            if mcs._is_type_field(value):
-                field_type, field = mcs._extract_annotated(value)
-
-                if (
-                    field.Config.instance
-                    and field.Config.instance.__name__ not in __parsers__
-                ):
-                    __parsers__[field.Config.instance.__name__] = field.Config.instance
-
+            if mcs.__is_type_field(value):
+                field_type, field = mcs.__parse_annotated_field(value)
                 __schema_fields__[name] = field
                 __schema_annotations__[name] = field_type
+
         setattr(cls_schema, "__schema_fields__", __schema_fields__)
         setattr(cls_schema, "__schema_annotations__", __schema_annotations__)
-        setattr(cls_schema, "__parsers__", __parsers__)
         setattr(cls_schema, "__meta_info__", {})
-
         return cls_schema
 
 
 class BaseSchema(metaclass=SchemaMeta):
     class Config:
-        parsers: Dict[Type[Any], Dict[str, Any]] = {Selector: {}}
+        selector_kwargs: Dict[str, Any] = {}
         type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
 
+    @property
+    def __parser__(self) -> Union[Selector, SelectorList]:
+        return self._cached_parser
+
+    @property
+    def __raw__(self) -> str:
+        return self._markup
+
     def __init__(self, markup: Any):
-        self.cached_parsers: Dict[str, Any] = {}
-        if isinstance(markup, (str, bytes)):
-            self.__raw__ = markup
-            for cls_parser in self.__parsers__.values():  # type: ignore
-                if (
-                    self.Config.parsers.get(cls_parser, None) is None
-                    and cls_parser != NoneType
-                ):
-                    _logger.error("Config.parser required %s", cls_parser.__name__)
-                    raise AttributeError(
-                        f"Config.parser required {cls_parser.__name__}"
-                    )
-
-            # cache parsers
-            self.cached_parsers.update(
-                {  # type: ignore
-                    cls_parser.__name__: cls_parser(markup, **kw)
-                    for cls_parser, kw in self.Config.parsers.items()
-                    if not isinstance(cls_parser, NoneType)
-                }
-            )
-
+        self._cached_parser: Union[Selector, SelectorList]
+        if isinstance(markup, str):
+            self._markup = markup
+            self._cached_parser = Selector(markup, **self.Config.selector_kwargs)
+        elif isinstance(markup, bytes):
+            self._cached_parser = Selector(body=markup, **self.Config.selector_kwargs)
+            self._markup = markup.decode()
         # TODO write adapter for another backends
-        elif isinstance(markup, Selector):
-            self.__raw__ = markup.get()
-            self.cached_parsers["Selector"] = markup
+        elif isinstance(markup, (Selector, SelectorList)):
+            self._markup = markup.get()  # type: ignore
+            self._cached_parser = markup
 
         else:
             raise TypeError(
                 f"markup support only str,bytes or Selector types, not {type(markup).__name__}"
             )
-
         # initialize and parse fields
         self.__init_fields__()
-
-    def clear_cache(self):
-        self.cached_parsers.clear()
 
     def __init_fields__(self):
         _logger.info(
@@ -325,14 +285,7 @@ class BaseSchema(metaclass=SchemaMeta):
                 field.type_ = field_type
 
             # todo refactoring
-            if (
-                field.Config.instance == NoneType
-                and field.__class__.__name__ == "Nested"
-            ):
-                value = field.sc_parse(self.cached_parsers["Selector"])
-            else:
-                cache_key = field.Config.instance.__name__
-                value = field.sc_parse(self.cached_parsers[cache_key])  # self.__raw__
+            value = field.sc_parse(self.__parser__)
 
             if self.Config.type_caster and field.auto_type and not field.is_default:
                 value = self.Config.type_caster.cast(field_type, value)
@@ -355,7 +308,7 @@ class BaseSchema(metaclass=SchemaMeta):
 
     def dict(self):
         result: Dict[str, Any] = {  # type: ignore
-            k: getattr(self, k)
+            k: self._to_dict(getattr(self, k))
             for k, v in self.__class__.__dict__.items()
             if isinstance(v, sc_param)
         }
@@ -387,5 +340,5 @@ class BaseSchema(metaclass=SchemaMeta):
         ]
 
     @property
-    def __schema_name__(self):
+    def __schema_name__(self) -> str:
         return self.__class__.__name__
