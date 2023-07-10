@@ -3,12 +3,15 @@
 usage: `scrapy runspider scrapy_crawler.py -o books.json`
 """
 
-from typing import List
+from typing import List, TYPE_CHECKING
 
 import scrapy
-from scrapy.http import HtmlResponse
+
 from scrape_schema import BaseSchema, sc_param, Parsel, Sc, Nested
 import logging
+
+if TYPE_CHECKING:
+    from scrapy.http import HtmlResponse
 
 _logger = logging.getLogger("scrape_schema")
 _logger.setLevel(logging.ERROR)
