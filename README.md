@@ -10,6 +10,8 @@
 This library is designed to write structured, readable, 
 reusable parsers for html, raw text and is inspired by dataclasses
 
+> !!! Scrape-schema is currently in Pre-Alpha. Please expect breaking changes.
+
 # Motivation
 Simplifying parsers support, where it is difficult to use 
 or the complete absence of the **API interfaces** and decrease lines of code
@@ -20,7 +22,9 @@ for third-party serialization libraries: json, dataclasses, pydantic, etc
 _____
 # Features
 - [Parsel](https://github.com/scrapy/parsel) backend.
+- re, css, xpath, jmespath, chompjs features
 - [Fluent interface](https://en.wikipedia.org/wiki/Fluent_interface#Python) simulate original parsel.Selector API for easy to use. 
+- does not depend on the http client implementation, use any!
 - Python 3.8+ support
 - Dataclass-like structure
 - Partial support auto type-casting from annotations (str, int, float, bool, list, dict, Optional)
@@ -263,6 +267,10 @@ class MySchema(BaseSchema):
     @sc_param
     def sum(self):
         return sum(self.digits)
+    
+    @sc_param
+    def max_digit(self):
+        return max(self.digits)
 
     @sc_param
     def all_words(self):
@@ -277,9 +285,11 @@ if __name__ == '__main__':
 #  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5, 1.5],
 #  'failed_value': False,
 #  'ipv4': '192.168.0.1',
+#  'max_digit': 192,
 #  'sum': 391,
 #  'words_lower': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor'],
 #  'words_upper': ['BANANA', 'POTATO']}
+
 ```
 
 _____
