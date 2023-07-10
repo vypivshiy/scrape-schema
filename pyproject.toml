@@ -87,7 +87,10 @@ parallel = true
 omit = [
   "scrape_schema/__about__.py",
   "scrape_schema/factory/__init__.py",
-  "scrape_schema/_logger.py"
+  "scrape_schema/_logger.py",
+  "scrape_schema/_typing.py",
+  "scrape_schema/_protocols.py",
+  "scrape_schema/type_caster.py"
 ]
 
 [tool.coverage.report]
