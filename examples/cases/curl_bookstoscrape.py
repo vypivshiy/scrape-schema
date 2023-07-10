@@ -1,20 +1,13 @@
-"""example how to usage scrape-schema in scrapy
-
-usage: `scrapy runspider scrapy_crawler.py -o books.json`
-"""
-
-from typing import List, TYPE_CHECKING
-
-import scrapy
-
-from scrape_schema import BaseSchema, sc_param, Parsel, Sc, Nested
+"""dummy example how to usage scrape schema in curl"""
 import logging
+import pprint
+import subprocess
+from typing import List
 
-if TYPE_CHECKING:
-    from scrapy.http import HtmlResponse
+from scrape_schema import BaseSchema, Nested, Parsel, Sc, sc_param
 
-_logger = logging.getLogger("scrape_schema")
-_logger.setLevel(logging.ERROR)
+logger = logging.getLogger("scrape_schema")
+logger.setLevel(logging.ERROR)
 
 
 class Book(BaseSchema):
@@ -47,7 +40,7 @@ class Book(BaseSchema):
     price: Sc[
         float,
         (
-            Parsel(default=.0)
+            Parsel(default=0.0)
             .xpath('//div[@class="product_price"]/p[@class="price_color"]/text()')
             .get()[2:]
         ),
@@ -63,7 +56,8 @@ class Book(BaseSchema):
         ),
     ]
     _rating: Sc[
-        str, Parsel().xpath('//p[contains(@class, "star-rating")]').attrib.get(key="class")
+        str,
+        Parsel().xpath('//p[contains(@class, "star-rating")]').attrib.get(key="class"),
     ]
 
     def __init__(self, markup):
@@ -82,15 +76,14 @@ class Book(BaseSchema):
 class MainPage(BaseSchema):
     """https://books.toscrape.com/catalogue/page-\d+.html"""
 
-    books: Sc[
-        List[Book], Nested(Parsel().xpath(".//section/div/ol[@class='row']/li"))
-    ]
+    books: Sc[List[Book], Nested(Parsel().xpath(".//section/div/ol[@class='row']/li"))]
 
 
-class BookToScrapeSpider(scrapy.Spider):
-    name = "books.to_scape"
-    start_urls = ["https://books.toscrape.com/catalogue/page-1.html"]
-
-    def parse(self, response: HtmlResponse, **kwargs):
-        # TODO implement adapter
-        yield MainPage(response.selector).dict()
+if __name__ == "__main__":
+    result = subprocess.Popen(
+        "curl https://books.toscrape.com/catalogue/page-40.html",
+        shell=True,
+        text=True,
+        stdout=subprocess.PIPE,
+    ).communicate()
+    pprint.pprint(MainPage(result[0]).dict(), compact=True)
