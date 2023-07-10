@@ -67,4 +67,5 @@ pprint.pprint(Schema(text).dict(), compact=True)
 #            {'available': True, 'item': 'bentley', 'price': 50000},
 #            {'available': True, 'item': 'ford', 'price': 20000},
 #            {'available': True, 'item': 'suzuki', 'price': 25000}],
-#  'last_item': {'available': True, 'item': 'suzuki', 'price': 25000}}
+#  'last_item': {'available': True, 'item': 'suzuki', 'price': 25000},
+#  'max_price_item': {'available': False, 'item': 'ferrari', 'price': 99999999}}
