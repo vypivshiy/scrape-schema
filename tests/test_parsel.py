@@ -1,16 +1,6 @@
-from scrape_schema import Parsel
+from tests.fixtures import HTML
 
-HTML = """
-        <html>
-            <body>
-                <h1>Hello, Parsel!</h1>
-                <ul>
-                    <li><a href="http://example.com">Link 1</a></li>
-                    <li><a href="http://scrapy.org">Link 2</a></li>
-                </ul>
-                <script type="application/json">{"a": ["b", "c"]}</script>
-            </body>
-        </html>"""
+from scrape_schema import Parsel
 
 
 def test_stack():
@@ -20,9 +10,8 @@ def test_stack():
     assert len(p._stack_methods) == 2
 
 
-def test_xpath_raw_tag():
-    html = "<div> test case </div>"
-    assert Parsel().xpath("//div").get().sc_parse(html) == "<div> test case </div>"
+def test_xpath():
+    assert Parsel().xpath("//h1").get().sc_parse(HTML) == "<h1>Hello, Parsel!</h1>"
 
 
 def test_raw_text():
@@ -32,3 +21,32 @@ def test_raw_text():
     text_3 = Parsel().xpath("//body/p/text()").get().sc_parse(TEXT)
     text_4 = Parsel().css("body > p::text").get().sc_parse(TEXT)
     assert text_1 == text_2 == text_3 == text_4
+
+
+def test_css():
+    assert Parsel().css("body > h1").get().sc_parse(HTML) == "<h1>Hello, Parsel!</h1>"
+
+
+def test_attrib_get():
+    assert (
+        Parsel().xpath("//li/a").attrib.get("href").sc_parse(HTML)
+        == "http://example.com"
+    )
+
+
+def test_attrib_keys():
+    assert list(Parsel().xpath("//li/a").attrib.keys().sc_parse(HTML))[0] == "href"
+
+
+def test_attrib_values():
+    assert (
+        list(Parsel().xpath("//li/a").attrib.values().sc_parse(HTML))[0]
+        == "http://example.com"
+    )
+
+
+def test_attrib_items():
+    # print(list(Parsel().xpath("//li/a").attrib.items().sc_parse(HTML)))
+    assert list(Parsel().xpath("//li/a").attrib.items().sc_parse(HTML)) == [
+        ("href", "http://example.com")
+    ]
