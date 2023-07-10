@@ -183,7 +183,7 @@ class Field(BaseField):
         Returns:
             Iterating over it yields all encountered JSON objects
         """
-        return self.add_method(
+        return self.add_method(  # type: ignore
             SpecialMethods.CHOMP_JS_PARSE_ALL, unicode_escape, omitempty, json_params
         )
 
