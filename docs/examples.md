@@ -88,7 +88,8 @@ class MainPage(BaseSchema):
 >> further classes will be imported from the `schema.py` module
 ## browser (playwright, selenium)
 
-get full html document and send to `MainPage` class
+Get full html document and send to `MainPage` class
+
 ```python
 import pprint
 
@@ -104,7 +105,25 @@ if __name__ == '__main__':
         page.goto("https://books.toscrape.com/catalogue/page-50.html")
         pprint.pprint(MainPage(page.content()).dict(), compact=True)
         browser.close()
+```
 
+```python
+import pprint
+import time
+
+from selenium import webdriver
+from schema import MainPage
+
+if __name__ == '__main__':
+        
+    browser = webdriver.Chrome()
+    
+    browser.get("https://books.toscrape.com/catalogue/page-15.html")
+    html = browser.page_source
+    time.sleep(2)
+    pprint.pprint(MainPage(html).dict(), compact=True)
+    
+    browser.close()
 ```
 
 ## scrapy
@@ -118,7 +137,7 @@ from schema import MainPage
 
 
 class BookToScrapeSpider(scrapy.Spider):
-    name = "books.to_scape"
+    name = "books.toscrape"
     start_urls = ["https://books.toscrape.com/catalogue/page-1.html"]
 
     def parse(self, response, **kwargs):
