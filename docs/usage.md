@@ -108,11 +108,25 @@ logger.setLevel(logging.DEBUG)
 ...
 ```
 ### BaseSchema
-base schema-like class 
+Base schema class 
 
 Params:
 
 - text - bytes, str or Selector object
+
+Magic Methods:
+
+- `__selector__` Union[Selector, SelectorList] - return Parsel selector
+
+- `__raw__` str - return raw text
+
+- `__schema_fields__` Dict[str, BaseField] - return dict of {attr_name: Field_object, ...}
+
+- `__schema_annotations__` Dict[str, Type] - return dict of {attr_name: Type, ...}
+
+- `__sc_params__` Dict[str, Any] - return dict of sc_params properties {attr_name: sc_param}
+
+- `__schema_name__` str - return class name
 
 ### Parsel
 Field for pulling values from html. Methods have a similar interface to `parsel.Selector`.
