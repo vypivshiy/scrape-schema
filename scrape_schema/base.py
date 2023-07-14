@@ -244,7 +244,11 @@ class BaseSchema(metaclass=SchemaMeta):
         type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
 
     @property
-    def __parser__(self) -> Union[Selector, SelectorList]:
+    def __sc_params__(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if isinstance(v, sc_param)}
+
+    @property
+    def __selector__(self) -> Union[Selector, SelectorList]:
         return self._cached_parser
 
     @property
@@ -284,7 +288,7 @@ class BaseSchema(metaclass=SchemaMeta):
                 field.type_ = field_type
 
             # todo refactoring
-            value = field.sc_parse(self.__parser__)
+            value = field.sc_parse(self.__selector__)
 
             if self.Config.type_caster and field.auto_type and not field.is_default:
                 value = self.Config.type_caster.cast(field_type, value)
