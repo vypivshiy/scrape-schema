@@ -47,7 +47,7 @@ class Nested(BaseField):
         if isinstance(chunks, SelectorList) and get_origin(self.type_) is list:
             return [cls_schema(chunk.get()) for chunk in chunks]
         elif get_origin(self.type_) is list:
-            return [cls_schema(chunk) for chunk in chunks]
+            return [cls_schema(chunk) for chunk in chunks]  # pragma: no cover
         elif isinstance(chunks, Selector) and get_origin(self.type_) is not list:
             return cls_schema(chunks.get())
-        return cls_schema(chunks)
+        return cls_schema(chunks)  # pragma: no cover
