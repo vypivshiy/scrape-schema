@@ -25,14 +25,14 @@ class Nested(BaseField):
 
     def sc_parse(self, markup) -> Any:
         if not self.type_:
-            raise AttributeError("Nested required annotation or `type_` param")
+            raise TypeError("Nested required annotation or `type_` param")
         elif get_origin(self.type_) is list and (
             len(get_args(self.type_)) != 0
             and issubclass(get_args(self.type_)[0], BaseSchema)
         ):
             pass
         elif not issubclass(self.type_, BaseSchema):
-            raise AttributeError(
+            raise TypeError(
                 f"type should be List[BaseSchema] or BaseSchema, not {self.type_}"
             )
 
