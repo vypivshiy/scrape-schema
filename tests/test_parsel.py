@@ -106,3 +106,19 @@ def test_parse_from_bytes():
         "http://example.com",
         "http://scrapy.org",
     ]
+
+
+def test_get_error():
+    with pytest.raises(TypeError):
+        assert Parsel().get(default="any", key="ab").sc_parse(HTML)
+
+
+def test_is_not_attrib():
+    with pytest.raises(TypeError):
+        Parsel().xpath("//div").keys().sc_parse(HTML)
+
+    with pytest.raises(TypeError):
+        Parsel().xpath("//div").values().sc_parse(HTML)
+
+    with pytest.raises(TypeError):
+        Parsel().xpath("//div").items().sc_parse(HTML)

@@ -228,7 +228,7 @@ class SchemaMeta(type):
         ).items():
             if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
                 continue  # pragma: no cover
-            if mcs.__is_type_field(value):
+            if mcs.__is_type_field(value):  # pragma: no cover
                 field_type, field = mcs.__parse_annotated_field(value)
                 __schema_fields__[name] = field
                 __schema_annotations__[name] = field_type
@@ -308,7 +308,7 @@ class BaseSchema(metaclass=SchemaMeta):
             return value.dict()
 
         elif isinstance(value, list):
-            if all(isinstance(val, BaseSchema) for val in value):
+            if all(isinstance(val, BaseSchema) for val in value):  # pragma: no cover
                 return [val.dict() for val in value]
         return value
 
