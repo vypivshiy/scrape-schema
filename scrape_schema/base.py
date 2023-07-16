@@ -19,6 +19,7 @@ from scrape_schema.type_caster import TypeCaster
 
 class sc_param(property):
     """Shortcut for adding property-like descriptors in BaseSchema"""
+
     pass  # pragma: no cover
 
 
