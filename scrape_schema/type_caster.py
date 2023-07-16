@@ -1,9 +1,9 @@
 # pragma: no cover
 import sys
 from typing import Any, Type, Union
-from scrape_schema._typing import NoneType
+
 from scrape_schema._logger import _logger
-from scrape_schema._typing import get_args, get_origin
+from scrape_schema._typing import NoneType, get_args, get_origin
 
 
 class TypeCaster:
