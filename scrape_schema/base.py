@@ -64,7 +64,7 @@ class Field(BaseField):
             if isinstance(class_method, (property, dict)):  # attrib check
                 return class_method
             return getattr(markup, method.METHOD_NAME)(*method.args, **method.kwargs)
-        raise TypeError(
+        raise TypeError(  # pragma: no cover
             f"`{type(markup).__name__}` is not contains `{method.METHOD_NAME}`"
         )
 
@@ -246,7 +246,9 @@ class BaseSchema(metaclass=SchemaMeta):
 
     @property
     def __sc_params__(self) -> Dict[str, Any]:
-        return {k: v for k, v in self.__dict__.items() if isinstance(v, sc_param)}
+        return {
+            k: v for k, v in self.__class__.__dict__.items() if isinstance(v, sc_param)
+        }
 
     @property
     def __selector__(self) -> Union[Selector, SelectorList]:
