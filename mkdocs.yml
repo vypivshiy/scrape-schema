@@ -28,4 +28,5 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Usage: usage.md
+  - FAQ: howto.md
   - Examples: examples.md
