@@ -70,22 +70,28 @@ class Field(BaseField):
 
     def _call_stack_methods(self, markup: Any) -> Any:
         result = markup
-        _logger.info("start call methods. stack count: %s", len(self._stack_methods))
-        for method in self._stack_methods:
+        _logger.info("Start parse markup. Stack methods count: %s", len(self._stack_methods))
+        _logger.debug("Markup target:\nSTART:\n%s\nEND",
+                      markup.css("body").get() if isinstance(markup, (Selector, SelectorList)) else markup)
+        for i, method in enumerate(self._stack_methods, 1):
             try:
                 if isinstance(method.METHOD_NAME, SpecialMethods):
                     result = self._special_method(result, method)
                 else:
                     result = self._accept_method(result, method)
+                _logger.debug("[%s] %s -> %s", i, method, result)
             except Exception as e:
-                return self._stack_method_handler(method, e)
+                _logger.warning("Oops, %s throw exception %s", method, e)
+                return self._stack_method_handler(method, e, markup)
         _logger.info("Call methods done. result=%s", result)
         return result
 
     def _stack_method_handler(
-        self, method: Union[MarkupMethod, SpecialMethods], e: Exception
+            self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
     ):
-        _logger.error("Method `%s` return traceback %s", method, e)
+        _logger.warning("Method `%s` return traceback %s", method, e)
+        _logger.warning("Full markup:\nSTART\n%s\nEND",
+                        markup.get() if isinstance(markup, (Selector, SelectorList)) else markup)
         _logger.exception(e)
         if self.default is Ellipsis:
             raise e
@@ -116,10 +122,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REPLACE, old, new, count)  # type: ignore
 
     def re_search(
-        self,
-        pattern: Union[str, Pattern[str]],
-        flags: Union[int, RegexFlag] = 0,
-        groupdict: bool = False,
+            self,
+            pattern: Union[str, Pattern[str]],
+            flags: Union[int, RegexFlag] = 0,
+            groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """re.search method for text result.
 
@@ -133,10 +139,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
 
     def re_findall(
-        self,
-        pattern: Union[str, Pattern[str]],
-        flags: Union[int, RegexFlag] = 0,
-        groupdict: bool = False,
+            self,
+            pattern: Union[str, Pattern[str]],
+            flags: Union[int, RegexFlag] = 0,
+            groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """[match for match in re.finditer(...)] method for text result.
 
@@ -150,7 +156,7 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
 
     def chomp_js_parse(
-        self, unicode_escape: Any = False, json_params: Any = None
+            self, unicode_escape: Any = False, json_params: Any = None
     ) -> SpecialMethodsProtocol:
         """Extracts first JSON object encountered in the input string
 
@@ -167,10 +173,10 @@ class Field(BaseField):
         )
 
     def chomp_js_parse_all(
-        self,
-        unicode_escape: Any = False,
-        omitempty: Any = False,
-        json_params: Any = None,
+            self,
+            unicode_escape: Any = False,
+            omitempty: Any = False,
+            json_params: Any = None,
     ) -> SpecialMethodsProtocol:
         """Returns a list extracting all JSON objects encountered in the input string. Can be used to read JSON Lines
 
@@ -188,7 +194,7 @@ class Field(BaseField):
         )
 
     def add_method(
-        self, method_name: Union[str, SpecialMethods], *args, **kwargs
+            self, method_name: Union[str, SpecialMethods], *args, **kwargs
     ) -> Self:
         """low-level interface adding methods to call stack"""
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
@@ -224,7 +230,7 @@ class SchemaMeta(type):
 
         # localns={} kwarg avoid TypeError 'function' object is not subscriptable
         for name, value in get_type_hints(
-            cls_schema, localns={}, include_extras=True
+                cls_schema, localns={}, include_extras=True
         ).items():
             if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
                 continue  # pragma: no cover

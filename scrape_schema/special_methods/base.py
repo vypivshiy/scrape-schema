@@ -21,7 +21,7 @@ class MarkupMethod(NamedTuple):
     kwargs: Dict[str, Any] = {}
 
     def __repr__(self):
-        return f"{self.METHOD_NAME} args={self.args}, kwargs={self.kwargs}"  # pragma: no cover
+        return f"Method={self.METHOD_NAME}, args={self.args}, kwargs={self.kwargs}"  # pragma: no cover
 
 
 class SpecialMethodCallable(Protocol):
