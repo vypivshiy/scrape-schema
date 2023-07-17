@@ -12,7 +12,7 @@ reusable parsers for html, raw text and is inspired by dataclasses
 
 > !!! Scrape-schema is currently in Pre-Alpha. Please expect breaking changes.
 
-# Motivation
+## Motivation
 Simplifying parsers support, where it is difficult to use 
 or the complete absence of the **API interfaces** and decrease lines of code
 
@@ -20,23 +20,24 @@ Also structuring, data serialization and use as an intermediate layer
 for third-party serialization libraries: json, dataclasses, pydantic, etc
 
 _____
-# Features
-- [Parsel](https://github.com/scrapy/parsel) backend.
-- re, css, xpath, jmespath, chompjs features
+## Features
+- Built top on [Parsel](https://github.com/scrapy/parsel)
+- re, css, xpath, jmespath, [chompjs](https://github.com/Nykakin/chompjs) features
 - [Fluent interface](https://en.wikipedia.org/wiki/Fluent_interface#Python) simulate original parsel.Selector API for easy to use. 
-- does not depend on the http client implementation, use any!
+- Does not depend on the http client implementation, use any!
 - Python 3.8+ support
+- Reusability, code consistency
 - Dataclass-like structure
 - Partial support auto type-casting from annotations (str, int, float, bool, list, dict, Optional)
-- logging to quickly find problems in extracted values
+- Detailed logging process to make it easier to write a parser
 ____
 
-# Install
+## Install
 
 ```shell
 pip install scrape-schema
 ```
-# Example
+## Example
 
 The fields interface is similar to the original [parsel](https://parsel.readthedocs.io/en/latest/)
 
@@ -102,8 +103,8 @@ print(Schema(text).dict())
 ```
 
 ____
-# Code comparison
-## html
+## Code comparison
+### html
 
 parsel:
 ```python
@@ -183,7 +184,7 @@ if __name__ == '__main__':
     pprint.pprint(MainPage(response).dict(), compact=True)
 ```
 
-## raw text
+### raw text
 original re:
 ```python
 import re
@@ -239,7 +240,6 @@ if __name__ == '__main__':
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
 scrape_schema:
-
 ```python
 from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
@@ -293,7 +293,7 @@ if __name__ == '__main__':
 ```
 
 _____
-# logging
+## logging
 In this project, logging to the `DEBUG` level is enabled by default. 
 
 To set up logger, you can get it by the name `"scrape_schema"`
