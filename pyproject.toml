@@ -39,8 +39,8 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 
 
 [project.optional-dependencies]
-dev = ["flake8", "black", "isort", "pytest", "mypy", "parsel"]
-ci = ["hatch", "bs4", "selectolax", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
+dev = ["flake8", "black", "isort", "pytest", "mypy"]
+ci = ["hatch", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
 docs = ["mkdocs-material"]
 
 [tool.hatch.version]
@@ -57,10 +57,10 @@ serve = "mkdocs serve --dev-addr localhost:8000"
 
 [tool.hatch.envs.default]
 dependencies = [
-  "colorama",
+  "colorlog",
+  "chompjs",
+  "typing_extensions",
   "pytest",
-  "selectolax",
-  "bs4",
   "parsel",
   "pytest-cov"
 ]
@@ -107,12 +107,3 @@ pretty = true
 ignore_missing_imports = true
 exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples"]
 files = "scrape_schema/*.py,scrape_schema/fields/*.py,scrape_schema/callbacks/*.py"
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    "error",
-    'ignore::RuntimeWarning',
-    'ignore::DeprecationWarning'
-]
-
-
