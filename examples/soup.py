@@ -2,6 +2,7 @@
 from typing import Any
 
 from bs4 import BeautifulSoup
+
 from scrape_schema import BaseSchema, sc_param
 
 
@@ -21,7 +22,7 @@ class Schema(BaseSchema):
     # I'm too lazy to write more :D
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     text = """
             <html>
                 <body>
