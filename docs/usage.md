@@ -129,13 +129,29 @@ Magic Methods:
 - `__schema_name__` str - return class name
 
 ### Parsel
-Field for pulling values from html. Methods have a similar interface to `parsel.Selector`.
+Field for pulling values from html. Methods have a similar API to `parsel.Selector`.
 params:
 
 - raw - if you works with raw text (not HTML), automatically accept xpath(//p/text()).get() methods
 - auto_type automatically type-cast from first annotated argument. Default True.
 - default - default value. If during operation it throws an error or does not find a value, 
+it will set it (without type conversion). If it is not specified, it will throw exception.
+
+### Text
+Field for pulling values from raw text. This field provide special methods and regex
+- auto_type automatically type-cast from first annotated argument. Default True.
+- default - default value. If during operation it throws an error or does not find a value, 
 it will set it (without type conversion). If it is not specified, it will throw exception. 
+
+TODO add example
+
+### JMESPath
+Field for pulling values from raw text. This field provide special methods and jmespath method
+- auto_type automatically type-cast from first annotated argument. Default False.
+- default - default value. If during operation it throws an error or does not find a value, 
+it will set it (without type conversion). If it is not specified, it will throw exception.
+
+TODO add example
 
 ### Nested
 Splits a html by a given field and creates additional nested schemas. `Sc` (Annotated) first argument should be
@@ -255,7 +271,7 @@ pprint.pprint(Schema(text).dict(), compact=True)
 # 'url_path': '/image.png'}
 
 ```
-## Extra Field buildin methods
+## Special methods
 ### fn
 - function: Callable[..., Any] 
 execute function for prev method chain and return result
