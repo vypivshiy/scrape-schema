@@ -52,3 +52,14 @@ HTML_FOR_SCHEMA = """
     </body>
 </html>
 """
+
+JSON_TEXT = '{"args": ["spam", "egg"], "headers": {"user-agent": "Mozilla 5.0", "lang": "en-US"}}'
+
+
+RAW_TEXT = """
+banana potato BANANA POTATO
+-foo:10
+-bar:20
+lorem upsum dolor
+192.168.0.1
+"""
