@@ -7,6 +7,8 @@ from scrape_schema.base import Field
 
 
 class Parsel(Field):
+    """This field provide parsel.Selector api and special methods"""
+
     def __init__(
         self, auto_type: bool = True, default: Any = ..., *, raw: bool = False
     ):
@@ -144,7 +146,7 @@ class Parsel(Field):
 
 
 class JMESPath(Field):
-    """Parsel wrapper for json only text data"""
+    """This field provide parsel.Selector api and special methods for json data"""
 
     def __init__(self, auto_type: bool = False, default: Any = ...):
         super().__init__(auto_type=auto_type, default=default)
@@ -183,7 +185,10 @@ class JMESPath(Field):
 
 
 class Text(Field):
+    """This field provide special methods for raw text data (regex only)"""
+
     def __init__(self, auto_type: bool = True, default: Any = ...):
         super().__init__(auto_type=auto_type, default=default)
+        # prepare get raw text
         self.add_method("xpath", "//body/p/text()")
         self.add_method("get")
