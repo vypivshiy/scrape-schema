@@ -1,7 +1,18 @@
 import re
 from abc import abstractmethod
 from re import RegexFlag
-from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Pattern,
+    Tuple,
+    Type,
+    Union,
+)
 
 from parsel import Selector, SelectorList
 
@@ -52,7 +63,7 @@ class Field(BaseField):
             return Selector(markup)
         elif isinstance(markup, bytes):
             return Selector(body=markup)
-        raise TypeError("Uncorrected markup type")
+        raise TypeError("Incorrect markup type")
 
     def _special_method(self, markup: Any, method: MarkupMethod) -> Any:
         return self._spec_method_handler.handle(method, markup)
@@ -70,9 +81,15 @@ class Field(BaseField):
 
     def _call_stack_methods(self, markup: Any) -> Any:
         result = markup
-        _logger.info("Start parse markup. Stack methods count: %s", len(self._stack_methods))
-        _logger.debug("Markup target:\nSTART:\n%s\nEND",
-                      markup.css("body").get() if isinstance(markup, (Selector, SelectorList)) else markup)
+        _logger.info(
+            "Start parse markup. Stack methods count: %s", len(self._stack_methods)
+        )
+        _logger.debug(
+            "Markup target:\nSTART:\n%s\nEND",
+            markup.css("body").get()
+            if isinstance(markup, (Selector, SelectorList))
+            else markup,
+        )
         for i, method in enumerate(self._stack_methods, 1):
             try:
                 if isinstance(method.METHOD_NAME, SpecialMethods):
@@ -87,15 +104,22 @@ class Field(BaseField):
         return result
 
     def _stack_method_handler(
-            self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
+        self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
     ):
-        _logger.warning("Method `%s` return traceback %s", method, e)
-        _logger.warning("Full markup:\nSTART\n%s\nEND",
-                        markup.get() if isinstance(markup, (Selector, SelectorList)) else markup)
-        _logger.exception(e)
+        _logger.error(
+            "Method `%s` return traceback %s", f"{type(markup).__name__}.{method}", e
+        )
+        _logger.error(
+            "Full markup:\nSTART\n%s\nEND",
+            markup.get() if isinstance(markup, (Selector, SelectorList)) else markup,
+        )
         if self.default is Ellipsis:
             raise e
-        _logger.warning("Set default value %s and disable type_casting", self.default)
+        _logger.info(
+            "Markup `%s` return exception, set default value `%s` and skip type casting",
+            f"{type(markup).__name__}.{method}",
+            self.default,
+        )
         self.is_default = True
         return self.default
 
@@ -122,10 +146,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REPLACE, old, new, count)  # type: ignore
 
     def re_search(
-            self,
-            pattern: Union[str, Pattern[str]],
-            flags: Union[int, RegexFlag] = 0,
-            groupdict: bool = False,
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """re.search method for text result.
 
@@ -139,10 +163,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
 
     def re_findall(
-            self,
-            pattern: Union[str, Pattern[str]],
-            flags: Union[int, RegexFlag] = 0,
-            groupdict: bool = False,
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """[match for match in re.finditer(...)] method for text result.
 
@@ -156,7 +180,7 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
 
     def chomp_js_parse(
-            self, unicode_escape: Any = False, json_params: Any = None
+        self, unicode_escape: Any = False, json_params: Any = None
     ) -> SpecialMethodsProtocol:
         """Extracts first JSON object encountered in the input string
 
@@ -173,10 +197,10 @@ class Field(BaseField):
         )
 
     def chomp_js_parse_all(
-            self,
-            unicode_escape: Any = False,
-            omitempty: Any = False,
-            json_params: Any = None,
+        self,
+        unicode_escape: Any = False,
+        omitempty: Any = False,
+        json_params: Any = None,
     ) -> SpecialMethodsProtocol:
         """Returns a list extracting all JSON objects encountered in the input string. Can be used to read JSON Lines
 
@@ -194,7 +218,7 @@ class Field(BaseField):
         )
 
     def add_method(
-            self, method_name: Union[str, SpecialMethods], *args, **kwargs
+        self, method_name: Union[str, SpecialMethods], *args, **kwargs
     ) -> Self:
         """low-level interface adding methods to call stack"""
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
@@ -230,7 +254,7 @@ class SchemaMeta(type):
 
         # localns={} kwarg avoid TypeError 'function' object is not subscriptable
         for name, value in get_type_hints(
-                cls_schema, localns={}, include_extras=True
+            cls_schema, localns={}, include_extras=True
         ).items():
             if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
                 continue  # pragma: no cover
