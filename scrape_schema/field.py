@@ -1,7 +1,5 @@
 from typing import Any, Hashable, Mapping, Optional, Pattern, Union
 
-from parsel import Selector
-
 from scrape_schema._logger import _logger
 from scrape_schema._protocols import AttribProtocol, SpecialMethodsProtocol
 from scrape_schema._typing import Self
@@ -143,3 +141,49 @@ class Parsel(Field):
     def items(self):
         if self._is_attrib():
             return self.add_method("items")
+
+
+class JMESPath(Field):
+    """Parsel wrapper for json only text data"""
+
+    def __init__(self, auto_type: bool = False, default: Any = ...):
+        super().__init__(auto_type=auto_type, default=default)
+
+    def jmespath(self, query: str, **kwargs: Any) -> Self:
+        """
+        Find objects matching the JMESPath ``query`` and return the result as a
+        :class:`SelectorList` instance with all elements flattened. List
+        elements implement :class:`Selector` interface too.
+
+        ``query`` is a string containing the `JMESPath
+        <https://jmespath.org/>`_ query to apply.
+
+        Any additional named arguments are passed to the underlying
+        ``jmespath.search`` call, e.g.::
+
+            selector.jmespath('author.name', options=jmespath.Options(dict_cls=collections.OrderedDict))
+        """
+        return self.add_method("jmespath", query, **kwargs)
+
+    def get(
+        self, default: Optional[str] = None
+    ) -> SpecialMethodsProtocol:  # type: ignore
+        """
+        Serialize and return the matched nodes in a single string. Percent encoded content is unquoted.
+
+        If `key` param passed - get value from attrib property. attrib should be called in chain methods
+        """
+        return self.add_method("get", default)  # type: ignore
+
+    def getall(self) -> SpecialMethodsProtocol:
+        """Call the .get() method for each element is this list
+        and return their results flattened, as a list of strings."""
+
+        return self.add_method("getall")  # type: ignore
+
+
+class Text(Field):
+    def __init__(self, auto_type: bool = True, default: Any = ...):
+        super().__init__(auto_type=auto_type, default=default)
+        self.add_method("xpath", "//body/p/text()")
+        self.add_method("get")
