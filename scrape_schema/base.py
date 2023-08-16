@@ -4,7 +4,6 @@ from re import RegexFlag
 from typing import (
     Any,
     Callable,
-    ClassVar,
     Dict,
     List,
     Optional,
@@ -86,9 +85,7 @@ class Field(BaseField):
         )
         _logger.debug(
             "Markup target:\nSTART:\n%s\nEND",
-            markup.css("body").get()
-            if isinstance(markup, (Selector, SelectorList))
-            else markup,
+            markup.get() if isinstance(markup, (Selector, SelectorList)) else markup,
         )
         for i, method in enumerate(self._stack_methods, 1):
             try:
