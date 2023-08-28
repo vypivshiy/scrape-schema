@@ -266,10 +266,15 @@ class SchemaMeta(type):
         return cls_schema
 
 
+class SchemaConfig:
+    """selector configuration"""
+    selector_kwargs: Dict[str, Any] = {}
+    type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
+
+
 class BaseSchema(metaclass=SchemaMeta):
-    class Config:
-        selector_kwargs: Dict[str, Any] = {}
-        type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
+    class Config(SchemaConfig):
+        pass
 
     @property
     def __sc_params__(self) -> Dict[str, Any]:
