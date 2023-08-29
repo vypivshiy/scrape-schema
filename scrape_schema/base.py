@@ -66,7 +66,7 @@ class Field(BaseField):
         return self._spec_method_handler.handle(method, markup)
 
     def __repr__(self):
-        return (
+        return (  # pragma: no cover
             f"{self.__class__.__name__}()"
             f"{'.'.join(repr(m) for m in self._stack_methods)}"
         )

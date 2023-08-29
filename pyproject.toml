@@ -97,6 +97,7 @@ omit = [
 exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
+  "def __repr__",
   "if TYPE_CHECKING:",
   "@abstractmethod"
 ]
