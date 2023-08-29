@@ -4,4 +4,4 @@ from scrape_schema.base import BaseSchema, sc_param
 from scrape_schema.field import JMESPath, Parsel, Text
 from scrape_schema.nested import Nested
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
