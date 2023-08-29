@@ -39,8 +39,8 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 
 
 [project.optional-dependencies]
-dev = ["flake8", "black", "isort", "pytest", "mypy", "pre-commit", "hatch"]
-ci = ["hatch", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
+dev = ["ruff", "black", "isort", "pytest", "mypy", "pre-commit", "hatch"]
+ci = ["hatch", "ruff", "black", "isort", "pytest", "mypy", "parsel"]
 docs = ["mkdocs-material"]
 
 [tool.hatch.version]
@@ -108,3 +108,32 @@ pretty = true
 ignore_missing_imports = true
 exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples"]
 files = "scrape_schema/*.py,scrape_schema/fields/*.py,scrape_schema/callbacks/*.py"
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+select = ["E", "F"]
+ignore = [
+  # Allow non-abstract empty methods in abstract base classes
+  "B027",
+  # Allow boolean positional values in function calls, like `dict.get(... True)`
+  "FBT003",
+  # Ignore checks for possible passwords
+  "S105", "S106", "S107",
+  # Ignore complexity
+  "C901", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
+]
+unfixable = [
+  # Don't touch unused imports
+  "F401",
+]
+
+exclude = [
+  "examples",
+  "venv",
+  "__init__.py",
+  "tests"
+]
+
+[tool.ruff.isort]
+known-first-party = ["eggella"]
