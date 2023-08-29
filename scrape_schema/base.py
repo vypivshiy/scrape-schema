@@ -394,7 +394,7 @@ class BaseSchema(metaclass=SchemaMeta):
         # parse public field keys
         for k, v in self.__dict__.items():
             if not k.startswith("_") and self.__schema_fields__.get(k):  # type: ignore
-                if alias := self.__schema_aliases__.get(k):
+                if alias := self.__schema_aliases__.get(k):  # type: ignore
                     args[f"{alias}({k})"] = v
                 else:
                     args[k] = v
