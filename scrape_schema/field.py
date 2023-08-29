@@ -12,6 +12,12 @@ class Parsel(Field):
     def __init__(
         self, auto_type: bool = True, default: Any = ..., *, raw: bool = False
     ):
+        """Base field provide Parsel.Selector API
+
+        :param auto_type: usage auto type feature in BaseSchema scope. Default True
+        :param default: set default value, if method return traceback. Disable auto type feature If not set - raise traceback.
+        :param raw: raw text parse mode. Auto accept `.xpath("//p/text()").get()` method (get raw markup)
+        """
         super().__init__(auto_type=auto_type, default=default)
         if raw:
             self.xpath("//p/text()").get()
@@ -149,6 +155,11 @@ class JMESPath(Field):
     """This field provide parsel.Selector api and special methods for json data"""
 
     def __init__(self, auto_type: bool = False, default: Any = ...):
+        """this field provide jmespath and special methods API
+
+        :param auto_type:
+        :param default:
+        """
         super().__init__(auto_type=auto_type, default=default)
 
     def jmespath(self, query: str, **kwargs: Any) -> Self:
@@ -188,6 +199,11 @@ class Text(Field):
     """This field provide special methods for raw text data (regex only)"""
 
     def __init__(self, auto_type: bool = True, default: Any = ...):
+        """this field provide jmespath and special methods API
+
+        :param auto_type:
+        :param default:
+        """
         super().__init__(auto_type=auto_type, default=default)
         # prepare get raw text
         self.add_method("xpath", "//body/p/text()")

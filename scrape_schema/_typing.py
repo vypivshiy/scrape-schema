@@ -1,3 +1,4 @@
+"""typing compat module"""
 import sys
 from typing import Type
 

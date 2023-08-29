@@ -21,7 +21,14 @@ class MarkupMethod(NamedTuple):
     kwargs: Dict[str, Any] = {}
 
     def __repr__(self):
-        return f"Method={self.METHOD_NAME}, args={self.args}, kwargs={self.kwargs}"  # pragma: no cover
+        arguments = ""
+        if self.args:
+            arguments += ", ".join(str(a) for a in self.args)
+        if self.kwargs:
+            arguments += ", " + ", ".join(f"{k}={v}" for k,v in self.kwargs.items())
+
+        method = self.METHOD_NAME.name if isinstance(self.METHOD_NAME, SpecialMethods) else self.METHOD_NAME
+        return f"{method}({arguments})"  # pragma: no cover
 
 
 class SpecialMethodCallable(Protocol):
@@ -39,10 +46,14 @@ class SpecialMethodsHandler:
     def __init__(self):
         self.spec_methods_dict: Dict[SpecialMethods, SpecialMethodCallable] = {}  # type: ignore
 
-    def add_method(self, spec_method: SpecialMethods, strategy: SpecialMethodCallable):
+    def add_method(self,
+                   spec_method: SpecialMethods,
+                   strategy: SpecialMethodCallable) -> None:
         self.spec_methods_dict[spec_method] = strategy
 
-    def handle(self, method: MarkupMethod, markup: Any, **kwargs):
+    def handle(self,
+               method: MarkupMethod,
+               markup: Any, **kwargs) -> Any:
         if isinstance(method.METHOD_NAME, SpecialMethods):
             return self.spec_methods_dict[method.METHOD_NAME](markup, method, **kwargs)
         raise TypeError("Unknown special method")  # pragma: no cover

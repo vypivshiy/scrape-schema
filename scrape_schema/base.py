@@ -40,6 +40,7 @@ class BaseField:
         self.auto_type = auto_type
         self.is_default = False  # flag check failed parsed value
         self._spec_method_handler: SpecialMethodsHandler = DEFAULT_SPEC_METHOD_HANDLER
+        self._last_failed_method: Optional[MarkupMethod] = None
 
     @abstractmethod
     def _prepare_markup(self, markup):
@@ -53,29 +54,34 @@ class BaseField:
 class Field(BaseField):
     def _prepare_markup(self, markup: Union[str, bytes, Selector, SelectorList]):
         """convert string/bytes to parser class context"""
+        self._last_failed_method = None  # reset failed method link
+        _logger.debug("Field markup type: %s", type(markup).__name__)
         if isinstance(markup, (Selector, SelectorList)):
             return markup
         elif isinstance(markup, str):
-            _logger.debug(
-                "Convert raw markup to parsel.Selector",
-            )
             return Selector(markup)
         elif isinstance(markup, bytes):
             return Selector(body=markup)
-        raise TypeError("Incorrect markup type")
+        raise TypeError(f"Unsupported markup type: {type(markup).__name__}")
 
     def _special_method(self, markup: Any, method: MarkupMethod) -> Any:
         return self._spec_method_handler.handle(method, markup)
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}()"
+                f"{'.'.join(repr(m) for m in self._stack_methods)}")
 
     @staticmethod
     def _accept_method(markup: Any, method: MarkupMethod) -> Any:
         if isinstance(method.METHOD_NAME, str):
             class_method = getattr(markup, method.METHOD_NAME)
-            if isinstance(class_method, (property, dict)):  # attrib check
+            # Selector.attrib check case or raw dict
+            if isinstance(class_method, (property, dict)):
                 return class_method
-            return getattr(markup, method.METHOD_NAME)(*method.args, **method.kwargs)
+            # callable
+            return class_method(*method.args, **method.kwargs)
         raise TypeError(  # pragma: no cover
-            f"`{type(markup).__name__}` is not contains `{method.METHOD_NAME}`"
+            f"`{type(markup).__name__}` is not a valid method name: {method.METHOD_NAME}"
         )
 
     def _call_stack_methods(self, markup: Any) -> Any:
@@ -84,8 +90,10 @@ class Field(BaseField):
             "Start parse markup. Stack methods count: %s", len(self._stack_methods)
         )
         _logger.debug(
-            "Markup target:\nSTART:\n%s\nEND",
-            markup.get() if isinstance(markup, (Selector, SelectorList)) else markup,
+            "Markup (len=%i) target: %s",
+            len(markup.get()),
+            f"{markup.get()[:64]}..." if len(markup.get()) > 64 else markup
+            if isinstance(markup, (Selector, SelectorList)) else markup,
         )
         for i, method in enumerate(self._stack_methods, 1):
             try:
@@ -93,18 +101,24 @@ class Field(BaseField):
                     result = self._special_method(result, method)
                 else:
                     result = self._accept_method(result, method)
-                _logger.debug("[%s] %s -> %s", i, method, result)
+                _logger.debug(
+                    "[%s] %s -> %s",
+                    i,
+                    method,
+                    f"(len={len(str(result))}) {str(result)[:64]}..."
+                    if len(str(result)) > 64 else result)
             except Exception as e:
-                _logger.warning("Oops, %s throw exception %s", method, e)
-                return self._stack_method_handler(method, e, markup)
+                _logger.warning("Oops, %s throw exception %s", str(method).lower(), e)
+                self._last_failed_method = method
+                return self._stack_method_error_handler(method, e, markup)
         _logger.info("Call methods done. result=%s", result)
         return result
 
-    def _stack_method_handler(
-        self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
+    def _stack_method_error_handler(
+            self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
     ):
         _logger.error(
-            "Method `%s` return traceback %s", f"{type(markup).__name__}.{method}", e
+            "Method `%r` return traceback: %s", method, e
         )
         _logger.error(
             "Full markup:\nSTART\n%s\nEND",
@@ -113,8 +127,7 @@ class Field(BaseField):
         if self.default is Ellipsis:
             raise e
         _logger.info(
-            "Markup `%s` return exception, set default value `%s` and skip type casting",
-            f"{type(markup).__name__}.{method}",
+            "Skip type casting and set default value: %s",
             self.default,
         )
         self.is_default = True
@@ -143,10 +156,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REPLACE, old, new, count)  # type: ignore
 
     def re_search(
-        self,
-        pattern: Union[str, Pattern[str]],
-        flags: Union[int, RegexFlag] = 0,
-        groupdict: bool = False,
+            self,
+            pattern: Union[str, Pattern[str]],
+            flags: Union[int, RegexFlag] = 0,
+            groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """re.search method for text result.
 
@@ -160,10 +173,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
 
     def re_findall(
-        self,
-        pattern: Union[str, Pattern[str]],
-        flags: Union[int, RegexFlag] = 0,
-        groupdict: bool = False,
+            self,
+            pattern: Union[str, Pattern[str]],
+            flags: Union[int, RegexFlag] = 0,
+            groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """[match for match in re.finditer(...)] method for text result.
 
@@ -177,7 +190,7 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
 
     def chomp_js_parse(
-        self, unicode_escape: Any = False, json_params: Any = None
+            self, unicode_escape: Any = False, json_params: Any = None
     ) -> SpecialMethodsProtocol:
         """Extracts first JSON object encountered in the input string
 
@@ -194,10 +207,10 @@ class Field(BaseField):
         )
 
     def chomp_js_parse_all(
-        self,
-        unicode_escape: Any = False,
-        omitempty: Any = False,
-        json_params: Any = None,
+            self,
+            unicode_escape: Any = False,
+            omitempty: Any = False,
+            json_params: Any = None,
     ) -> SpecialMethodsProtocol:
         """Returns a list extracting all JSON objects encountered in the input string. Can be used to read JSON Lines
 
@@ -215,7 +228,7 @@ class Field(BaseField):
         )
 
     def add_method(
-        self, method_name: Union[str, SpecialMethods], *args, **kwargs
+            self, method_name: Union[str, SpecialMethods], *args, **kwargs
     ) -> Self:
         """low-level interface adding methods to call stack"""
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
@@ -251,7 +264,7 @@ class SchemaMeta(type):
 
         # localns={} kwarg avoid TypeError 'function' object is not subscriptable
         for name, value in get_type_hints(
-            cls_schema, localns={}, include_extras=True
+                cls_schema, localns={}, include_extras=True
         ).items():
             if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
                 continue  # pragma: no cover
@@ -290,7 +303,7 @@ class BaseSchema(metaclass=SchemaMeta):
     def __raw__(self) -> str:
         return self._markup
 
-    def __init__(self, markup: Any):
+    def __init__(self, markup: Union[str, bytes, Selector, SelectorList]):
         self._cached_parser: Union[Selector, SelectorList]
         if isinstance(markup, str):
             self._markup = markup
@@ -305,7 +318,7 @@ class BaseSchema(metaclass=SchemaMeta):
 
         else:
             raise TypeError(
-                f"markup support only str,bytes or Selector types, not {type(markup).__name__}"
+                f"Markup support only str, bytes or Selector types, not {type(markup).__name__}"
             )
         # initialize and parse fields
         self.__init_fields__()
@@ -318,7 +331,7 @@ class BaseSchema(metaclass=SchemaMeta):
         )
         for name, field in self.__schema_fields__.items():
             field_type = self.__schema_annotations__[name]
-            _logger.debug("%s.%s start parse", self.__schema_name__, name)
+            _logger.debug("Start parse: %s.%s", self.__schema_name__, name)
             if field.__class__.__name__ == "Nested":  # todo fix
                 field.type_ = field_type
 
@@ -329,6 +342,10 @@ class BaseSchema(metaclass=SchemaMeta):
                 value = self.Config.type_caster.cast(field_type, value)
             # disable default value flag
             if field.is_default:
+                _logger.error("`%s.%s` failed parse in %r method, set default value",
+                              self.__schema_name__,
+                              name,
+                              field._last_failed_method)  # type: ignore
                 field.is_default = False
 
             _logger.info("%s.%s = %s", self.__schema_name__, name, value)

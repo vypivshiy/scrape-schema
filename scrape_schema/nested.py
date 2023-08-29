@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type, get_args
+from typing import Any, Optional, Type, get_args, List, Union
 
 from parsel import Selector, SelectorList
 
@@ -11,8 +11,13 @@ class Nested(BaseField):
         self,
         field: BaseField,
         *,
-        type_: Optional[Type] = None,
+        type_: Optional[Union[Type[BaseSchema], Type[List[BaseSchema]]]] = None,
     ):
+        """Nested field
+
+        :param field: Field method provide crop documents to parts logic
+        :param type_: Schema type. Auto set if this field in BaseSchema class scope
+        """
         super().__init__()
         self.auto_type = False
         self.type_ = type_
@@ -20,12 +25,12 @@ class Nested(BaseField):
 
     def _prepare_markup(self, markup):
         raise NotImplementedError(
-            "_prepare_markup not allowed in Nested"
+            "`_prepare_markup` method not allowed in Nested class"
         )  # pragma: no cover
 
     def sc_parse(self, markup) -> Any:
         if not self.type_:
-            raise TypeError("Nested required annotation or `type_` param")
+            raise TypeError("Nested required annotation in schema or `type_` param")
         elif get_origin(self.type_) is list and (
             len(get_args(self.type_)) != 0
             and issubclass(get_args(self.type_)[0], BaseSchema)
@@ -33,7 +38,7 @@ class Nested(BaseField):
             pass
         elif not issubclass(self.type_, BaseSchema):
             raise TypeError(
-                f"type should be List[BaseSchema] or BaseSchema, not {self.type_}"
+                f"Type should be `list[BaseSchema]` or `BaseSchema`, not {self.type_}"
             )
 
         if len(get_args(self.type_)) != 0 and issubclass(
