@@ -2,7 +2,7 @@
 import sys
 from typing import Any, Type, Union
 
-from scrape_schema._logger import _logger
+from scrape_schema._logger import _logger_cast as _logger
 from scrape_schema._typing import NoneType, get_args, get_origin
 
 
