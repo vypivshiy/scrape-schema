@@ -24,11 +24,19 @@ class sc_param(property):
 
 
 class BaseField:
-    def __init__(self, auto_type: bool = True, default: Any = ..., **kwargs):
+    def __init__(
+        self,
+        auto_type: bool = True,
+        default: Any = ...,
+        alias: Optional[str] = None,
+        **kwargs,
+    ):
         self._stack_methods: List[MarkupMethod] = []
         self.default = default
         self.auto_type = auto_type
         self.is_default = False  # flag check failed parsed value
+        self.alias = alias
+
         self._spec_method_handler: SpecialMethodsHandler = DEFAULT_SPEC_METHOD_HANDLER
         self._last_failed_method: Optional[MarkupMethod] = None
 
@@ -236,6 +244,7 @@ class Field(BaseField):
 class SchemaMeta(type):
     __schema_fields__: Dict[str, BaseField]
     __schema_annotations__: Dict[str, Type]
+    __schema_aliases__: Dict[str, str]
 
     @staticmethod
     def __is_type_field(attr: Type) -> bool:
@@ -252,6 +261,7 @@ class SchemaMeta(type):
         # cache fields, annotations and used parsers for more simplify access
         __schema_fields__: Dict[str, BaseField] = {}  # type: ignore
         __schema_annotations__: Dict[str, Type] = {}  # type: ignore
+        __schema_aliases__: Dict[str, str] = {}  # type: ignore
 
         cls_schema = super().__new__(mcs, name, bases, attrs)
         if cls_schema.__name__ == "BaseSchema":
@@ -266,10 +276,13 @@ class SchemaMeta(type):
             if mcs.__is_type_field(value):  # pragma: no cover
                 field_type, field = mcs.__parse_annotated_field(value)
                 __schema_fields__[name] = field
+                if field.alias:
+                    __schema_aliases__[name] = field.alias
                 __schema_annotations__[name] = field_type
 
         setattr(cls_schema, "__schema_fields__", __schema_fields__)
         setattr(cls_schema, "__schema_annotations__", __schema_annotations__)
+        setattr(cls_schema, "__schema_aliases__", __schema_aliases__)
         setattr(cls_schema, "__meta_info__", {})
         return cls_schema
 
@@ -361,13 +374,13 @@ class BaseSchema(metaclass=SchemaMeta):
 
     def dict(self):
         result: Dict[str, Any] = {  # type: ignore
-            k: self._to_dict(getattr(self, k))
-            for k, v in self.__class__.__dict__.items()
-            if isinstance(v, sc_param)
+            self.__schema_aliases__.get(k, k): self._to_dict(getattr(self, k))
+            for k, v in self.__sc_params__.items()
         }
         # parse public field keys
         for k, v in self.__dict__.items():
             if not k.startswith("_") and self.__schema_fields__.get(k):
+                k = self.__schema_aliases__.get(k, k)
                 result[k] = self._to_dict(v)
         return result
 
@@ -376,14 +389,15 @@ class BaseSchema(metaclass=SchemaMeta):
 
     def __repr_args__(self) -> List[str]:
         args: Dict[str, Any] = {  # type: ignore
-            k: getattr(self, k)
-            for k, v in self.__class__.__dict__.items()
-            if isinstance(v, sc_param)
+            k: getattr(self, k) for k, v in self.__sc_params__.items()
         }
         # parse public field keys
         for k, v in self.__dict__.items():
             if not k.startswith("_") and self.__schema_fields__.get(k):  # type: ignore
-                args[k] = v
+                if alias := self.__schema_aliases__.get(k):
+                    args[f"{alias}({k})"] = v
+                else:
+                    args[k] = v
 
         return [
             f"{k}={repr(v)}"

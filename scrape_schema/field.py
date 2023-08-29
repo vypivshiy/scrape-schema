@@ -10,7 +10,12 @@ class Parsel(Field):
     """This field provide parsel.Selector api and special methods"""
 
     def __init__(
-        self, auto_type: bool = True, default: Any = ..., *, raw: bool = False
+        self,
+        auto_type: bool = True,
+        default: Any = ...,
+        *,
+        raw: bool = False,
+        alias: Optional[str] = None,
     ):
         """Base field provide Parsel.Selector API
 
@@ -18,7 +23,7 @@ class Parsel(Field):
         :param default: set default value, if method return traceback. Disable auto type feature If not set - raise traceback.
         :param raw: raw text parse mode. Auto accept `.xpath("//p/text()").get()` method (get raw markup)
         """
-        super().__init__(auto_type=auto_type, default=default)
+        super().__init__(auto_type=auto_type, default=default, alias=alias)
         if raw:
             self.xpath("//p/text()").get()
 
@@ -154,13 +159,15 @@ class Parsel(Field):
 class JMESPath(Field):
     """This field provide parsel.Selector api and special methods for json data"""
 
-    def __init__(self, auto_type: bool = False, default: Any = ...):
+    def __init__(
+        self, auto_type: bool = False, default: Any = ..., alias: Optional[str] = None
+    ):
         """this field provide jmespath and special methods API
 
         :param auto_type:
         :param default:
         """
-        super().__init__(auto_type=auto_type, default=default)
+        super().__init__(auto_type=auto_type, default=default, alias=alias)
 
     def jmespath(self, query: str, **kwargs: Any) -> Self:
         """
@@ -198,13 +205,15 @@ class JMESPath(Field):
 class Text(Field):
     """This field provide special methods for raw text data (regex only)"""
 
-    def __init__(self, auto_type: bool = True, default: Any = ...):
+    def __init__(
+        self, auto_type: bool = True, default: Any = ..., alias: Optional[str] = None
+    ):
         """this field provide jmespath and special methods API
 
         :param auto_type:
         :param default:
         """
-        super().__init__(auto_type=auto_type, default=default)
+        super().__init__(auto_type=auto_type, default=default, alias=alias)
         # prepare get raw text
         self.add_method("xpath", "//body/p/text()")
         self.add_method("get")
