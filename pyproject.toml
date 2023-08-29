@@ -39,7 +39,7 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 
 
 [project.optional-dependencies]
-dev = ["flake8", "black", "isort", "pytest", "mypy", "pre-commit"]
+dev = ["flake8", "black", "isort", "pytest", "mypy", "pre-commit", "hatch"]
 ci = ["hatch", "flake8", "black", "isort", "pytest", "mypy", "parsel"]
 docs = ["mkdocs-material"]
 
