@@ -28,22 +28,22 @@ repos:
         name: isort
         entry: isort
         language: system
-        types: [ python ]
-        stages: [ commit ]
-
-      - id: flake8
-        name: flake8
-        entry: flake8 .
-        language: system
         types: [python]
         stages: [commit]
 
+      - id: flake8
+        name: flake8
+        entry: flake8
+        language: system
+        types: [python]
+        stages: [push]
+
       - id: mypy
         name: mypy check
-        entry: mypy .
+        entry: mypy
         language: system
         pass_filenames: false
-        stages: [commit]
+        stages: [push]
 
       - id: pytest
         name: pytest
