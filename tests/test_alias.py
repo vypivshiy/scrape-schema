@@ -8,3 +8,4 @@ class AliasTestSchema(BaseSchema):
 def test_alias():
     sc = AliasTestSchema("test")
     assert sc.dict() == {"camelDict": "test"}
+    assert sc.dict().get("snake_dict", None) == None
