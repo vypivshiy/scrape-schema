@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type, get_args, List, Union
+from typing import Any, List, Optional, Type, Union, get_args
 
 from parsel import Selector, SelectorList
 

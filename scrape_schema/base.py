@@ -1,17 +1,7 @@
 import re
 from abc import abstractmethod
 from re import RegexFlag
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Pattern,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
 
 from parsel import Selector, SelectorList
 
@@ -68,8 +58,10 @@ class Field(BaseField):
         return self._spec_method_handler.handle(method, markup)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}()"
-                f"{'.'.join(repr(m) for m in self._stack_methods)}")
+        return (
+            f"{self.__class__.__name__}()"
+            f"{'.'.join(repr(m) for m in self._stack_methods)}"
+        )
 
     @staticmethod
     def _accept_method(markup: Any, method: MarkupMethod) -> Any:
@@ -92,8 +84,11 @@ class Field(BaseField):
         _logger.debug(
             "Markup (len=%i) target: %s",
             len(markup.get()),
-            f"{markup.get()[:64]}..." if len(markup.get()) > 64 else markup
-            if isinstance(markup, (Selector, SelectorList)) else markup,
+            f"{markup.get()[:64]}..."
+            if len(markup.get()) > 64
+            else markup
+            if isinstance(markup, (Selector, SelectorList))
+            else markup,
         )
         for i, method in enumerate(self._stack_methods, 1):
             try:
@@ -106,7 +101,9 @@ class Field(BaseField):
                     i,
                     method,
                     f"(len={len(str(result))}) {str(result)[:64]}..."
-                    if len(str(result)) > 64 else result)
+                    if len(str(result)) > 64
+                    else result,
+                )
             except Exception as e:
                 _logger.warning("Oops, %s throw exception %s", str(method).lower(), e)
                 self._last_failed_method = method
@@ -115,11 +112,9 @@ class Field(BaseField):
         return result
 
     def _stack_method_error_handler(
-            self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
+        self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
     ):
-        _logger.error(
-            "Method `%r` return traceback: %s", method, e
-        )
+        _logger.error("Method `%r` return traceback: %s", method, e)
         _logger.error(
             "Full markup:\nSTART\n%s\nEND",
             markup.get() if isinstance(markup, (Selector, SelectorList)) else markup,
@@ -156,10 +151,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REPLACE, old, new, count)  # type: ignore
 
     def re_search(
-            self,
-            pattern: Union[str, Pattern[str]],
-            flags: Union[int, RegexFlag] = 0,
-            groupdict: bool = False,
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """re.search method for text result.
 
@@ -173,10 +168,10 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
 
     def re_findall(
-            self,
-            pattern: Union[str, Pattern[str]],
-            flags: Union[int, RegexFlag] = 0,
-            groupdict: bool = False,
+        self,
+        pattern: Union[str, Pattern[str]],
+        flags: Union[int, RegexFlag] = 0,
+        groupdict: bool = False,
     ) -> SpecialMethodsProtocol:
         """[match for match in re.finditer(...)] method for text result.
 
@@ -190,7 +185,7 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
 
     def chomp_js_parse(
-            self, unicode_escape: Any = False, json_params: Any = None
+        self, unicode_escape: Any = False, json_params: Any = None
     ) -> SpecialMethodsProtocol:
         """Extracts first JSON object encountered in the input string
 
@@ -207,10 +202,10 @@ class Field(BaseField):
         )
 
     def chomp_js_parse_all(
-            self,
-            unicode_escape: Any = False,
-            omitempty: Any = False,
-            json_params: Any = None,
+        self,
+        unicode_escape: Any = False,
+        omitempty: Any = False,
+        json_params: Any = None,
     ) -> SpecialMethodsProtocol:
         """Returns a list extracting all JSON objects encountered in the input string. Can be used to read JSON Lines
 
@@ -228,7 +223,7 @@ class Field(BaseField):
         )
 
     def add_method(
-            self, method_name: Union[str, SpecialMethods], *args, **kwargs
+        self, method_name: Union[str, SpecialMethods], *args, **kwargs
     ) -> Self:
         """low-level interface adding methods to call stack"""
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
@@ -264,7 +259,7 @@ class SchemaMeta(type):
 
         # localns={} kwarg avoid TypeError 'function' object is not subscriptable
         for name, value in get_type_hints(
-                cls_schema, localns={}, include_extras=True
+            cls_schema, localns={}, include_extras=True
         ).items():
             if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
                 continue  # pragma: no cover
@@ -281,6 +276,7 @@ class SchemaMeta(type):
 
 class SchemaConfig:
     """selector configuration"""
+
     selector_kwargs: Dict[str, Any] = {}
     type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
 
@@ -342,10 +338,12 @@ class BaseSchema(metaclass=SchemaMeta):
                 value = self.Config.type_caster.cast(field_type, value)
             # disable default value flag
             if field.is_default:
-                _logger.error("`%s.%s` failed parse in %r method, set default value",
-                              self.__schema_name__,
-                              name,
-                              field._last_failed_method)  # type: ignore
+                _logger.error(
+                    "`%s.%s` failed parse in %r method, set default value",
+                    self.__schema_name__,
+                    name,
+                    field._last_failed_method,
+                )  # type: ignore
                 field.is_default = False
 
             _logger.info("%s.%s = %s", self.__schema_name__, name, value)
