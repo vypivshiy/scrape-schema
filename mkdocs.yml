@@ -1,6 +1,19 @@
 site_name: Scrape Schema
+site_author: Georgiy
 site_description: Converting any text (xml, html, plain text, stdout, etc) to python datatypes
-strict: true
+site_url: https://scrape-schema.readthedocs.io/
+repo_name: vypivshiy/scrape-schema
+repo_url: https://github.com/vypivshiy/scrape-schema
+
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - FAQ: howto.md
+  - Examples: examples.md
+  - Reference:
+      - Schema: reference/schema.md
+      - Fields: reference/fields.md
+
 theme:
   name: material
   palette:
@@ -19,14 +32,21 @@ theme:
         icon: material/lightbulb
         name: "Switch to light mode"
 
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+
 
 markdown_extensions:
+  - pymdownx.superfences:
+  - admonition:
+  - pymdownx.details:
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.superfences
-
-nav:
-  - Home: index.md
-  - Usage: usage.md
-  - FAQ: howto.md
-  - Examples: examples.md
+  - pymdownx.magiclink:
+      repo_url_shortener: true
+      repo_url_shorthand: true
+      normalize_issue_symbols: true
+      user: vypivshiy
+      repo: scrape-schema
