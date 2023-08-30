@@ -280,7 +280,7 @@ class Field(BaseField):
         """
         pattern = re.compile(pattern, flags=flags)
         if groupdict and not pattern.groupindex:
-            raise AttributeError("groupdict required named groups")
+            raise TypeError("groupdict required named groups")
         return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
 
     def re_findall(
@@ -303,7 +303,7 @@ class Field(BaseField):
         """
         pattern = re.compile(pattern, flags=flags)
         if groupdict and not pattern.groupindex:
-            raise AttributeError("groupdict required named groups")
+            raise TypeError("groupdict required named groups")
 
         return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
 
@@ -373,6 +373,18 @@ class SchemaMeta(type):
         args = get_args(attr)
         return args[0], tuple(arg for arg in args[1:] if isinstance(arg, BaseField))[0]
 
+    @staticmethod
+    def __is_attribute_field(cls_schema, name: str) -> bool:
+        if (field := cls_schema.__dict__.get(name)) and isinstance(field, BaseField):
+            return True
+        return False
+
+    @staticmethod
+    def __parse_attribute_field(cls_schema, name: str) -> Tuple[Type, BaseField]:
+        field = cls_schema.__dict__.get(name)
+        type_ = cls_schema.__annotations__.get(name, Any)
+        return type_, field
+
     def __new__(mcs, name, bases, attrs):
         # cache fields, annotations and used parsers for more simplify access
         __schema_fields__: Dict[str, BaseField] = {}  # type: ignore
@@ -396,6 +408,13 @@ class SchemaMeta(type):
             # Annotated[type, Field]
             if mcs.__is_type_field(value):  # pragma: no cover
                 field_type, field = mcs.__parse_annotated_field(value)
+                __schema_fields__[name] = field
+                if field.alias:
+                    __schema_aliases__[name] = field.alias
+                __schema_annotations__[name] = field_type
+            # attr_name: type = Field
+            elif mcs.__is_attribute_field(cls_schema, name):
+                field_type, field = mcs.__parse_attribute_field(cls_schema, name)
                 __schema_fields__[name] = field
                 if field.alias:
                     __schema_aliases__[name] = field.alias
