@@ -41,14 +41,15 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 [project.optional-dependencies]
 dev = ["ruff", "black", "isort", "pytest", "mypy", "pre-commit", "hatch"]
 ci = ["hatch", "ruff", "black", "isort", "pytest", "mypy", "parsel"]
-docs = ["mkdocs-material"]
+docs = ["mkdocs-material", "mkdocstrings[python]"]
 
 [tool.hatch.version]
 path = "scrape_schema/__init__.py"
 
 [tool.hatch.envs.docs]
 dependencies = [
-  "mkdocs-material"
+  "mkdocs-material",
+  "mkdocstrings[python]"
 ]
 
 [tool.hatch.envs.docs.scripts]
