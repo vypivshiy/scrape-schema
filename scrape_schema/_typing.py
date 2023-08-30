@@ -4,6 +4,7 @@ from typing import Type
 
 NoneType: Type = type(None)
 
+
 if sys.version_info >= (3, 9):
     from typing import Annotated
 else:

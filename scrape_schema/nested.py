@@ -7,6 +7,12 @@ from scrape_schema.base import BaseField, BaseSchema
 
 
 class Nested(BaseField):
+    """Allows you to nest a Schema inside a field.
+
+    Example:
+
+    """
+
     def __init__(
         self,
         field: BaseField,

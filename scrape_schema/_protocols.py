@@ -1,3 +1,6 @@
+"""This module contains Protocol annotations for help type hint
+Fluent interface better
+"""
 from re import RegexFlag
 from typing import Any, Callable, Hashable, Pattern, Protocol, Union
 
@@ -5,6 +8,8 @@ from scrape_schema._typing import Self
 
 
 class SpecialMethodsProtocol(Protocol):
+    """Special methods protocol typing"""
+
     def sc_parse(self, markup: Any) -> Any:
         pass  # pragma: no cover
 
@@ -54,6 +59,8 @@ class SpecialMethodsProtocol(Protocol):
 
 
 class AttribProtocol(SpecialMethodsProtocol):
+    """Parsel.Selector.attrib protocol"""
+
     def get(self, *, key: Hashable) -> SpecialMethodsProtocol:  # type: ignore
         pass  # pragma: no cover
 

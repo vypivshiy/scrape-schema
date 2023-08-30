@@ -1,7 +1,18 @@
 import re
 from abc import abstractmethod
 from re import RegexFlag
-from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Hashable,
+    List,
+    Optional,
+    Pattern,
+    Tuple,
+    Type,
+    Union,
+)
 
 from parsel import Selector, SelectorList
 
@@ -18,7 +29,10 @@ from scrape_schema.type_caster import TypeCaster
 
 
 class sc_param(property):
-    """Shortcut for adding property-like descriptors in BaseSchema"""
+    """Shortcut for adding property-like descriptors in BaseSchema,
+    which will go into the output of the `dict()` method.
+
+    Works like build-in `@property` decorator"""
 
     pass  # pragma: no cover
 
@@ -31,6 +45,15 @@ class BaseField:
         alias: Optional[str] = None,
         **kwargs,
     ):
+        """Base Field class
+
+        Args:
+            auto_type: usage auto_type feature. default True. works in BaseSchema object
+            default: default value if parsing runtime will catch an error.
+                Throws an error by default
+            alias: alias fields to display in the BaseSchema object.
+                If no value is specified, will apply the key of the given attribute
+        """
         self._stack_methods: List[MarkupMethod] = []
         self.default = default
         self.auto_type = auto_type
@@ -50,8 +73,20 @@ class BaseField:
 
 
 class Field(BaseField):
-    def _prepare_markup(self, markup: Union[str, bytes, Selector, SelectorList]):
-        """convert string/bytes to parser class context"""
+    def _prepare_markup(
+        self, markup: Union[str, bytes, Selector, SelectorList]
+    ) -> Union[Selector, SelectorList]:
+        """convert string/bytes to parser class context
+
+        Args:
+            markup: str, bytes, Selector, SelectorList object
+
+        Returns:
+            markup converted to Selector object, if markup arg is str or bytes
+
+        Raises:
+            TypeError if markup is not str, bytes, Selector, SelectorList object
+        """
         self._last_failed_method = None  # reset failed method link
         _logger.debug("Field markup type: %s", type(markup).__name__)
         if isinstance(markup, (Selector, SelectorList)):
@@ -63,6 +98,15 @@ class Field(BaseField):
         raise TypeError(f"Unsupported markup type: {type(markup).__name__}")
 
     def _special_method(self, markup: Any, method: MarkupMethod) -> Any:
+        """Handle special method
+
+        Args:
+            markup: variable for special_method
+            method: markup method object
+
+        Returns:
+            method execution result
+        """
         return self._spec_method_handler.handle(method, markup)
 
     def __repr__(self):
@@ -73,6 +117,15 @@ class Field(BaseField):
 
     @staticmethod
     def _accept_method(markup: Any, method: MarkupMethod) -> Any:
+        """call method
+
+        Args:
+            markup: variable for MarkupMethod
+            method: markup method object
+
+        Returns:
+            method execution result
+        """
         if isinstance(method.METHOD_NAME, str):
             class_method = getattr(markup, method.METHOD_NAME)
             # Selector.attrib check case or raw dict
@@ -85,6 +138,18 @@ class Field(BaseField):
         )
 
     def _call_stack_methods(self, markup: Any) -> Any:
+        """call all passed methods
+
+        Args:
+            markup: first markup target
+
+        Returns:
+            result of all executed methods
+
+        Raises:
+            most often `AttributeError` and `TypeError` due to the absence
+            of a method name due to incorrect output data in the call chain
+        """
         result = markup
         _logger.info(
             "Start parse markup. Stack methods count: %s", len(self._stack_methods)
@@ -136,26 +201,64 @@ class Field(BaseField):
         self.is_default = True
         return self.default
 
-    def sc_parse(self, markup: Any) -> Any:
+    def sc_parse(self, markup: Union[str, bytes, Selector, SelectorList]) -> Any:
+        """Execute all passed methods
+
+        Args:
+            markup: markup target
+
+        Returns:
+            result of all executed methods
+        """
         markup = self._prepare_markup(markup)
         return self._call_stack_methods(markup)
 
     # build in methods
 
     def fn(self, function: Callable[..., Any]) -> SpecialMethodsProtocol:
-        """call another function and return result"""
+        """call another function and return result
+
+        Args:
+            function: function to be executed
+
+        Returns:
+            executed function result
+        """
         return self.add_method(SpecialMethods.FN, function=function)  # type: ignore
 
     def concat_l(self, left_string: str) -> SpecialMethodsProtocol:
-        """add string to left. Last argument should be string"""
+        """add string to left. Last argument should be string
+            value + left_string
+        Args:
+            left_string:
+
+        Returns:
+            concatenated value
+        """
         return self.add_method(SpecialMethods.CONCAT_L, left_string)  # type: ignore
 
     def concat_r(self, right_string: str) -> SpecialMethodsProtocol:
-        """add string to right. Last argument should be string"""
+        """add string to right. Last argument should be string
+            right_string + value
+        Args:
+            right_string:
+
+        Returns:
+            concatenated string
+        """
         return self.add_method(SpecialMethods.CONCAT_R, right_string)  # type: ignore
 
     def sc_replace(self, old: str, new: str, count: int = -1) -> SpecialMethodsProtocol:
-        """replace string method. Last argument should be string"""
+        """str.replace method. Last argument should be string. old string replaced by new
+
+        Args:
+            old: string
+            new: string
+            count: Maximum number of occurrences to replace. -1 (default) means replace all occurrences.
+
+        Returns:
+            replaced string
+        """
         return self.add_method(SpecialMethods.REPLACE, old, new, count)  # type: ignore
 
     def re_search(
@@ -168,11 +271,16 @@ class Field(BaseField):
 
         Last chain should be return string.
 
-        :param pattern: regex pattern
-        :param flags: compilation flags
-        :param groupdict: accept groupdict method. patter required named groups. default False
+        Args:
+            pattern: regex pattern
+            flags: regex compilation flags
+            groupdict: accept groupdict method. pattern required named groups. default False
+        Raises:
+            AttributeError: if groupdict=True and pattern not contains named groups
         """
         pattern = re.compile(pattern, flags=flags)
+        if groupdict and not pattern.groupindex:
+            raise AttributeError("groupdict required named groups")
         return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
 
     def re_findall(
@@ -185,11 +293,18 @@ class Field(BaseField):
 
         Last chain should be return string.
 
-        :param pattern: regex pattern
-        :param flags: compilation flags
-        :param groupdict: accept groupdict method. patter required named groups. default False
+        Args:
+            pattern: regex pattern
+            flags: regex compilation flags
+            groupdict: accept groupdict method. patter required named groups. default False
+
+        Raises:
+            AttributeError: if groupdict=True and pattern not contains named groups
         """
         pattern = re.compile(pattern, flags=flags)
+        if groupdict and not pattern.groupindex:
+            raise AttributeError("groupdict required named groups")
+
         return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
 
     def chomp_js_parse(
@@ -197,10 +312,9 @@ class Field(BaseField):
     ) -> SpecialMethodsProtocol:
         """Extracts first JSON object encountered in the input string
 
-        Params:
-            string – Input string
-            unicode_escape – Attempt to fix input string if it contains escaped special characters
-            json_params – Allow passing down standard json.loads options
+        Args:
+            unicode_escape: Attempt to fix input string if it contains escaped special characters
+            json_params: Allow passing down standard `json.loads` options
 
         Returns:
             Extracted JSON object
@@ -217,11 +331,10 @@ class Field(BaseField):
     ) -> SpecialMethodsProtocol:
         """Returns a list extracting all JSON objects encountered in the input string. Can be used to read JSON Lines
 
-        Params:
-            string – Input string
-            unicode_escape – Attempt to fix input string if it contains escaped special characters
-            omitempty – Skip empty dictionaries and lists
-            json_params – Allow passing down standard json.loads flags
+        Args:
+            unicode_escape: Attempt to fix input string if it contains escaped special characters
+            omitempty: Skip empty dictionaries and lists
+            json_params: Allow passing down standard json.loads flags
 
         Returns:
             Iterating over it yields all encountered JSON objects
@@ -237,14 +350,17 @@ class Field(BaseField):
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
         return self
 
-    def __getitem__(self, item) -> Self:
+    def __getitem__(self, item: Hashable) -> Self:
+        """This method provide __getitem__ API (get by key or slice)
+
+        Args:
+            item: key or slice
+        """
         return self.add_method("__getitem__", item)
 
 
 class SchemaMeta(type):
-    __schema_fields__: Dict[str, BaseField]
-    __schema_annotations__: Dict[str, Type]
-    __schema_aliases__: Dict[str, str]
+    """Metaclass for prefetching fields, field annotations, and field alias keys"""
 
     @staticmethod
     def __is_type_field(attr: Type) -> bool:
@@ -271,8 +387,13 @@ class SchemaMeta(type):
         for name, value in get_type_hints(
             cls_schema, localns={}, include_extras=True
         ).items():
-            if name in ("__schema_fields__", "__schema_annotations__", "__parsers__"):
+            if name in (
+                "__schema_fields__",
+                "__schema_annotations__",
+                "__schema_aliases__",
+            ):
                 continue  # pragma: no cover
+            # Annotated[type, Field]
             if mcs.__is_type_field(value):  # pragma: no cover
                 field_type, field = mcs.__parse_annotated_field(value)
                 __schema_fields__[name] = field
@@ -283,36 +404,76 @@ class SchemaMeta(type):
         setattr(cls_schema, "__schema_fields__", __schema_fields__)
         setattr(cls_schema, "__schema_annotations__", __schema_annotations__)
         setattr(cls_schema, "__schema_aliases__", __schema_aliases__)
-        setattr(cls_schema, "__meta_info__", {})
         return cls_schema
 
 
 class SchemaConfig:
-    """selector configuration"""
+    """BaseSchema configuration
 
-    selector_kwargs: Dict[str, Any] = {}
-    type_caster: Optional[TypeCaster] = TypeCaster()  # TODO make interface
+    Attributes:
+        selector_kwargs: default kwargs for parsel.Selector class
+        type_caster: type_caster module
+    """
+
+    selector_kwargs: Dict[str, Any] = {}  # default execute extra kwargs
+    type_caster: Optional[TypeCaster] = TypeCaster()  # type_caster class
 
 
 class BaseSchema(metaclass=SchemaMeta):
+    __schema_fields__: Dict[str, BaseField]
+    __schema_annotations__: Dict[str, Type]
+    __schema_aliases__: Dict[str, str]
+
+    """Main schema class
+
+    Attributes:
+        __schema_fields__: Dict[str, BaseField] access to fields object by key in current schema
+        __schema_annotations__: Dict[str, Type] access to fields annotations in current schema
+        __schema_aliases__: Dict[str, str] access to fields aliases in current schema
+
+    """
+
     class Config(SchemaConfig):
         pass
 
     @property
     def __sc_params__(self) -> Dict[str, Any]:
+        """Magic method for access all @sc_param decorated properties
+
+        Returns:
+            dict with all @sc_param decorated properties
+
+        """
         return {
             k: v for k, v in self.__class__.__dict__.items() if isinstance(v, sc_param)
         }
 
     @property
     def __selector__(self) -> Union[Selector, SelectorList]:
+        """Get available cached Parsel.Selector or SelectorList object
+
+        Returns:
+            Parsel SelectorType object
+        """
         return self._cached_parser
 
     @property
     def __raw__(self) -> str:
+        """Get raw string markdown value
+
+        Returns:
+            markup string object
+        """
         return self._markup
 
     def __init__(self, markup: Union[str, bytes, Selector, SelectorList]):
+        """Create a new object by parsing fields from markup.
+
+        Args:
+            markup: string, bytes or parsel.Selector object
+        Raises:
+            TypeError: if markup is not string, bytes or Selector objects
+        """
         self._cached_parser: Union[Selector, SelectorList]
         if isinstance(markup, str):
             self._markup = markup
@@ -320,7 +481,6 @@ class BaseSchema(metaclass=SchemaMeta):
         elif isinstance(markup, bytes):
             self._cached_parser = Selector(body=markup, **self.Config.selector_kwargs)
             self._markup = markup.decode()
-        # TODO write adapter for another backends
         elif isinstance(markup, (Selector, SelectorList)):
             self._markup = markup.get()  # type: ignore
             self._cached_parser = markup
@@ -330,9 +490,13 @@ class BaseSchema(metaclass=SchemaMeta):
                 f"Markup support only str, bytes or Selector types, not {type(markup).__name__}"
             )
         # initialize and parse fields
-        self.__init_fields__()
+        self._init_fields()
 
-    def __init_fields__(self):
+    def _init_fields(self) -> None:
+        """Parse fields entrypoint.
+
+        Automatically called in the `__init__` constructor
+        """
         _logger.info(
             "[%s] Start parse fields count: %s",
             self.__schema_name__,
@@ -342,7 +506,8 @@ class BaseSchema(metaclass=SchemaMeta):
             field_type = self.__schema_annotations__[name]
             _logger.debug("Start parse: %s.%s", self.__schema_name__, name)
             if field.__class__.__name__ == "Nested":  # todo fix
-                field.type_ = field_type
+                # only checks Nested fields
+                field.type_ = field_type  # type: ignore
 
             # todo refactoring
             value = field.sc_parse(self.__selector__)
@@ -363,7 +528,10 @@ class BaseSchema(metaclass=SchemaMeta):
             setattr(self, name, value)
 
     @staticmethod
-    def _to_dict(value: Union["BaseSchema", List, Dict, Any]):
+    def _to_dict(
+        value: Union["BaseSchema", List, Dict, Any]
+    ) -> Union[List[Dict[str, Any]], Dict[str, Any], Any]:
+        """convert BaseSchema objects to build-in python objects like dict, list"""
         if isinstance(value, BaseSchema):
             return value.dict()
 
@@ -372,7 +540,12 @@ class BaseSchema(metaclass=SchemaMeta):
                 return [val.dict() for val in value]
         return value
 
-    def dict(self):
+    def dict(self) -> Dict[str, Any]:
+        """Convert schema object to python dict. if field have alias key - set alias key
+
+        Returns:
+            dictionary with all public fields and sc_param properties
+        """
         result: Dict[str, Any] = {  # type: ignore
             self.__schema_aliases__.get(k, k): self._to_dict(getattr(self, k))
             for k, v in self.__sc_params__.items()
@@ -408,4 +581,9 @@ class BaseSchema(metaclass=SchemaMeta):
 
     @property
     def __schema_name__(self) -> str:
+        """
+
+        Returns:
+            class name
+        """
         return self.__class__.__name__

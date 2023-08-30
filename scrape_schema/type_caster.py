@@ -7,7 +7,13 @@ from scrape_schema._typing import NoneType, get_args, get_origin
 
 
 class TypeCaster:
+    """Simple type-caster variables from annotation information
+
+    This class provide next
+    """
+
     def _typing_to_builtin(self, type_hint: Type) -> Type:
+        """convert Nested generic type (like Dict, List, Optional) to object"""
         origin = get_origin(type_hint)
         args = get_args(type_hint)
 
@@ -19,11 +25,22 @@ class TypeCaster:
             return type_hint
 
     def cast(self, type_hint: Type, value: Any) -> Any:
+        """cast value to given type
+
+        Args:
+            type_hint: typehint. If  value is Any > ignore type cast
+            value: value target
+        """
         if sys.version_info >= (3, 9):
             type_hint = self._typing_to_builtin(type_hint)
 
         origin = get_origin(type_hint)
         args = get_args(type_hint)
+
+        # Any
+        if origin is Any or Any in args:
+            return value
+
         _logger.debug(
             "`%s` Cast type start. `value=%s`, type_annotation=%s, `origin=%s`, `args=%s`",
             self.__class__.__name__,
@@ -32,6 +49,7 @@ class TypeCaster:
             origin,
             args,
         )
+
         # None
         if value is None and type_hint is not bool:
             return value

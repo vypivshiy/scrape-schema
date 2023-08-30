@@ -16,12 +16,15 @@ class Parsel(Field):
         *,
         raw: bool = False,
         alias: Optional[str] = None,
-    ):
-        """Base field provide Parsel.Selector API
+    ) -> None:
+        """Base field provide Parsel.Selector API and special methods
 
-        :param auto_type: usage auto type feature in BaseSchema scope. Default True
-        :param default: set default value, if method return traceback. Disable auto type feature If not set - raise traceback.
-        :param raw: raw text parse mode. Auto accept `.xpath("//p/text()").get()` method (get raw markup)
+                Args:
+                    auto_type: usage auto type feature in BaseSchema scope. Default True
+                    default: set default value, if method return traceback.
+        Disable auto type andIf not set - raise error
+                    raw: raw text parse mode. Auto accept `.xpath("//p/text()").get()` method
+                    alias: field alias. default None
         """
         super().__init__(auto_type=auto_type, default=default, alias=alias)
         if raw:
@@ -32,7 +35,8 @@ class Parsel(Field):
 
         query is a string containing the CSS selector to apply.
 
-        In the background, CSS queries are translated into XPath queries using cssselect  library and run .xpath() method.
+        In the background, CSS queries are translated into XPath queries using cssselect
+        library and run .xpath() method.
         """
         return self.add_method("css", query)
 
@@ -40,7 +44,8 @@ class Parsel(Field):
     def raw_text(self) -> SpecialMethodsProtocol:
         """Shortcut `Parsel().xpath('//p/text()')` call.
 
-        This method for getting raw text (not html), when calling `parsel.Selector` methods will raise an error
+        This method for getting raw text (not html), when calling `parsel.Selector`
+        methods will raise an error
         """
         # Parsel is not meant for raw text: it will try to "fix" html and parse as html usage `raw_text` property
         # or `xpath(//p/text()).get()` or raw=True in init constructor
@@ -49,22 +54,15 @@ class Parsel(Field):
     def xpath(
         self, query: str, namespaces: Optional[Mapping[str, str]] = None, **kwargs: Any
     ) -> Self:
-        """
-        Find nodes matching the xpath ``query`` and return the result as a
-        :class:`SelectorList` instance with all elements flattened. List
-        elements implement :class:`Selector` interface too.
+        """Xpath selector
+        Args:
+            query: is a string containing the XPATH query to apply.
+            namespaces: is an optional ``prefix: namespace-uri`` mapping (dict) for additional prefixes.
+            **kwargs: field alias. default None
 
-        ``query`` is a string containing the XPATH query to apply.
+        Returns:
+            SelectorList
 
-        ``namespaces`` is an optional ``prefix: namespace-uri`` mapping (dict)
-        for additional prefixes to those registered with ``register_namespace(prefix, uri)``.
-        Contrary to ``register_namespace()``, these prefixes are not
-        saved for future calls.
-
-        Any additional named arguments can be used to pass values for XPath
-        variables in the XPath expression, e.g.::
-
-            selector.xpath('//a[href=$url]', url="http://www.example.com")
         """
 
         return self.add_method("xpath", query, namespaces, **kwargs)
@@ -76,13 +74,12 @@ class Parsel(Field):
         Apply the given regex and return a list of strings with the
         matches.
 
-        ``regex`` can be either a compiled regular expression or a string which
-        will be compiled to a regular expression using ``re.compile(regex)``.
+        Args:
+            regex: regular expression
+            replace_entities: replace char entity refers replaced by their corresponding char (``&amp;``, ``&lt;``).
 
-        By default, character entity references are replaced by their
-        corresponding character (except for ``&amp;`` and ``&lt;``).
-        Passing ``replace_entities`` as ``False`` switches off these
-        replacements.
+        Returns:
+            string
         """
         return self.add_method("re", regex=regex, replace_entities=replace_entities)  # type: ignore
 
@@ -95,10 +92,18 @@ class Parsel(Field):
     def get(
         self, default: Optional[str] = None, key: Optional[Hashable] = None
     ) -> SpecialMethodsProtocol:  # type: ignore
-        """
-        Serialize and return the matched nodes in a single string. Percent encoded content is unquoted.
+        """Serialize and return the matched nodes in a single string.
 
-        If `key` param passed - get value from attrib property. attrib should be called in chain methods
+        Percent encoded content is unquoted.
+
+        If `key` param passed - get value from attrib property.
+
+        Args:
+            default: invoke Selector.get() method and return default value if is None
+            key: get value from attrib property *attrib should be called in chain methods*
+
+        Raises:
+            TypeError: if passed default and key arguments
         """
         if key and default:
             _logger.error(
@@ -113,25 +118,23 @@ class Parsel(Field):
         return self.add_method("get", default)  # type: ignore
 
     def jmespath(self, query: str, **kwargs: Any) -> Self:
-        """
-        Find objects matching the JMESPath ``query`` and return the result as a
-        :class:`SelectorList` instance with all elements flattened. List
-        elements implement :class:`Selector` interface too.
+        """Find objects matching the JMESPath ``query`` and return the result as a
+        SelectorList instance with all elements flattened.
+        List elements implement `Selector` interface too.
 
-        ``query`` is a string containing the `JMESPath
-        <https://jmespath.org/>`_ query to apply.
-
-        Any additional named arguments are passed to the underlying
-        ``jmespath.search`` call, e.g.::
-
-            selector.jmespath('author.name', options=jmespath.Options(dict_cls=collections.OrderedDict))
+        Args:
+            query: JMESPath string query
+            **kwargs:  Any additional named arguments are passed to the underlying
         """
         return self.add_method("jmespath", query, **kwargs)
 
     def getall(self) -> SpecialMethodsProtocol:
         """Call the .get() method for each element is this list
-        and return their results flattened, as a list of strings."""
+        and return their results flattened, as a list of strings.
 
+        Returns:
+            list[str]
+        """
         return self.add_method("getall")  # type: ignore
 
     @property
@@ -140,20 +143,44 @@ class Parsel(Field):
         Return the attributes dictionary for the first element.
 
         If the list is empty, return an empty dict.
+
+        Returns:
+            dict[str, str]
         """
         return self.add_method("attrib")  # type: ignore
 
-    def keys(self):
-        if self._is_attrib():
-            return self.add_method("keys")
+    def keys(self) -> SpecialMethodsProtocol:  # type: ignore
+        """Get attrib keys
 
-    def values(self):
+        Returns:
+            dict keys
+        Raises:
+            TypeError: if prev chain is not attrib
+        """
         if self._is_attrib():
-            return self.add_method("values")
+            return self.add_method("keys")  # type: ignore
 
-    def items(self):
+    def values(self) -> SpecialMethodsProtocol:  # type: ignore
+        """Get attrib values
+
+        Returns:
+            dict_values
+        Raises:
+            TypeError: if prev chain is not attrib
+        """
         if self._is_attrib():
-            return self.add_method("items")
+            return self.add_method("values")  # type: ignore
+
+    def items(self) -> SpecialMethodsProtocol:  # type: ignore
+        """Get attrib items
+
+        Returns:
+            dict items
+        Raises:
+            TypeError: if prev chain is not attrib
+        """
+        if self._is_attrib():
+            return self.add_method("items")  # type: ignore
 
 
 class JMESPath(Field):
@@ -161,43 +188,51 @@ class JMESPath(Field):
 
     def __init__(
         self, auto_type: bool = False, default: Any = ..., alias: Optional[str] = None
-    ):
+    ) -> None:
         """this field provide jmespath and special methods API
 
-        :param auto_type:
-        :param default:
+        Args:
+            auto_type: usage auto_type feature. Default False
+            default: default
+            alias: field alias. default None
         """
         super().__init__(auto_type=auto_type, default=default, alias=alias)
 
     def jmespath(self, query: str, **kwargs: Any) -> Self:
-        """
-        Find objects matching the JMESPath ``query`` and return the result as a
-        :class:`SelectorList` instance with all elements flattened. List
-        elements implement :class:`Selector` interface too.
+        """Find objects matching the JMESPath ``query`` and return the result as a
+        SelectorList instance with all elements flattened.
+        List elements implement `Selector` interface too.
 
-        ``query`` is a string containing the `JMESPath
-        <https://jmespath.org/>`_ query to apply.
-
-        Any additional named arguments are passed to the underlying
-        ``jmespath.search`` call, e.g.::
-
-            selector.jmespath('author.name', options=jmespath.Options(dict_cls=collections.OrderedDict))
+        Args:
+            query: JMESPath string query
+            **kwargs:  Any additional named arguments are passed to the underlying
         """
         return self.add_method("jmespath", query, **kwargs)
 
     def get(
         self, default: Optional[str] = None
     ) -> SpecialMethodsProtocol:  # type: ignore
-        """
-        Serialize and return the matched nodes in a single string. Percent encoded content is unquoted.
+        """Serialize and return the matched nodes in a single string.
 
-        If `key` param passed - get value from attrib property. attrib should be called in chain methods
+        Percent encoded content is unquoted.
+
+        If `key` param passed - get value from attrib property.
+
+        Args:
+            default: invoke Selector.get() method and return default value if is None
+
+        Raises:
+            TypeError: if passed default and key arguments
         """
         return self.add_method("get", default)  # type: ignore
 
     def getall(self) -> SpecialMethodsProtocol:
         """Call the .get() method for each element is this list
-        and return their results flattened, as a list of strings."""
+        and return their results flattened, as a list of strings.
+
+        Returns:
+            list[str]
+        """
 
         return self.add_method("getall")  # type: ignore
 
@@ -208,10 +243,12 @@ class Text(Field):
     def __init__(
         self, auto_type: bool = True, default: Any = ..., alias: Optional[str] = None
     ):
-        """this field provide jmespath and special methods API
+        """this field provide special methods API
 
-        :param auto_type:
-        :param default:
+        Args:
+            auto_type: usage auto type feature in BaseSchema scope. Default True
+            default: set default value, if method return traceback.
+            alias: field alias. default None
         """
         super().__init__(auto_type=auto_type, default=default, alias=alias)
         # prepare get raw text
