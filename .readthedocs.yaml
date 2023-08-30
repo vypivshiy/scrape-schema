@@ -5,7 +5,7 @@ build:
   tools:
     python: "3.9"
   commands:
-    - pip install mkdocs-material
+    - pip install mkdocs-material mkdocstrings[python]
     - cat mkdocs.yml
     - mkdocs build --clean --site-dir $READTHEDOCS_OUTPUT/html --config-file mkdocs.yml
 
