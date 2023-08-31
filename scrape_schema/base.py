@@ -110,12 +110,13 @@ class Field(BaseField):
         return self._spec_method_handler.handle(method, markup)
 
     def __repr__(self):
+        args = f"auto_type={self.auto_type}, default={self.default}, alias={self.alias}"
         if self._stack_methods:
             return (  # pragma: no cover
-                f"{self.__class__.__name__}()."
+                f"{self.__class__.__name__}({args})."
                 f"{'.'.join(repr(m) for m in self._stack_methods)}"
             )
-        return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}({args})"
 
     @staticmethod
     def _accept_method(markup: Any, method: MarkupMethod) -> Any:
@@ -283,7 +284,9 @@ class Field(BaseField):
         pattern = re.compile(pattern, flags=flags)
         if groupdict and not pattern.groupindex:
             raise TypeError("groupdict required named groups")
-        return self.add_method(SpecialMethods.REGEX_SEARCH, pattern, groupdict)  # type: ignore
+        return self.add_method(
+            SpecialMethods.REGEX_SEARCH, pattern, groupdict, flags  # type: ignore
+        )  # type: ignore
 
     def re_findall(
         self,
@@ -307,7 +310,9 @@ class Field(BaseField):
         if groupdict and not pattern.groupindex:
             raise TypeError("groupdict required named groups")
 
-        return self.add_method(SpecialMethods.REGEX_FINDALL, pattern, groupdict)  # type: ignore
+        return self.add_method(  # type: ignore
+            SpecialMethods.REGEX_FINDALL, pattern, groupdict, flags
+        )
 
     def chomp_js_parse(
         self, unicode_escape: Any = False, json_params: Any = None
