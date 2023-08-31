@@ -8,7 +8,7 @@ repo_url: https://github.com/vypivshiy/scrape-schema
 nav:
   - Home: index.md
   - Usage: usage.md
-  - FAQ: howto.md
+  - FAQ: faq.md
   - Examples: examples.md
   - Reference:
       - Schema: reference/schema.md

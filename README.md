@@ -10,7 +10,8 @@
 This library is designed to write structured, readable,
 reusable parsers for html, raw text and is inspired by dataclasses
 
-> !!! Scrape-schema is currently in Pre-Alpha. Please expect breaking changes.
+!!! warning
+    Scrape-schema is currently in Pre-Alpha. Please expect breaking changes.
 
 ## Motivation
 Simplifying parsers support, where it is difficult to use
@@ -239,11 +240,12 @@ if __name__ == '__main__':
     #                  'dolor'],
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
+
 scrape_schema:
 ```python
 from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
-from scrape_schema import Parsel, BaseSchema, Sc, sc_param
+from scrape_schema import Text, BaseSchema, Sc, sc_param
 
 # Note: `Sc` is shortcut typing.Annotated
 
@@ -257,12 +259,12 @@ lorem upsum dolor
 
 
 class MySchema(BaseSchema):
-    ipv4: Sc[str, Parsel(raw=True).re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]]
-    failed_value: Sc[bool, Parsel(default=False, raw=True).re_search(r"(ora)")[1]]
-    digits: Sc[List[int], Parsel(raw=True).re_findall(r"(\d+)")]
-    digits_float: Sc[List[float], Parsel(raw=True).re_findall(r"(\d+)").fn(lambda lst: [f"{s}.5" for s in lst])]
-    words_lower: Sc[List[str], Parsel(raw=True).re_findall("([a-z]+)")]
-    words_upper: Sc[List[str], Parsel(raw=True).re_findall(r"([A-Z]+)")]
+    ipv4: Sc[str, Text().re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]]
+    failed_value: Sc[bool, Text(default=False).re_search(r"(ora)")[1]]
+    digits: Sc[List[int], Text().re_findall(r"(\d+)")]
+    digits_float: Sc[List[float], Text().re_findall(r"(\d+)").fn(lambda lst: [f"{s}.5" for s in lst])]
+    words_lower: Sc[List[str], Text().re_findall("([a-z]+)")]
+    words_upper: Sc[List[str], Text().re_findall(r"([A-Z]+)")]
 
     @sc_param
     def sum(self):

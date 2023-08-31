@@ -1,73 +1,9 @@
-# Quickstart
-The fields interface is similar to the [original parsel](https://parsel.readthedocs.io/en/latest/)
-
-> Example from parsel documentation
-```
->>> from parsel import Selector
->>> text = """
-        <html>
-            <body>
-                <h1>Hello, Parsel!</h1>
-                <ul>
-                    <li><a href="http://example.com">Link 1</a></li>
-                    <li><a href="http://scrapy.org">Link 2</a></li>
-                </ul>
-                <script type="application/json">{"a": ["b", "c"]}</script>
-            </body>
-        </html>"""
->>> selector = Selector(text=text)
->>> selector.css('h1::text').get()
-'Hello, Parsel!'
->>> selector.xpath('//h1/text()').re(r'\w+')
-['Hello', 'Parsel']
->>> for li in selector.css('ul > li'):
-...     print(li.xpath('.//@href').get())
-http://example.com
-http://scrapy.org
->>> selector.css('script::text').jmespath("a").get()
-'b'
->>> selector.css('script::text').jmespath("a").getall()
-['b', 'c']
-```
-
-
-> Same solution, but in scrape-schema
-```python
-from scrape_schema import BaseSchema, Parsel, Sc
-
-
-class Schema(BaseSchema):
-    h1: Sc[str, Parsel().css('h1::text').get()]
-    words: Sc[list[str], Parsel().xpath('//h1/text()').re(r'\w+')]
-    urls: Sc[list[str], Parsel().css('ul > li').xpath('.//@href').getall()]
-    sample_jmespath_1: Sc[str, Parsel().css('script::text').jmespath("a").get()]
-    sample_jmespath_2: Sc[list[str], Parsel().css('script::text').jmespath("a").getall()]
-
-
-text = """
-        <html>
-            <body>
-                <h1>Hello, Parsel!</h1>
-                <ul>
-                    <li><a href="http://example.com">Link 1</a></li>
-                    <li><a href="http://scrapy.org">Link 2</a></li>
-                </ul>
-                <script type="application/json">{"a": ["b", "c"]}</script>
-            </body>
-        </html>"""
-
-print(Schema(text).dict())
-# {'h1': 'Hello, Parsel!',
-# 'words': ['Hello', 'Parsel'],
-# 'urls': ['http://example.com', 'http://scrapy.org'],
-# 'sample_jmespath_1': 'b',
-# 'sample_jmespath_2': ['b', 'c']}
-```
-
+# Usage
+## Quickstart
 
 ## About typing.Annotated
-This project usage Annotated [(PEP 593)](https://docs.python.org/3/library/typing.html#typing.Annotated) 
-typehint for annotation fields in runtime and make the static type checker happy 😀 
+This project usage Annotated [(PEP 593)](https://docs.python.org/3/library/typing.html#typing.Annotated)
+typehint for annotation fields in runtime and make the static type checker happy 😀
 and didn't need write a mypy plugin 🤯.
 
 This project have `Annotated` shortcut `Sc`
@@ -78,9 +14,9 @@ from scrape_schema import Sc
 
 assert Annotated == Sc  # OK
 ```
-
-> typing.Annotated does not guarantee type correctness at runtime, it is intended to indicate to 
-> the static type checker and IDE the intended type.
+!!! note
+    typing.Annotated does not guarantee type correctness at runtime, it is intended to indicate to
+    the static type checker and IDE the intended type.
 
 ```python
 from typing import Union, Annotated
@@ -88,73 +24,246 @@ from typing import Union, Annotated
 def spam(a: int) -> Union[int, str]:
     if a < 0:
         return "ooops"
-    return a**2   
+    return a**2
 
 class A:
     a: Annotated[str, spam(-1000)]
     b: Annotated[int, spam(1000)]
     c: Annotated[dict, spam(-1000)]  # mypy OK
-    d: Annotated[list[dict[str, int]], spam(float("inf"))]  # mypy OK
+    d: Annotated[list[dict[str, int]], spam(float("inf"))]  # also OK
 ```
 
-## Features
+## Annotating in attribute-style
 
-### logging
-for config or disable logging get logger by `scrape_schema` name
+There is a way to create a schema using normal field assignment.
+But for now there is no mypy plugin to throw an exception and mypy will throw
+error with code `assigment`.
+!!! warning
+    There is currently no plugin for mypy and this method
+    will give an `assignment` error.
+
+    to pass mypy check, turn off checking for this type of error by
+    `# mypy: disable-error-code="assignment"`
+
+```python
+# mypy: disable-error-code="assignment"
+from scrape_schema import BaseSchema, Text
+
+
+class Schema(BaseSchema):
+    digit: int = Text().re_search(r"\d+")[0]
+    word: str = Text().re_search(r"[a-zA-Z]+")[0]
+
+
+Schema("test 100").dict()
+# {"digit": 100, "word": "test"}
+
+```
+
+- _new 0.5.0_
+
+## logging
+For config or disable logging get logger by `scrape_schema` name
+
 ```python
 import logging
 logger = logging.getLogger("scrape_schema")
 logger.setLevel(logging.DEBUG)
 ...
 ```
-### BaseSchema
-Base schema class 
 
-Params:
+For type_caster feature:
 
-- text - bytes, str or Selector object
+```python
+import logging
+logger = logging.getLogger("type_caster")
+logger.setLevel(logging.ERROR)
+...
+```
+- _new 0.5.0_
 
-Magic Methods:
+## BaseSchema
 
-- `__selector__` Union[Selector, SelectorList] - return Parsel selector
+Base schema class provide this parsing magic. Accept str, bytes, Selector and SelectorList objects
 
-- `__raw__` str - return raw text
+for various types like Response object (requests, httpx) - prepare value
+```python
+from scrape_schema import BaseSchema, Sc, Parsel
+import requests
 
-- `__schema_fields__` Dict[str, BaseField] - return dict of {attr_name: Field_object, ...}
+class Schema(BaseSchema):
+    title: Sc[str, Parsel().xpath("//title/text()").get()]
+    body: Sc[str, Parsel().xpath("//body/text()").get()]
+    urls: Sc[list[str], Parsel(default=[]).xpath("//a/@href").getall()]
 
-- `__schema_annotations__` Dict[str, Type] - return dict of {attr_name: Type, ...}
 
-- `__sc_params__` Dict[str, Any] - return dict of sc_params properties {attr_name: sc_param}
+if __name__ == '__main__':
+    response = requests.get("https://example.com")
+    # from string
+    print(Schema(response.text).dict())
 
-- `__schema_name__` str - return class name
+    # from bytes
+    print(Schema(response.content).dict())
+
+    # or from parsel.Selector object
+    from parsel import Selector
+    selector = Selector(response.text)
+    print(Schema(selector).dict())
+```
+### Configuration
+
+If your need configuration parse schema rule (example: for xml parse)
+
+```python
+from scrape_schema import BaseSchema, Sc, Parsel
+from scrape_schema.base import SchemaConfig
+
+class XMLConfig(SchemaConfig):
+    # auto add kwargs for new parsel.Selector instances
+    selector_kwargs = {'type':'xml'}
+
+class Schema(BaseSchema):
+    class Config(XMLConfig):
+        pass
+    # do something
+```
+
+## Fields
+For the examples below the following html will be used and will be referred to as HTML
 
 ### Parsel
-Field for pulling values from html. Methods have a similar API to `parsel.Selector`.
-params:
+This field simular an original `parsel.Selector` API
 
-- raw - if you works with raw text (not HTML), automatically accept xpath(//p/text()).get() methods
-- auto_type automatically type-cast from first annotated argument. Default True.
-- default - default value. If during operation it throws an error or does not find a value, 
-it will set it (without type conversion). If it is not specified, it will throw exception.
+```python
+from typing import Optional
+import pprint
+
+from scrape_schema import BaseSchema, Parsel, Sc
+
+
+class Schema(BaseSchema):
+    # in view `dict` method h1 name swap to `title`
+    h1: Sc[str, Parsel(alias="title").css('body > h1').get()]
+    # if you don't pass the `default` argument,
+    # script raise `TypeError: expected string or bytes-like object`
+    real_title: Sc[Optional[str], Parsel(default=None).xpath("//head/title").get().re_search("\w+")[0]]
+    # singe xpath query
+    urls: Sc[list[str], Parsel().xpath("//ul/li/a/@href").getall()]
+    # css + xpath
+    urls_css: Sc[list[str], Parsel().css("ul > li > a").xpath("@href").getall()]
+    # multiple queries:
+    urls_multi: Sc[list[str], Parsel().css("ul").css('li').css('a').xpath("@href").getall()]
+    # get urls from parsel.Selector.re methods
+    urls_re1: Sc[list[str], Parsel().re(r'href="(https://.*?)"')]
+    # get urls from standart regex and disable auto_type feature
+    urls_re2: Sc[list[str], Parsel(auto_type=False).xpath("//ul").get().re_findall(r'href="(https://.*?)"')]
+
+
+if __name__ == '__main__':
+    text = """
+        <html>
+            <body>
+                <h1>Hello, Parsel!</h1>
+                <ul>
+                    <li><a href="https://example.com">Link 1</a></li>
+                    <li><a href="https://scrapy.org">Link 2</a></li>
+                    <li><a href="https://github.com/vypivshiy/scrape-schema">Link 3</a></li>
+                </ul>
+                <script type="application/json">{"a": ["b", "c"]}</script>
+            </body>
+        </html>"""
+    pprint.pprint(Schema(text).dict(), compact=True)
+# {'real_title': None,
+#  'title': '<h1>Hello, Parsel!</h1>',
+#  'urls': ['https://example.com', 'https://scrapy.org',
+#           'https://github.com/vypivshiy/scrape-schema'],
+#  'urls_css': ['https://example.com', 'https://scrapy.org',
+#               'https://github.com/vypivshiy/scrape-schema'],
+#  'urls_multi': ['https://example.com', 'https://scrapy.org',
+#                 'https://github.com/vypivshiy/scrape-schema'],
+#  'urls_re1': ['https://example.com', 'https://scrapy.org',
+#               'https://github.com/vypivshiy/scrape-schema'],
+#  'urls_re2': ['https://example.com', 'https://scrapy.org',
+#               'https://github.com/vypivshiy/scrape-schema']}
+
+```
 
 ### Text
-Field for pulling values from raw text. This field provide special methods and regex
-- auto_type automatically type-cast from first annotated argument. Default True.
-- default - default value. If during operation it throws an error or does not find a value, 
-it will set it (without type conversion). If it is not specified, it will throw exception. 
+This field provide raw text parse mode and provide special methods
 
-TODO add example
+Have alias `Parsel(raw=True)` and `Parsel().raw_text` and
+IDE doesn't show `parsel.Selector` method hints
+
+!!! tip
+    This field useful for parse plain text, not json, html, css
+
+```python
+import pprint
+from typing import List  # if you usage python 3.8. If python 3.9+ - use build-in list
+
+from scrape_schema import BaseSchema, Text, Sc, sc_param
+
+
+TEXT = """
+banana potato BANANA POTATO
+-foo:10
+-bar:20
+lorem upsum dolor
+192.168.0.1
+"""
+
+
+class MySchema(BaseSchema):
+    ipv4: Sc[
+        str, Text().re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]
+    ]
+    failed_value: Sc[bool, Text(default=False).re_search(r"(ora)")[1]]
+    digits: Sc[List[int], Text().re_findall(r"(\d+)")]
+    digits_float: Sc[
+        List[float],
+        Text().re_findall(r"(\d+)").fn(lambda lst: [f"{s}.5" for s in lst])
+    ]
+    words_lower: Sc[List[str], Text().re_findall("([a-z]+)")]
+    words_upper: Sc[List[str], Text().re_findall(r"([A-Z]+)")]
+
+
+
+pprint.pprint(MySchema(TEXT).dict(), compact=True)
+# {'digits': [10, 20, 192, 168, 0, 1],
+#  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5, 1.5],
+#  'failed_value': False,
+#  'ipv4': '192.168.0.1',
+#  'words_lower': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor'],
+#  'words_upper': ['BANANA', 'POTATO']}
+```
 
 ### JMESPath
-Field for pulling values from raw text. This field provide special methods and jmespath method
-- auto_type automatically type-cast from first annotated argument. Default False.
-- default - default value. If during operation it throws an error or does not find a value, 
-it will set it (without type conversion). If it is not specified, it will throw exception.
+This field provide `parsel.Selector().JMESPath` and special methods and auto_type feature is disabled
 
-TODO add example
+!!! tip
+    This field useful for parse json
+
+```python
+from typing import List, Optional
+import pprint
+
+from scrape_schema import BaseSchema, Sc, JMESPath
+
+class JsonSchema(BaseSchema):
+    args: Sc[List[str], JMESPath().jmespath("args").getall()]
+    headers: Sc[dict, JMESPath().jmespath("headers").get()]
+    url: Sc[Optional[str], JMESPath(default=None).jmespath("url").get()]
+
+if __name__ == '__main__':
+    text = '{"args": ["spam", "egg"], "headers": {"user-agent": "Mozilla 5.0", "lang": "en-US"}}'
+    pprint.pprint(JsonSchema(text).dict(), compact=True)
+    # {'args': ['spam', 'egg'],
+    #  'headers': {'lang': 'en-US', 'user-agent': 'Mozilla 5.0'},
+    #  'url': None}
+```
 
 ### Nested
-Splits a html by a given field and creates additional nested schemas. `Sc` (Annotated) first argument should be
+Splits a html to parts by a given field and creates additional nested schemas. `Sc` (Annotated) first argument should be
 `BaseSchema` or `list[BaseSchema]` type
 
 ```python
@@ -230,6 +339,7 @@ pprint.pprint(Schema(text).dict(), compact=True)
 #  'last_item': {'available': True, 'item': 'suzuki', 'price': 25000},
 #  'max_price_item': {'available': False, 'item': 'ferrari', 'price': 99999999}}
 ```
+
 ### sc_param
 property descriptor for dict() view. Useful for additional conversion or reuse of a value from a field
 
@@ -243,23 +353,23 @@ from scrape_schema import BaseSchema, Sc, Parsel, sc_param
 class Schema(BaseSchema):
     url_path: Sc[str, Parsel().xpath("//a/@href").get()]
     _raw_tag: Sc[Selector, Parsel(auto_type=False).xpath("//div")[0]]
-    
+
     @sc_param
     def div(self):
-        return {"class": self._raw_tag.attrib.get('class'), 
+        return {"class": self._raw_tag.attrib.get('class'),
                 "text": self._raw_tag.xpath(".//text()").get()}
-    
+
     @sc_param
     def url(self):
         return f"https://example.com/{self.url_path}"
-    
+
     @sc_param
     def foo(self):
         return "foo"
-    
+
     @property
     def bar(self):  # this property not return from dict() method
-        return "bar"  
+        return "bar"
 
 text = """<a href="/image.png">
 <div class="example">hello, scrape schema!</div>
@@ -272,9 +382,11 @@ pprint.pprint(Schema(text).dict(), compact=True)
 
 ```
 ## Special methods
+All fields contain special methods -> shortcut functions to convert values
+
 ### fn
-- function: Callable[..., Any] 
-execute function for prev method chain and return result
+- function: Callable[..., Any]
+Execute function for prev method chain and return result
 
 ```python
 from scrape_schema import BaseSchema, Sc, Parsel
@@ -298,7 +410,7 @@ print(Schema(text).dict())
 ```
 
 ### concat_l
-- left_string: str 
+- left_string: str
 concat new string to left. Last chain method result should be string"""
 
 ```python
@@ -320,13 +432,13 @@ text = """<img src="/one.png">
 <img src="/real_png.png">
 <a href="/login">"""
 print(Schema(text).dict())
-# {'png_images': ['https://example.com/one.png', 'https://example.com/two.gif', 
-# 'https://example.com/three.jpg', 'https://example.com/real_png.png'], 
+# {'png_images': ['https://example.com/one.png', 'https://example.com/two.gif',
+# 'https://example.com/three.jpg', 'https://example.com/real_png.png'],
 # 'url': 'https://example.com/login'}
 
 ```
 ### concat_r
-- right_string: str 
+- right_string: str
 concat new string to right. Last chain method result should be string
 
 ```python
@@ -339,13 +451,13 @@ class Schema(BaseSchema):
                         .xpath("//div[@class='price']/text()")
                         .get()
                         .concat_r(" $"))]
-    
+
     # convert str float directly to int raise ValueError: invalid literal for int() with base 10: '500.0'
     price_int: Sc[int, (Parsel()
                         .xpath("//div[@class='price']/text()")
                         .get()
-                        .fn(float))]    
-    
+                        .fn(float))]
+
 text = """<div class="item">low orbit ion cannon</p>
 <div class="price">500.0</div>"""
 print(Schema(text).dict())
@@ -353,9 +465,9 @@ print(Schema(text).dict())
 
 ```
 ### sc_replace
-- old: str, 
-- new: str, 
-- count: int = -1 
+- old: str,
+- new: str,
+- count: int = -1
 replace string method. Last chain method result should be string
 
 ```python
@@ -368,7 +480,7 @@ class Schema(BaseSchema):
                     .xpath("//div[@class='price']/text()")
                     .get()
                     .sc_replace("$", ""))]
-    
+
 text = """<div class="item">low orbit ion cannon</p>
 <div class="price">500$</div>"""
 print(Schema(text).dict())
@@ -378,34 +490,29 @@ print(Schema(text).dict())
 ### re_search
 simular `re.search` function. Last chain method result should be return string.
 
-> Recommended usage this method with string values. if you works with Selector type, usage `re` method
-
-- pattern: Union[str, Pattern[str]]
-- flags: Union[int, RegexFlag] = 0, 
-- groupdict: bool = False - accept groupdict method. if pattern not contain `named groups` - raise TypeError
-    ) -> Self:
-re.search method for text result.
+!!! note
+    Recommended usage this method with string values. if you works with Selector type, usage `re` method
 
 ### re_findall
 Simular `[match for match in re.finditer()]` method. Last chain method result should be return string.
-- pattern: Union[str, Pattern[str]],
-- flags: Union[int, RegexFlag] = 0,
-- groupdict: bool = False - accept `groupdict` method. pattern required named groups. default False
-- 
-> Recommended usage this method with string values. if you works with Selector type, usage `re` method
+
+!!! note
+    Recommended usage this method with string values. if you works with Selector type, usage `re` method
 
 ### chompjs_parse
-Simular [chompjs.parse_js_object()](https://github.com/Nykakin/chompjs) method. 
+Simular [chompjs.parse_js_object()](https://github.com/Nykakin/chompjs) method.
 Last chain method result should be return string
 
-> **Cast typing feature will work unpredictably with chompjs output, disable is recommended
-> set `Parsel(auto_type=False)`**
+!!! note
+    **Cast typing feature will work unpredictably with chompjs output, disable is recommended
+    set `Parsel(auto_type=False)`**
+
 ```python
 from typing import Any, TypedDict
 import pprint
 from scrape_schema import BaseSchema, Parsel, Sc, sc_param
 
-# optionally, you can write TypedDict type for chomp_js output annotation 
+# optionally, you can write TypedDict type for chomp_js output annotation
 # or use `dict[str, Any]`
 ResultDict = TypedDict(
     "ResultDict", {"key": str, "values": list[int], "layer1": dict[str, Any]}
@@ -440,7 +547,7 @@ if __name__ == '__main__':
                 );
     </script>
     """
-    
+
     pprint.pprint(ChompJSAddon(text).dict(), compact=True)
     # {'key': 'spam',
     #  'result': {'key': 'spam',
@@ -453,15 +560,10 @@ if __name__ == '__main__':
 ```
 
 ### chompjs_parse_all
-Simular [chompjs.parse_js_objects()](https://github.com/Nykakin/chompjs) method. 
+Simular [chompjs.parse_js_objects()](https://github.com/Nykakin/chompjs) method.
 Last chain method result should be return string
 
-## Cases
-### html
-
-```python
-from scrape_schema import BaseSchema, Parsel, Sc
-```
+## Tips
 
 ### raw text parse (regex)
 parsel.Selector is designed to work with xml/html documents and wraps it in a tag when passing raw text:
@@ -470,59 +572,9 @@ parsel.Selector is designed to work with xml/html documents and wraps it in a ta
 
 There are several ways to get text:
 - `Parsel().css("body > p::text")`
-- `Parsel().xpath("//p/text()")`
-- shortcut `Parsel(raw=True)` 
+- `Parsel().xpath("//body/p/text()")`
+- shortcut `Parsel(raw=True)`
 - shortcut `Parsel().raw_text`
+- `Text()` field
 
 > `re` method belongs to the Selector object, use **re_search** or **re_findall**
-
-```python
-from typing import List
-import pprint
-
-from scrape_schema import BaseSchema, Parsel, Sc, sc_param
-
-
-class MySchema(BaseSchema):
-    ipv4: Sc[str, (Parsel(raw=True)
-                    .re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1])]
-    failed_value: Sc[bool, (Parsel(default=False, raw=True)
-                            .re_search(r"(ora)")[1])]
-    # digits: Sc[List[int], Parsel(raw=True).re(r"(\d+)")  # throw error
-    digits: Sc[List[int], Parsel(raw=True).re_findall(r"(\d+)")]
-    digits_float: Sc[List[float], (Parsel(raw=True)
-                                   .re_findall(r"(\d+)")
-                                   .fn(lambda lst: [f"{s}.5" for s in lst]))]
-    words_lower: Sc[List[str], (Parsel(raw=True)
-                                .re_findall("([a-z]+)"))]
-    words_upper: Sc[List[str], (Parsel(raw=True)
-                                .re_findall(r"([A-Z]+)"))]
-
-    @sc_param
-    def sum(self):
-        return sum(self.digits)
-
-    @sc_param
-    def all_words(self):
-        return self.words_lower + self.words_upper
-
-
-TEXT = """
-banana potato BANANA POTATO
--foo:10
--bar:20
-lorem upsum dolor
-192.168.0.1
-"""
-
-pprint.pprint(MySchema(TEXT).dict(), compact=True)
-# {'all_words': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor',
-#                'BANANA', 'POTATO'],
-#  'digits': [10, 20, 192, 168, 0, 1],
-#  'digits_float': [10.5, 20.5, 192.5, 168.5, 0.5, 1.5],
-#  'failed_value': False,
-#  'ipv4': '192.168.0.1',
-#  'sum': 391,
-#  'words_lower': ['banana', 'potato', 'foo', 'bar', 'lorem', 'upsum', 'dolor'],
-#  'words_upper': ['BANANA', 'POTATO']}
-```

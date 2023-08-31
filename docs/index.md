@@ -7,23 +7,24 @@
 [![codecov](https://codecov.io/gh/vypivshiy/scrape-schema/branch/master/graph/badge.svg?token=jqSNuE7g5l)](https://codecov.io/gh/vypivshiy/scrape-schema)
 
 # Scrape-schema
-This library is designed to write structured, readable, 
+This library is designed to write structured, readable,
 reusable parsers for html, raw text and is inspired by dataclasses
 
-> !!! Scrape-schema is currently in Pre-Alpha. Please expect breaking changes.
+!!! warning
+    Scrape-schema is currently in Pre-Alpha. Please expect breaking changes.
 
 ## Motivation
-Simplifying parsers support, where it is difficult to use 
+Simplifying parsers support, where it is difficult to use
 or the complete absence of the **API interfaces** and decrease lines of code
 
-Also structuring, data serialization and use as an intermediate layer 
+Also structuring, data serialization and use as an intermediate layer
 for third-party serialization libraries: json, dataclasses, pydantic, etc
 
 _____
 ## Features
 - Built top on [Parsel](https://github.com/scrapy/parsel)
 - re, css, xpath, jmespath, [chompjs](https://github.com/Nykakin/chompjs) features
-- [Fluent interface](https://en.wikipedia.org/wiki/Fluent_interface#Python) simulate original parsel.Selector API for easy to use. 
+- [Fluent interface](https://en.wikipedia.org/wiki/Fluent_interface#Python) simulate original parsel.Selector API for easy to use.
 - Does not depend on the http client implementation, use any!
 - Python 3.8+ support
 - Reusability, code consistency
@@ -222,9 +223,9 @@ def parse_text(text: str) -> dict:
     words_upper = matches if (matches := re.findall(r"([A-Z]+)", text)) else None
 
     return dict(ipv4=ipv4, max_digit=max_digit, failed_value=failed_value,
-                digits=digits, digits_float=digits_float, 
+                digits=digits, digits_float=digits_float,
                 words_lower=words_lower, words_upper=words_upper)
-    
+
 
 if __name__ == '__main__':
     pprint.pprint(parse_text(TEXT), width=48, compact=True)
@@ -239,11 +240,12 @@ if __name__ == '__main__':
     #                  'dolor'],
     #  'words_upper': ['BANANA', 'POTATO']}
 ```
+
 scrape_schema:
 ```python
 from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
-from scrape_schema import Parsel, BaseSchema, Sc, sc_param
+from scrape_schema import Text, BaseSchema, Sc, sc_param
 
 # Note: `Sc` is shortcut typing.Annotated
 
@@ -257,17 +259,17 @@ lorem upsum dolor
 
 
 class MySchema(BaseSchema):
-    ipv4: Sc[str, Parsel(raw=True).re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]]
-    failed_value: Sc[bool, Parsel(default=False, raw=True).re_search(r"(ora)")[1]]
-    digits: Sc[List[int], Parsel(raw=True).re_findall(r"(\d+)")]
-    digits_float: Sc[List[float], Parsel(raw=True).re_findall(r"(\d+)").fn(lambda lst: [f"{s}.5" for s in lst])]
-    words_lower: Sc[List[str], Parsel(raw=True).re_findall("([a-z]+)")]
-    words_upper: Sc[List[str], Parsel(raw=True).re_findall(r"([A-Z]+)")]
+    ipv4: Sc[str, Text().re_search(r"(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")[1]]
+    failed_value: Sc[bool, Text(default=False).re_search(r"(ora)")[1]]
+    digits: Sc[List[int], Text().re_findall(r"(\d+)")]
+    digits_float: Sc[List[float], Text().re_findall(r"(\d+)").fn(lambda lst: [f"{s}.5" for s in lst])]
+    words_lower: Sc[List[str], Text().re_findall("([a-z]+)")]
+    words_upper: Sc[List[str], Text().re_findall(r"([A-Z]+)")]
 
     @sc_param
     def sum(self):
         return sum(self.digits)
-    
+
     @sc_param
     def max_digit(self):
         return max(self.digits)
@@ -294,9 +296,10 @@ if __name__ == '__main__':
 
 _____
 ## logging
-In this project, logging to the `DEBUG` level is enabled by default. 
+In this project, logging to the `DEBUG` level is enabled by default.
 
 To set up logger, you can get it by the name `"scrape_schema"`
+
 ```python
 import logging
 
@@ -305,7 +308,16 @@ logger.setLevel(logging.INFO)
 ...
 ```
 
-See more [examples](examples) and [documentation](https://scrape-schema.readthedocs.io/en/latest/) 
+For type_caster module:
+
+```python
+import logging
+
+logger = logging.getLogger("type_caster")
+logger.setLevel(logging.ERROR)
+
+```
+See more [examples](examples) and [documentation](https://scrape-schema.readthedocs.io/en/latest/)
 for get more information/examples
 ____
 This project is licensed under the terms of the MIT license.
