@@ -45,7 +45,7 @@ class ReplaceMethod(BaseSpecialMethodStrategy):
 
 class ReSearchMethod(BaseSpecialMethodStrategy):
     def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
-        pattern, groupdict = method.args
+        pattern, groupdict, _flag = method.args
         if groupdict:
             if not pattern.groupindex:
                 raise TypeError(f"Pattern `{pattern.pattern}` is not contains groups")
@@ -55,7 +55,7 @@ class ReSearchMethod(BaseSpecialMethodStrategy):
 
 class ReFindallMethod(BaseSpecialMethodStrategy):
     def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
-        pattern, groupdict = method.args
+        pattern, groupdict, _flag = method.args
         if groupdict:
             if not pattern.groupindex:
                 raise TypeError(f"Pattern `{pattern.pattern}` is not contains groups")

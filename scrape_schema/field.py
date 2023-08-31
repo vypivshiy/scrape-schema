@@ -81,7 +81,7 @@ class Parsel(Field):
         Returns:
             string
         """
-        return self.add_method("re", regex=regex, replace_entities=replace_entities)  # type: ignore
+        return self.add_method("re", regex, replace_entities)  # type: ignore
 
     def _is_attrib(self):
         if (method := self._stack_methods[-1].METHOD_NAME) != "attrib":
