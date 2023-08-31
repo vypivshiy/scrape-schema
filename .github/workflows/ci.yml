@@ -64,8 +64,8 @@ jobs:
       - name: Install hatch
         run: pip install hatch
 
-      - name: run flake8 linter
-        run: flake8 .
+      - name: run ruff linter
+        run: ruff .
 
       - name: run mypy
         run: mypy .
