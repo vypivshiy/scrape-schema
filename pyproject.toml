@@ -42,6 +42,7 @@ Examples = "https://github.com/vypivshiy/scrape-schema/examples"
 dev = ["ruff", "black", "isort", "pytest", "mypy", "pre-commit", "hatch"]
 ci = ["hatch", "ruff", "black", "isort", "pytest", "mypy", "parsel"]
 docs = ["mkdocs-material", "mkdocstrings[python]"]
+codegen = ['jinja2']
 
 [tool.hatch.version]
 path = "scrape_schema/__init__.py"
