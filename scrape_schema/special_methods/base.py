@@ -2,8 +2,6 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Protocol, Tuple, Union
 
-from scrape_schema._typing import NoneType
-
 
 class SpecialMethods(Enum):
     """enumeration of special methods for fields
