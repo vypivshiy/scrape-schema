@@ -1,0 +1,16 @@
+@startuml
+Schema -> Schema: collect all Fields types
+note left: initialization from metaclass
+Schema -> Schema: collect all Fields attributes names
+Schema -> Schema: collect all Fields objects
+Schema -> Schema: init (markup param)
+note left: initialization from constuctor
+Schema -> Schema: convert str/bytes markup to Selector object
+Schema -> Field: send markup selector
+Field -> Field: exec all methods
+note left: methods invoke left to right
+Schema <-- Field: return parsed value
+Schema -> Schema: convert value by annotation
+note left: if field auto_type=True and not catch error
+Schema <- Schema: set parsed attribute
+@enduml
