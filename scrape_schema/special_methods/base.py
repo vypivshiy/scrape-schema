@@ -2,6 +2,8 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Any, Dict, NamedTuple, Protocol, Tuple, Union
 
+from scrape_schema._typing import NoneType
+
 
 class SpecialMethods(Enum):
     """enumeration of special methods for fields
@@ -41,12 +43,21 @@ class MarkupMethod(NamedTuple):
     args: Tuple[Any, ...] = ()
     kwargs: Dict[str, Any] = {}
 
+    @staticmethod
+    def __repr_arg(arg: Any) -> str:
+        if isinstance(arg, str):
+            # TODO check single-double quotes
+            return f"'{arg}'" if '"' in arg else f'"{arg}"'
+        return str(arg)
+
     def __repr__(self):
         arguments = ""
         if self.args:
-            arguments += ", ".join(str(a) for a in self.args)
+            arguments += ", ".join(self.__repr_arg(a) for a in self.args if a)
         if self.kwargs:
-            arguments += ", " + ", ".join(f"{k}={v}" for k, v in self.kwargs.items())
+            arguments += ", " + ", ".join(
+                f"{k}={self.__repr_arg(v)}" for k, v in self.kwargs.items()
+            )
 
         method = (
             self.METHOD_NAME.name

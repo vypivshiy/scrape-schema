@@ -110,10 +110,12 @@ class Field(BaseField):
         return self._spec_method_handler.handle(method, markup)
 
     def __repr__(self):
-        return (  # pragma: no cover
-            f"{self.__class__.__name__}()"
-            f"{'.'.join(repr(m) for m in self._stack_methods)}"
-        )
+        if self._stack_methods:
+            return (  # pragma: no cover
+                f"{self.__class__.__name__}()."
+                f"{'.'.join(repr(m) for m in self._stack_methods)}"
+            )
+        return f"{self.__class__.__name__}()"
 
     @staticmethod
     def _accept_method(markup: Any, method: MarkupMethod) -> Any:
