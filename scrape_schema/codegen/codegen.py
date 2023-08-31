@@ -3,7 +3,12 @@ import random
 import types
 from typing import List, Type
 
-from jinja2 import Template
+try:
+    from jinja2 import Template
+except ImportError:
+    raise ImportError(
+        "Required jinja2. For install, type pip install scrape-schema[codegen]"
+    )
 
 from scrape_schema.base import BaseField, BaseSchema, Field
 from scrape_schema.codegen.constants import *
