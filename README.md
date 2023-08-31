@@ -11,6 +11,7 @@ This library is designed to write structured, readable,
 reusable parsers for html, raw text and is inspired by dataclasses
 
 !!! warning
+
     Scrape-schema is currently in Pre-Alpha. Please expect breaking changes.
 
 ## Motivation
@@ -25,11 +26,13 @@ _____
 - Built top on [Parsel](https://github.com/scrapy/parsel)
 - re, css, xpath, jmespath, [chompjs](https://github.com/Nykakin/chompjs) features
 - [Fluent interface](https://en.wikipedia.org/wiki/Fluent_interface#Python) simulate original parsel.Selector API for easy to use.
+- decrease boilerplate code
 - Does not depend on the http client implementation, use any!
 - Python 3.8+ support
 - Reusability, code consistency
 - Dataclass-like structure
 - Partial support auto type-casting from annotations (str, int, float, bool, list, dict, Optional)
+- Codegen: you can use this module for generating code
 - Detailed logging process to make it easier to write a parser
 ____
 
@@ -108,6 +111,7 @@ ____
 ### html
 
 parsel:
+
 ```python
 from parsel import Selector
 import pprint
@@ -186,7 +190,9 @@ if __name__ == '__main__':
 ```
 
 ### raw text
+
 original re:
+
 ```python
 import re
 import pprint
@@ -242,6 +248,7 @@ if __name__ == '__main__':
 ```
 
 scrape_schema:
+
 ```python
 from typing import List  # if you usage python3.8. If python3.9 - use build-in list
 import pprint
@@ -293,6 +300,7 @@ if __name__ == '__main__':
 #  'words_upper': ['BANANA', 'POTATO']}
 
 ```
+## Codegen
 
 _____
 ## logging

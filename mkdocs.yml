@@ -10,6 +10,7 @@ nav:
   - Usage: usage.md
   - FAQ: faq.md
   - Examples: examples.md
+  - Tools: tools.md
   - Reference:
       - Schema: reference/schema.md
       - Fields: reference/fields.md
