@@ -498,6 +498,8 @@ class BaseSchema(metaclass=SchemaMeta):
     def _pre_validate_markup(self):
         # find @markup_pre_validator decorated methods and validate
         for k, v in self.__class__.__dict__.items():
+            if isinstance(v, BaseField) or isinstance(v, sc_param):
+                continue
             if getattr(v, "__dict__", None) and (
                 pre_validator := v.__dict__.get("__wrapped__")
             ):
