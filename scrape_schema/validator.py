@@ -3,13 +3,13 @@ import re
 from functools import wraps
 from typing import TYPE_CHECKING, Callable, Optional, Union
 
+from parsel import Selector, SelectorList
+
 from scrape_schema.exceptions import SchemaPreValidationError
 
 if TYPE_CHECKING:
     from scrape_schema import BaseSchema
 
-
-MARKUP_TYPE = Union[str, bytes, "Selector", "SelectorList"]
 
 __all__ = ["markup_pre_validator"]
 
@@ -64,13 +64,13 @@ class MarkupPreValidator:
 
         return inner
 
-    def _pre_validate_re(self, markup: MARKUP_TYPE) -> bool:
+    def _pre_validate_re(self, markup: str) -> bool:
         return bool(re.search(self.pattern, markup))  # type: ignore
 
-    def _pre_validate_css(self, markup: MARKUP_TYPE) -> bool:
+    def _pre_validate_css(self, markup: Union[Selector, SelectorList]) -> bool:
         return bool(markup.css(self.css).get())  # type: ignore
 
-    def _pre_validate_xpath(self, markup: MARKUP_TYPE) -> bool:
+    def _pre_validate_xpath(self, markup: Union[Selector, SelectorList]) -> bool:
         return bool(markup.xpath(self.xpath).get())  # type: ignore
 
 
