@@ -1,9 +1,7 @@
 """Validator methods and decorators"""
 import re
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
-
-from parsel import Selector, SelectorList
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from scrape_schema.exceptions import SchemaPreValidationError
 
