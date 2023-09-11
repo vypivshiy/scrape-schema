@@ -92,7 +92,8 @@ omit = [
   "scrape_schema/_logger.py",
   "scrape_schema/_typing.py",
   "scrape_schema/_protocols.py",
-  "scrape_schema/type_caster.py"
+  "scrape_schema/type_caster.py",
+  "scrape_schema/codegen/codegen.py"
 ]
 
 [tool.coverage.report]
@@ -138,4 +139,4 @@ exclude = [
 ]
 
 [tool.ruff.isort]
-known-first-party = ["eggella"]
+known-first-party = ["scrape_schema"]
