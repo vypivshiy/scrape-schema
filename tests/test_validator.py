@@ -1,5 +1,6 @@
 # mypy: disable-error-code="assignment"
 import pytest
+from parsel import Selector
 from tests.fixtures import HTML_FOR_SCHEMA
 
 from scrape_schema import BaseSchema, Parsel, sc_param
@@ -33,13 +34,13 @@ class ValidatedSchemaRe(BaseSchema):
         return True
 
 
+def test_callable_validation():
+    ValidatedSchema(HTML_FOR_SCHEMA)
+
+
 def test_failed_callable_validation():
     with pytest.raises(SchemaPreValidationError):
         ValidatedSchema("<title>hello</title>")
-
-
-def test_callable_validation():
-    ValidatedSchema(HTML_FOR_SCHEMA)
 
 
 def test_xpath_validation():
@@ -67,3 +68,39 @@ def test_re_validation():
 def test_failed_re_validation():
     with pytest.raises(SchemaPreValidationError):
         ValidatedSchemaRe("<title>hello</title>")
+
+
+def test_callable_validation_selector():
+    ValidatedSchema(Selector(HTML_FOR_SCHEMA))
+
+
+def test_failed_callable_validation_selector():
+    with pytest.raises(SchemaPreValidationError):
+        ValidatedSchema(Selector("<title>hello</title>"))
+
+
+def test_xpath_validation_selector():
+    ValidatedSchemaXpath(Selector(HTML_FOR_SCHEMA))
+
+
+def test_failed_xpath_validation_selector():
+    with pytest.raises(SchemaPreValidationError):
+        ValidatedSchemaXpath(Selector("<title>hello</title>"))
+
+
+def test_css_validation():
+    ValidatedSchemaCss(Selector(HTML_FOR_SCHEMA))
+
+
+def test_failed_css_validation():
+    with pytest.raises(SchemaPreValidationError):
+        ValidatedSchemaCss(Selector("<title>hello</title>"))
+
+
+def test_re_validation():
+    ValidatedSchemaRe(Selector(HTML_FOR_SCHEMA))
+
+
+def test_failed_re_validation():
+    with pytest.raises(SchemaPreValidationError):
+        ValidatedSchemaRe(Selector("<title>hello</title>"))
