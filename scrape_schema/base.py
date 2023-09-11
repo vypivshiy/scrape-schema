@@ -1,6 +1,5 @@
 import re
 from abc import abstractmethod
-from functools import wraps
 from re import RegexFlag
 from typing import (
     Any,

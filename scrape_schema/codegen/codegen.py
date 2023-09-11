@@ -1,3 +1,5 @@
+# ruff: noqa: F405
+# ruff: noqa: F403
 # TODO this experimental POC, later this need refactoring and rewrite
 import inspect
 import random
@@ -11,7 +13,7 @@ except ImportError:
         "Required jinja2. For install, type pip install scrape-schema[codegen]"
     )
 
-from scrape_schema.base import BaseField, BaseSchema, Field
+from scrape_schema.base import BaseField, BaseSchema
 from scrape_schema.codegen.constants import *
 from scrape_schema.field import Parsel
 from scrape_schema.special_methods.base import MarkupMethod, SpecialMethods
