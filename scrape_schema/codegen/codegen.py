@@ -1,3 +1,4 @@
+# mypy: disable-error-code="assignment"
 # ruff: noqa: F405
 # ruff: noqa: F403
 # TODO this experimental POC, later this need refactoring and rewrite
@@ -162,7 +163,7 @@ if __name__ == "__main__":
 
     class Schema(BaseSchema):
         title: str = Parsel().xpath("//title/text()").get()
-        div: list[str] = Parsel(alias="urls").xpath("//a/@href").getall()[0]
+        div: List[str] = Parsel(alias="urls").xpath("//a/@href").getall()[0]
 
     print(generate_code(Schema))
     # f = Parsel(alias='title').xpath("//title/text()").get().concat_l("a")

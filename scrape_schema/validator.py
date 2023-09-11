@@ -71,28 +71,28 @@ class MarkupPreValidator:
 
     def _pre_validate_re(self, markup: MARKUP_TYPE) -> bool:
         if isinstance(markup, (Selector, SelectorList)):
-            return bool(markup.re(self.pattern))
+            return bool(markup.re(self.pattern))  # type: ignore
         elif isinstance(markup, bytes):
-            return bool(re.search(self.pattern, str(markup)))
-        return bool(re.search(self.pattern, markup))
+            return bool(re.search(self.pattern, str(markup)))  # type: ignore
+        return bool(re.search(self.pattern, markup))  # type: ignore
 
     def _pre_validate_css(self, markup: MARKUP_TYPE) -> bool:
         if isinstance(markup, (Selector, SelectorList)):
-            return bool(markup.css(self.css).get())
+            return bool(markup.css(self.css).get())  # type: ignore
         elif isinstance(markup, bytes):
-            return bool(
-                Selector(body=markup, **self.selector_kwargs).css(self.css).get()
+            return bool(  # type: ignore
+                Selector(body=markup, **self.selector_kwargs).css(self.css).get()  # type: ignore
             )
-        return bool(Selector(markup, **self.selector_kwargs).css(self.css).get())
+        return bool(Selector(markup, **self.selector_kwargs).css(self.css).get())  # type: ignore
 
     def _pre_validate_xpath(self, markup: MARKUP_TYPE) -> bool:
         if isinstance(markup, (Selector, SelectorList)):
-            return bool(markup.xpath(self.xpath).get())
+            return bool(markup.xpath(self.xpath).get())  # type: ignore
         elif isinstance(markup, bytes):
             return bool(
-                Selector(body=markup, **self.selector_kwargs).xpath(self.xpath).get()
+                Selector(body=markup, **self.selector_kwargs).xpath(self.xpath).get()  # type: ignore
             )
-        return bool(Selector(markup, **self.selector_kwargs).xpath(self.xpath).get())
+        return bool(Selector(markup, **self.selector_kwargs).xpath(self.xpath).get())  # type: ignore
 
 
 markup_pre_validator = MarkupPreValidator
