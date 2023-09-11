@@ -65,6 +65,7 @@ class BaseField:
 
         self._spec_method_handler: SpecialMethodsHandler = DEFAULT_SPEC_METHOD_HANDLER
         self._last_failed_method: Optional[MarkupMethod] = None
+        self._is_success: bool = True  # False - field is failed, True, no errors
 
     @abstractmethod
     def _prepare_markup(self, markup):
@@ -99,6 +100,11 @@ class Field(BaseField):
         elif isinstance(markup, bytes):
             return Selector(body=markup)
         raise TypeError(f"Unsupported markup type: {type(markup).__name__}")
+
+    @property
+    def success(self) -> bool:
+        """last parsed field status"""
+        return self._is_success
 
     def _special_method(self, markup: Any, method: MarkupMethod) -> Any:
         """Handle special method
@@ -156,6 +162,7 @@ class Field(BaseField):
             most often `AttributeError` and `TypeError` due to the absence
             of a method name due to incorrect output data in the call chain
         """
+        self._is_success = True  # reset success parsed flag
         result = markup
         _logger.info(
             "Start parse markup. Stack methods count: %s", len(self._stack_methods)
@@ -184,6 +191,7 @@ class Field(BaseField):
                     else result,
                 )
             except Exception as e:
+                self._is_success = False  # mark failed parse field
                 _logger.warning("Oops, %s throw exception %s", str(method).lower(), e)
                 self._last_failed_method = method
                 return self._stack_method_error_handler(method, e, markup)
@@ -193,12 +201,13 @@ class Field(BaseField):
     def _stack_method_error_handler(
         self, method: Union[MarkupMethod, SpecialMethods], e: Exception, markup
     ):
-        _logger.error("Method `%r` return traceback: %s", method, e)
+        _logger.error("Failed call method: %s", method)
         _logger.error(
             "Full markup:\nSTART\n%s\nEND",
             markup.get() if isinstance(markup, (Selector, SelectorList)) else markup,
         )
         if self.default is Ellipsis:
+            _logger.error("Method `%r` return traceback: %s", method, e)
             raise e
         _logger.info(
             "Skip type casting and set default value: %s",
@@ -548,16 +557,18 @@ class BaseSchema(metaclass=SchemaMeta):
         )
         for name, field in self.__schema_fields__.items():
             field_type = self.__schema_annotations__[name]
-            _logger.debug("Start parse: %s.%s", self.__schema_name__, name)
+            _logger.debug("Start parse attribute: `%s.%s`", self.__schema_name__, name)
             if field.__class__.__name__ == "Nested":  # todo fix
                 # only checks Nested fields
                 field.type_ = field_type  # type: ignore
-
             # todo refactoring
             value = field.sc_parse(self.__selector__)
 
             if self.Config.type_caster and field.auto_type and not field.is_default:
                 value = self.Config.type_caster.cast(field_type, value)
+            if not field._is_success and not field.is_default:
+                _logger.error("Parse error in %s.%s field", self.__schema_name__, name)
+
             # disable default value flag
             if field.is_default:
                 _logger.error(
