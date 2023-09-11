@@ -1,5 +1,6 @@
 import re
 from abc import abstractmethod
+from functools import wraps
 from re import RegexFlag
 from typing import (
     Any,
@@ -19,6 +20,7 @@ from parsel import Selector, SelectorList
 from scrape_schema._logger import _logger
 from scrape_schema._protocols import SpecialMethodsProtocol
 from scrape_schema._typing import Annotated, Self, get_args, get_origin, get_type_hints
+from scrape_schema.exceptions import SchemaPreValidationError
 from scrape_schema.special_methods import (
     DEFAULT_SPEC_METHOD_HANDLER,
     MarkupMethod,
@@ -26,6 +28,7 @@ from scrape_schema.special_methods import (
     SpecialMethodsHandler,
 )
 from scrape_schema.type_caster import TypeCaster
+from scrape_schema.validator import MarkupPreValidator
 
 
 class sc_param(property):
@@ -205,7 +208,7 @@ class Field(BaseField):
         return self.default
 
     def sc_parse(self, markup: Union[str, bytes, Selector, SelectorList]) -> Any:
-        """Execute all passed methods
+        """parse field entrypoint. Execute all passed methods
 
         Args:
             markup: markup target
@@ -284,9 +287,9 @@ class Field(BaseField):
         pattern = re.compile(pattern, flags=flags)
         if groupdict and not pattern.groupindex:
             raise TypeError("groupdict required named groups")
-        return self.add_method(
-            SpecialMethods.REGEX_SEARCH, pattern, groupdict, flags  # type: ignore
-        )  # type: ignore
+        return self.add_method(  # type: ignore
+            SpecialMethods.REGEX_SEARCH, pattern, groupdict, flags
+        )
 
     def re_findall(
         self,
@@ -492,6 +495,17 @@ class BaseSchema(metaclass=SchemaMeta):
         """
         return self._markup
 
+    def _pre_validate_markup(self):
+        # find @markup_pre_validator decorated methods and validate
+        for k, v in self.__class__.__dict__.items():
+            if getattr(v, "__dict__", None) and (
+                pre_validator := v.__dict__.get("__wrapped__")
+            ):
+                if issubclass(pre_validator, MarkupPreValidator):
+                    if not getattr(self, k)():
+                        msg = f"Validation error in {self.__schema_name__}.{k} method"
+                        raise SchemaPreValidationError(msg)
+
     def __init__(self, markup: Union[str, bytes, Selector, SelectorList]):
         """Create a new object by parsing fields from markup.
 
@@ -510,11 +524,13 @@ class BaseSchema(metaclass=SchemaMeta):
         elif isinstance(markup, (Selector, SelectorList)):
             self._markup = markup.get()  # type: ignore
             self._cached_parser = markup
-
         else:
             raise TypeError(
                 f"Markup support only str, bytes or Selector types, not {type(markup).__name__}"
             )
+        # markup pre validator
+        self._pre_validate_markup()
+
         # initialize and parse fields
         self._init_fields()
 
