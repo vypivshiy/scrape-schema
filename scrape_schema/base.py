@@ -195,6 +195,8 @@ class Field(BaseField):
                 self._last_failed_method = method
                 return self._stack_method_error_handler(method, e, markup)
         _logger.info("Call methods done. result=%s", result)
+        if self.default is not Ellipsis and result in (None, []):
+            return self.default
         return result
 
     def _stack_method_error_handler(
