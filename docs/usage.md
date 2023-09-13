@@ -340,6 +340,38 @@ pprint.pprint(Schema(text).dict(), compact=True)
 #  'max_price_item': {'available': False, 'item': 'ferrari', 'price': 99999999}}
 ```
 
+### default value handling
+This is a demonstration of what happens if the value is not found
+```python
+from typing import Optional, List
+
+from scrape_schema import BaseSchema, Parsel
+
+class DefaultsExamples(BaseSchema):
+    # handle error, set None
+    failed_1: Optional[str] = Parsel(default=None).xpath("//title").get().sc_replace("0", "1", 1)
+    # None
+    failed_2: Optional[str] = Parsel().xpath("//title").get()
+    # "fail:
+    failed_3: str = Parsel(default="fail").xpath("//title").get().sc_replace("0", "1", 1)
+    # []
+    failed_4: List[str] = Parsel().xpath("//a").getall()
+    # None
+    failed_5: Optional[List[str]] = Parsel(default=None).xpath("//a").getall()
+
+
+class RaisesSchema(BaseSchema):
+    this_raise_err: str = Parsel().xpath("//title").get().sc_replace("0", "1", 1)
+
+
+if __name__ == '__main__':
+    print(DefaultsExamples("").dict())
+    # {'failed_1': None, 'failed_2': None,
+    # 'failed_3': 'fail', 'failed_4': [], 'failed_5': None}
+    RaisesSchema("")
+    # AttributeError: 'NoneType' object has no attribute 'replace'
+```
+
 ### sc_param
 property descriptor for dict() view. Useful for additional conversion or reuse of a value from a field
 
