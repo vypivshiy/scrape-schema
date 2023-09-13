@@ -105,12 +105,13 @@ def test_magic_methods():
 
 def test_default_field_value():
     class DefaultSchema(BaseSchema):
-        a: Sc[
-            str, Parsel(default="fail").xpath("//div/div").css("p").get()
-        ]  # work without errors, return None
+        a: Sc[str, Parsel(default="fail").xpath("//div/div").css("p").get()]
         b: Sc[
             int,
             Parsel(default="fail").xpath("//div/div").css("p").get().concat_l("test"),
         ]
+        c: Sc[
+            str, Parsel().xpath("//div/div").css("p").get()
+        ]  # return None and has default value, set 'fail'
 
-    assert DefaultSchema("???").dict() == {"a": None, "b": "fail"}
+    assert DefaultSchema("???").dict() == {"a": "fail", "b": "fail", "c": None}
