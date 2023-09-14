@@ -6,7 +6,7 @@ from scrape_schema._typing import get_origin
 from scrape_schema.base import BaseField, BaseSchema
 
 if TYPE_CHECKING:
-    from scrape_schema.special_methods.base import SpecialMethods
+    from scrape_schema._protocols import SpecialMethodsProtocol
 
 
 class Nested(BaseField):
@@ -18,7 +18,8 @@ class Nested(BaseField):
 
     def __init__(
         self,
-        field: Union[BaseField, SpecialMethods],
+        # Special method protocol for avoid typing errors
+        field: Union[BaseField, "SpecialMethodsProtocol"],
         *,
         type_: Optional[Union[Type[BaseSchema], Type[List[BaseSchema]]]] = None,
     ):
