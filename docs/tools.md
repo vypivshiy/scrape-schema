@@ -1,9 +1,12 @@
 # Tools
 ## Codegen
-Этот инструмент находится в разработке будут добавлены новые фичи
 
-Если вы по какой-то причине не хотите использовать эту библиотеку в своих проектах, то вы можете
-сгенерировать код
+!!! warning
+    This tool is under development, new features will be added later
+
+    If for some reason you do not want to use this library in your projects, then you can
+    generate code
+
 
 ```python
 from scrape_schema import BaseSchema, Parsel, Sc
@@ -23,7 +26,7 @@ class Schema(BaseSchema):
 print(generate_code(Schema))
 ```
 
-output:
+Output:
 
 ```python
 # Created by scrape-schema codegen

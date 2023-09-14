@@ -1,4 +1,4 @@
-# Cases
+# Tips and tricks
 
 This section will show examples of using scrape_schema in different situations.
 
@@ -115,14 +115,14 @@ from selenium import webdriver
 from schema import MainPage
 
 if __name__ == '__main__':
-        
+
     browser = webdriver.Chrome()
-    
+
     browser.get("https://books.toscrape.com/catalogue/page-15.html")
     html = browser.page_source
     time.sleep(2)
     pprint.pprint(MainPage(html).dict(), compact=True)
-    
+
     browser.close()
 ```
 

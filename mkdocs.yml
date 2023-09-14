@@ -7,9 +7,16 @@ repo_url: https://github.com/vypivshiy/scrape-schema
 
 nav:
   - Home: index.md
-  - Usage: usage.md
+  - Usage:
+      - "Types Intro": usage/types_intro.md
+      - Quickstart: usage/quickstart.md
+      - Schema: usage/schema.md
+      - Fields: usage/fields.md
+      - "Pre validation": usage/pre_validation.md
+      - "Logging Config": usage/logging.md
+  - "Code comparison": code_comparison.md
   - FAQ: faq.md
-  - Examples: examples.md
+  - "Tips and tricks": tips_and_tricks.md
   - Tools: tools.md
   - Reference:
       - Schema: reference/schema.md
@@ -40,6 +47,8 @@ plugins:
 
 
 markdown_extensions:
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.superfences:
   - admonition:
   - pymdownx.details:
