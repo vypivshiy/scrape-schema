@@ -1,9 +1,12 @@
-from typing import Any, List, Optional, Type, Union, get_args
+from typing import TYPE_CHECKING, Any, List, Optional, Type, Union, get_args
 
 from parsel import Selector, SelectorList
 
 from scrape_schema._typing import get_origin
 from scrape_schema.base import BaseField, BaseSchema
+
+if TYPE_CHECKING:
+    from scrape_schema.special_methods.base import SpecialMethods
 
 
 class Nested(BaseField):
@@ -15,7 +18,7 @@ class Nested(BaseField):
 
     def __init__(
         self,
-        field: BaseField,
+        field: Union[BaseField, SpecialMethods],
         *,
         type_: Optional[Union[Type[BaseSchema], Type[List[BaseSchema]]]] = None,
     ):
