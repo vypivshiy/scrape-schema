@@ -42,8 +42,7 @@ class TypeCaster:
             return value
 
         _logger.debug(
-            "`%s` Cast type start. `value=%s`, type_annotation=%s, `origin=%s`, `args=%s`",
-            self.__class__.__name__,
+            "Cast type start. `value=%s`, type_annotation=%s, `origin=%s`, `args=%s`",
             value,
             type_hint,
             origin,
@@ -58,8 +57,7 @@ class TypeCaster:
             # list
             if origin is list:
                 _logger.debug(
-                    "List cast %s %s -> %s",
-                    self.__class__.__name__,
+                    "List cast %s -> %s",
                     args[0],
                     value,
                 )
@@ -68,8 +66,7 @@ class TypeCaster:
             elif origin is dict:
                 key_type, value_type = args
                 _logger.debug(
-                    "Dict cast %s key=%s, value=%s -> %s",
-                    self.__class__.__name__,
+                    "Dict cast key=%s, value=%s -> %s",
                     key_type.__name__,
                     value_type.__name__,
                     value,
@@ -83,9 +80,7 @@ class TypeCaster:
             # Optional
             elif origin is Union:
                 if value is None and NoneType in args:
-                    _logger.debug(
-                        "Optional cast %s -> %s", self.__class__.__name__, value
-                    )
+                    _logger.debug("Optional cast %s", value)
                     return None
                 # in python3.8 raise TypeError: issubclass() arg 1 must be a class
                 # example _cast_type(Optional[List[int]], [])
@@ -94,11 +89,9 @@ class TypeCaster:
                     return self.cast(type_hint=non_none_args[0], value=value)
         # bool cast
         elif type_hint is bool:
-            _logger.debug("Bool cast %s -> %s", self.__class__.__name__, value)
+            _logger.debug("Bool cast %s", value)
             return bool(value)
         else:
             # direct cast
-            _logger.debug(
-                "Direct cast %s %s -> %s", self.__class__.__name__, type_hint, value
-            )
+            _logger.debug("Direct cast %s -> %s", type_hint, value)
             return type_hint(value)
