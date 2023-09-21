@@ -18,7 +18,14 @@ from parsel import Selector, SelectorList
 
 from scrape_schema._logger import _logger
 from scrape_schema._protocols import SpecialMethodsProtocol
-from scrape_schema._typing import Annotated, Self, get_args, get_origin, get_type_hints
+from scrape_schema._typing import (
+    Annotated,
+    NoneType,
+    Self,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 from scrape_schema.exceptions import SchemaPreValidationError
 from scrape_schema.special_methods import (
     DEFAULT_SPEC_METHOD_HANDLER,
@@ -148,6 +155,33 @@ class Field(BaseField):
             f"`{type(markup).__name__}` is not a valid method name: {method.METHOD_NAME}"
         )
 
+    @staticmethod
+    def __log_debug_markup_len(markup: Any) -> int:
+        """this method for logging module"""
+        if isinstance(markup, NoneType):  # pragma: no cover
+            return 0
+        elif isinstance(markup, (Selector, SelectorList)):
+            markup = markup.get()
+            return 0 if isinstance(markup, NoneType) else len(markup)
+        return len(str(markup))
+
+    @staticmethod
+    def __log_debug_markup_part(markup: Any, max_len: int = 64) -> str:
+        """this method for logging module"""
+        if isinstance(markup, NoneType):  # pragma: no cover
+            return ""
+        elif isinstance(markup, (Selector, SelectorList)):
+            markup = markup.get()
+            return (
+                ""
+                if isinstance(markup, NoneType)
+                else f"{markup[:max_len]}..."
+                if len(markup) > max_len
+                else markup
+            )
+        markup = str(markup)
+        return f"{markup[:max_len]}..." if len(markup) > max_len else markup
+
     def _call_stack_methods(self, markup: Any) -> Any:
         """call all passed methods
 
@@ -168,12 +202,8 @@ class Field(BaseField):
         )
         _logger.debug(
             "Markup (len=%i) target: %s",
-            len(markup.get()),
-            f"{markup.get()[:64]}..."
-            if len(markup.get()) > 64
-            else markup
-            if isinstance(markup, (Selector, SelectorList))
-            else markup,
+            self.__log_debug_markup_len(markup),
+            self.__log_debug_markup_part(markup),
         )
         for i, method in enumerate(self._stack_methods, 1):
             try:
@@ -182,12 +212,7 @@ class Field(BaseField):
                 else:
                     result = self._accept_method(result, method)
                 _logger.debug(
-                    "[%s] %s -> %s",
-                    i,
-                    method,
-                    f"(len={len(str(result))}) {str(result)[:64]}..."
-                    if len(str(result)) > 64
-                    else result,
+                    "[%s] %s -> %s", i, method, self.__log_debug_markup_part(result)
                 )
             except Exception as e:
                 self._is_success = False  # mark failed parse field
