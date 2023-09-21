@@ -267,6 +267,62 @@ pprint.pprint(Schema(text).dict(), compact=True)
 #  'max_price_item': {'available': False, 'item': 'ferrari', 'price': 99999999}}
 ```
 
+## Callback
+Provide invoke functions. Useful for auto set UUID, counter, etc. Support SpecialMethods.
+Callback function should be not accept arguments.
+Your best friends for this field:
+- `functools.partial`
+- itertools
+- any simple functions
+
+```python
+import random
+
+from scrape_schema import BaseSchema, Callback
+from uuid import uuid4
+from string import ascii_lowercase
+from itertools import count
+from functools import partial
+
+
+def _random_word(len_=16) -> str:
+    return "".join(random.choices(population=ascii_lowercase, k=len_))
+
+
+# create a simple counter
+counter = count(1)
+my_counter = partial(lambda: next(counter))
+
+
+# also you can set alias for reuse
+FieldUUID4 = Callback(lambda: str(uuid4()))
+
+
+class CallbackSchema(BaseSchema):
+    num: int = Callback(my_counter)
+    # not need init alias. same as uuid argument
+    uuid: str = FieldUUID4
+    # same as
+    # uuid: str = Callback(lambda: str(uuid4()))
+
+    word: str = Callback(_random_word)
+    # also Callback field support SpecialMethod functions
+    long_word: str = Callback(partial(_random_word, 32)).concat_l("LONG: ")
+
+
+print(CallbackSchema("").dict())
+print(CallbackSchema("").dict())
+print(CallbackSchema("").dict())
+# {'num': 1, 'uuid': 'a6b5be7a-1f6e-4f37-bfc3-9cfba36ed9f0', 'word': 'lftxzhxsfktwxrzs',
+# 'long_word': 'LONG: begxplujskfeeriivqqbdbqakcfnlvtm'}
+# {'num': 2, 'uuid': 'b41de697-4c73-4f08-9d53-4c62adc3e506', 'word': 'ylkdunpqxvyevzzf',
+# 'long_word': 'LONG: uvtllkxetatsrsqwauiovqpbwiqvswoh'}
+# {'num': 3, 'uuid': '457c7ecc-adbe-447e-b914-9a5e3c22af7a', 'word': 'zjrtgxtaraihhngw',
+# 'long_word': 'LONG: wzsjvqcvwyydqgiichhohtwagzlajter'}
+```
+
+- new in 0.5.5
+
 ## Special methods
 All fields contain special methods - shortcut functions for convert values in field objects.
 
