@@ -271,9 +271,10 @@ pprint.pprint(Schema(text).dict(), compact=True)
 Provide invoke functions. Useful for auto set UUID, counter, etc. Support SpecialMethods.
 Callback function should be not accept arguments.
 Your best friends for this field:
-- `functools.partial`
-- itertools
-- any simple functions
+
+- [itertools](https://docs.python.org/3.10/library/itertools.html)
+- [functools.partial](https://docs.python.org/3.10/library/functools.html?highlight=functools#functools.partial)
+- lambda functions or any simple functions
 
 ```python
 import random
