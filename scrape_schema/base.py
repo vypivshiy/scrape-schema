@@ -27,7 +27,7 @@ from scrape_schema.special_methods import (
     SpecialMethodsHandler,
 )
 from scrape_schema.type_caster import TypeCaster
-from scrape_schema.validator import MarkupPreValidator
+from scrape_schema.validator import markup_pre_validator
 
 
 class sc_param(property):
@@ -496,28 +496,6 @@ class BaseSchema(metaclass=SchemaMeta):
         """
         return self._cached_parser
 
-    @property
-    def __raw__(self) -> str:
-        """Get raw string markdown value
-
-        Returns:
-            markup string object
-        """
-        return self._markup
-
-    def _pre_validate_markup(self):
-        # find @markup_pre_validator decorated methods and validate
-        for k, v in self.__class__.__dict__.items():
-            if isinstance(v, BaseField) or isinstance(v, sc_param):
-                continue
-            if getattr(v, "__dict__", None) and (
-                pre_validator := v.__dict__.get("__wrapped__")
-            ):
-                if issubclass(pre_validator, MarkupPreValidator):
-                    if not getattr(self, k)():
-                        msg = f"Validation error in {self.__schema_name__}.{k} method"
-                        raise SchemaPreValidationError(msg)
-
     def __init__(self, markup: Union[str, bytes, Selector, SelectorList]):
         """Create a new object by parsing fields from markup.
 
@@ -527,6 +505,13 @@ class BaseSchema(metaclass=SchemaMeta):
             TypeError: if markup is not string, bytes or Selector objects
         """
         self._cached_parser: Union[Selector, SelectorList]
+        self._markup: str
+
+        self.__init_markup(markup)
+        self.__pre_validate_markup()
+        self.__init_fields()
+
+    def __init_markup(self, markup: Union[str, bytes, Selector, SelectorList]):
         if isinstance(markup, str):
             self._markup = markup
             self._cached_parser = Selector(markup, **self.Config.selector_kwargs)
@@ -540,13 +525,21 @@ class BaseSchema(metaclass=SchemaMeta):
             raise TypeError(
                 f"Markup support only str, bytes or Selector types, not {type(markup).__name__}"
             )
-        # markup pre validator
-        self._pre_validate_markup()
 
-        # initialize and parse fields
-        self._init_fields()
+    def __pre_validate_markup(self):
+        # find @markup_pre_validator decorated methods and validate
+        for k, v in self.__class__.__dict__.items():
+            if isinstance(v, BaseField) or isinstance(v, sc_param):
+                continue
+            if getattr(v, "__dict__", None) and (
+                pre_validator := v.__dict__.get("__wrapped__")
+            ):
+                if issubclass(pre_validator, markup_pre_validator):
+                    if not getattr(self, k)():
+                        msg = f"Validation error in {self.__schema_name__}.{k} method"
+                        raise SchemaPreValidationError(msg)
 
-    def _init_fields(self) -> None:
+    def __init_fields(self) -> None:
         """Parse fields entrypoint.
 
         Automatically called in the `__init__` constructor
@@ -559,12 +552,9 @@ class BaseSchema(metaclass=SchemaMeta):
         for name, field in self.__schema_fields__.items():
             field_type = self.__schema_annotations__[name]
             _logger.debug("Start parse attribute: `%s.%s`", self.__schema_name__, name)
-            if field.__class__.__name__ == "Nested":  # todo fix
-                # only checks Nested fields
+            if getattr(field, "__I_AM_NESTED_FIELD__", False):
                 field.type_ = field_type  # type: ignore
-            # todo refactoring
             value = field.sc_parse(self.__selector__)
-
             if self.Config.type_caster and field.auto_type and not field.is_default:
                 value = self.Config.type_caster.cast(field_type, value)
             if not field._is_success and not field.is_default:
@@ -583,6 +573,15 @@ class BaseSchema(metaclass=SchemaMeta):
             _logger.info("%s.%s = %s", self.__schema_name__, name, value)
             setattr(self, name, value)
 
+    @property
+    def __raw__(self) -> str:
+        """Get raw string markdown value
+
+        Returns:
+            markup string object
+        """
+        return self._markup
+
     @staticmethod
     def _to_dict(
         value: Union["BaseSchema", List, Dict, Any]
@@ -596,9 +595,10 @@ class BaseSchema(metaclass=SchemaMeta):
                 return [val.dict() for val in value]
         return value
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self, *, by_alias: bool = True) -> Dict[str, Any]:
         """Convert schema object to python dict. if field have alias key - set alias key
-
+        Args:
+            by_alias: bool set key by field alias. Default True
         Returns:
             dictionary with all public fields and sc_param properties
         """
@@ -609,7 +609,7 @@ class BaseSchema(metaclass=SchemaMeta):
         # parse public field keys
         for k, v in self.__dict__.items():
             if not k.startswith("_") and self.__schema_fields__.get(k):
-                k = self.__schema_aliases__.get(k, k)
+                k = self.__schema_aliases__.get(k, k) if by_alias else k
                 result[k] = self._to_dict(v)
         return result
 
