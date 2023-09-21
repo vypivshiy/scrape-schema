@@ -1,4 +1,5 @@
-from typing import Any, Hashable, Mapping, Optional, Pattern, Union
+"""build-in fields"""
+from typing import Any, Callable, Hashable, Mapping, Optional, Pattern, Union
 
 from scrape_schema._logger import _logger
 from scrape_schema._protocols import AttribProtocol, SpecialMethodsProtocol
@@ -254,3 +255,31 @@ class Text(Field):
         # prepare get raw text
         self.add_method("xpath", "//body/p/text()")
         self.add_method("get")
+
+
+class Callback(Field):
+    """This field provide callback functions. SpecialMethods support too
+
+    Useful for auto enumerate, set UUID, etc.
+    """
+
+    def __init__(
+        self,
+        callback: Callable[[], Any],
+        auto_type=False,
+        default: Any = ...,
+        alias: Optional[str] = None,
+    ):
+        """This field provide callback functions
+
+        Args:
+            callback: callback function. function should be not accept any arguments
+            auto_type: usage auto type feature in BaseSchema scope. Default False
+            default: set default value, if method return traceback.
+            alias: field alias. default None
+        """
+        super().__init__(auto_type=auto_type, default=default, alias=alias)
+        self.callback = callback
+
+    def sc_parse(self, _) -> Any:
+        return self._call_stack_methods(self.callback())
