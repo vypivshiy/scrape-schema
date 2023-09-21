@@ -16,6 +16,9 @@ class Nested(BaseField):
 
     """
 
+    # dirty hack for guarantee detect Nested fields in Schema class
+    __I_AM_NESTED_FIELD__: bool = True
+
     def __init__(
         self,
         # Special method protocol for avoid typing errors
