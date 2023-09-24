@@ -12,6 +12,7 @@ nav:
       - Quickstart: usage/quickstart.md
       - Schema: usage/schema.md
       - Fields: usage/fields.md
+      - "Easy selectors": usage/easy_selector.md
       - "Pre validation": usage/pre_validation.md
       - "Logging Config": usage/logging.md
   - "Code comparison": code_comparison.md
