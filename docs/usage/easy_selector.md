@@ -1,6 +1,7 @@
 # Easy selector recipe
 ## Prepare
 To quickly write a selector you will need:
+
 - Chromium-based browser (Chromium, Chrome, Brave, Vivaldi, etc...)
 - [Selector Gadget](https://chrome.google.com/webstore/detail/selectorgadget/mhjhnkcfbdhnjickkkdbjoemdmbfginb) extension
 
