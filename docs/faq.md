@@ -2,9 +2,11 @@
 
 ## What you need to know to use this library
 - You know how to use [scrapy/parsel](https://parsel.readthedocs.io/en/latest/) library
-- You know [css selectors](https://en.wikipedia.org/wiki/CSS)
-- You know [xpath selectors](https://en.wikipedia.org/wiki/XPath)
+- You know [css selectors](https://en.wikipedia.org/wiki/CSS)*
+- You know [xpath selectors](https://en.wikipedia.org/wiki/XPath)*
 - **Optional** You know [regex](https://docs.python.org/3.11/howto/regex.html#regex-howto)
+
+\* for avoid manually write selectors - see [easy selectors](usage/easy_selector.md) page
 
 ## How this library works?
 At a high level performs the following steps:
