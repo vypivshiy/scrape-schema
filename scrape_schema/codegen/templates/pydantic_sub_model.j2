@@ -1,0 +1,7 @@
+class {{ schema_name }}(BaseModel):
+    {% for field in field_signatures -%}
+        {{ field }}
+    {% endfor -%}
+    {% for param in sc_param_signatures -%}
+        {{ param }}
+    {% endfor -%}
