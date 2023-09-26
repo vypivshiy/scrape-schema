@@ -1,1 +1,2 @@
 from scrape_schema.codegen.codegen import generate_code
+from scrape_schema.codegen.pydantic import generate_pydantic_schema
