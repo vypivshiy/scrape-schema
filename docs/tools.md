@@ -1,12 +1,90 @@
 # Tools
 ## Codegen
 
+### Generate pydantic models
+generate pydantic models example
+
+> sc_schema.py
+```python
+from typing import Optional
+
+from scrape_schema import BaseSchema, Parsel, sc_param, Nested
+from scrape_schema.codegen import generate_pydantic_schema
+
+class Item(BaseSchema):
+    foo: str = Parsel().xpath("//a").get()
+    bar: float = Parsel().xpath("//ul/li").get()
+
+    @sc_param
+    def spammers(self) -> list[int]:
+        return [1, 2, 3]
+
+class Schema(BaseSchema):
+    h: str = Parsel().xpath("//h1/text()").get()
+    a: str = Parsel(default="0").xpath("").get()
+    b: int = Parsel(alias="alias").xpath("a").get()
+    c: str = Parsel(alias="alias2", default="def")
+    item: Item = Nested(Parsel().xpath("//div"))
+    items: list[Item] = Nested(Parsel().xpath("//div"))
+    opt: Optional[int] = Parsel().get()
+
+    @sc_param
+    def spam(self):
+        return "spam"
+
+    @sc_param
+    def egg(self) -> int:
+        return 1
+
+if __name__ == '__main__':
+    # pass main schema entrypoint
+    print(generate_pydantic_schema(Schema))
+```
+
+write output to new file:
+
+> models.py
+```python
+from typing import Any, Optional
+from pydantic import BaseModel, Field
+
+
+class Item(BaseModel):
+    foo: str
+    bar: float
+    spammers: list[int]
+
+
+class Schema(BaseModel):
+    h: str
+    a: str = '0'
+    b: int = Field(alias='alias')
+    c: str = Field(default='def', alias='alias2')
+    item: Item
+    items: list[Item]
+    opt: Optional[int]
+    spam: Any
+    egg: int
+```
+
+example usage
+
+```python
+from sc_schema import Schema
+from models import Schema as PdSchema
+
+if __name__ == '__main__':
+    markup = "" # any valid markup
+    print(PdSchema(**Schema(markup).dict()))
+```
+
+### Generate python code
 !!! warning
     This tool is under development, new features will be added later
 
-    If for some reason you do not want to use this library in your projects, then you can
-    generate code
 
+If for some reason you do not want to use this library in your projects, then you can
+generate code
 
 ```python
 from scrape_schema import BaseSchema, Parsel, Sc
@@ -149,7 +227,7 @@ class Schema:
 ### Roadmap
 - [x] base codegen
 - [x] dict serialize
-- [ ] dataclass serialize
-- [ ] pydantic serialize
+- [x] pydantic serialize
 - [ ] attrs serialize
+- [ ] dataclass serialize
 - [ ] codegen output optimizations
