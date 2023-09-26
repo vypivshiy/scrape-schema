@@ -93,7 +93,7 @@ omit = [
   "scrape_schema/_typing.py",
   "scrape_schema/_protocols.py",
   "scrape_schema/type_caster.py",
-  "scrape_schema/codegen/codegen.py"
+  "scrape_schema/codegen"
 ]
 
 [tool.coverage.report]
@@ -110,8 +110,7 @@ exclude_lines = [
 python_version = 3.8
 pretty = true
 ignore_missing_imports = true
-exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples"]
-files = "scrape_schema/*.py,scrape_schema/fields/*.py,scrape_schema/callbacks/*.py"
+exclude = ["env", ".env", "venv", "tests/*", "__pycache__", "examples", "codegen/*"]
 
 [tool.ruff]
 target-version = "py38"
