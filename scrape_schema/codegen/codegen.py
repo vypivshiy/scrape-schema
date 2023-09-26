@@ -5,6 +5,7 @@
 import inspect
 import random
 import types
+import warnings
 from typing import List, Type
 
 try:
@@ -134,6 +135,11 @@ def generate_code(schema: Type[BaseSchema]):
 
     dependencies: parsel, chompjs, re
     """
+    warnings.warn(
+        "this function write just PoC and will be rewritten later",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
     fields = schema.__schema_fields__
     fields_aliases = schema.__schema_aliases__
     schema_name = schema.__name__
