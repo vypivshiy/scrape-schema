@@ -388,7 +388,7 @@ class Field(BaseField):
         Args:
             unicode_escape: Attempt to fix input string if it contains escaped special characters
             omitempty: Skip empty dictionaries and lists
-            json_params: Allow passing down standard json.loads flags
+            json_params: Allow passing down standard `json.loads` flags
 
         Returns:
             Iterating over it yields all encountered JSON objects
@@ -407,7 +407,7 @@ class Field(BaseField):
         Args:
             chars: strip chars. Default strip all whitespaces (\t, \n included)
         """
-        return self.add_method(SpecialMethods.STRIP, chars)
+        return self.add_method(SpecialMethods.STRIP, chars)  # type: ignore
 
     def rstrip(self, chars: Optional[str] = None) -> SpecialMethodsProtocol:
         """Same as `str.rstrip()` method.
@@ -417,7 +417,7 @@ class Field(BaseField):
         Args:
             chars: strip chars. Default strip right whitespaces (\t, \n included)
         """
-        return self.add_method(SpecialMethods.R_STRIP, chars)
+        return self.add_method(SpecialMethods.R_STRIP, chars)  # type: ignore
 
     def lstrip(self, chars: Optional[str] = None) -> SpecialMethodsProtocol:
         """Same as `str.lstrip()` method.
@@ -427,28 +427,28 @@ class Field(BaseField):
         Args:
             chars: strip chars. Default strip left whitespaces (\t, \n included)
         """
-        return self.add_method(SpecialMethods.L_STRIP, chars)
+        return self.add_method(SpecialMethods.L_STRIP, chars)  # type: ignore
 
     def lower(self) -> SpecialMethodsProtocol:
         """Same as `str.lower()` method.
 
         If last chain list[str] argument - invoke this method to all arguments
         """
-        return self.add_method(SpecialMethods.LOWER)
+        return self.add_method(SpecialMethods.LOWER)  # type: ignore
 
     def upper(self) -> SpecialMethodsProtocol:
         """Same as `str.upper()` method.
 
         If last chain list[str] argument - invoke this method to all arguments
         """
-        return self.add_method(SpecialMethods.UPPER)
+        return self.add_method(SpecialMethods.UPPER)  # type: ignore
 
     def capitalize(self) -> SpecialMethodsProtocol:
         """Same as `str.capitalize()` method.
 
         If last chain list[str] argument - invoke this method to all arguments
         """
-        return self.add_method(SpecialMethods.CAPITALIZE)
+        return self.add_method(SpecialMethods.CAPITALIZE)  # type: ignore
 
     def split(
         self, sep: Optional[str] = None, max_split: int = -1
@@ -457,7 +457,7 @@ class Field(BaseField):
 
         If last chain list[str] argument - raise TypeError
         """
-        return self.add_method(SpecialMethods.SPLIT, sep, max_split)
+        return self.add_method(SpecialMethods.SPLIT, sep, max_split)  # type: ignore
 
     def join(self, join_sep: str) -> SpecialMethodsProtocol:
         """Same as `str.join()` method.
@@ -467,7 +467,7 @@ class Field(BaseField):
         Args:
             join_sep: separate char for result
         """
-        return self.add_method(SpecialMethods.STR_JOIN, join_sep)
+        return self.add_method(SpecialMethods.STR_JOIN, join_sep)  # type: ignore
 
     def count(self) -> SpecialMethodsProtocol:
         """Return items count.
@@ -475,11 +475,11 @@ class Field(BaseField):
         if last chain value is list - return len value else 1
 
         """
-        return self.add_method(SpecialMethods.COUNT)
+        return self.add_method(SpecialMethods.COUNT)  # type: ignore
 
     def add_method(
         self, method_name: Union[str, SpecialMethods], *args, **kwargs
-    ) -> Union[Self, SpecialMethodsProtocol]:
+    ) -> Self:
         """low-level interface adding methods to call stack"""
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
         return self
