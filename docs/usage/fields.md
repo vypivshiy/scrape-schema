@@ -327,123 +327,54 @@ print(CallbackSchema("").dict())
 ## Special methods
 All fields contain special methods - shortcut functions for convert values in field objects.
 
-### fn
-- function: Callable[[Any], Any]
-Execute function for prev method chain and return result
+### sc_parse
+method stack call for parsing values
 
 ```python
-# parse only png images
-from scrape_schema import BaseSchema, Sc, Parsel
+from scrape_schema import Parsel, Text
 
 
-class Schema(BaseSchema):
-    # extract only '.png' images
-    png_images: Sc[list[str], (
-        Parsel().xpath("//img/@src").getall().fn(
-        lambda lst: [i for i in lst if i.endswith('.png')])
-    )]
-
-
-text = """<img src="/one.png">
-<img src="/two.gif">
-<img src="/three.jpg">
-<img src="/real_png.png">"""
-print(Schema(text).dict())
-# {'png_images': ['/one.png', '/real_png.png']}
+Text().sc_parse("test")  # test
+Parsel(raw=True).sc_parse("test")  # test
+# lxml automatically wrap raw text to <body><p>%TEXT%</p></body> construction
+Parsel().xpath('//body').get().sc_parse("test")  # <body><p>test</p></body>
+Parsel().xpath("//a/@href").get().sc_parse('<a href="/example">scrape schema</a>')  # '/example'
 ```
 
-### concat_l
-- left_string: str
-concat new string to left. Last chain method result should be a string"""
+### Scpecial methods cheat sheet
 
-```python
-from scrape_schema import BaseSchema, Sc, Parsel
+All methods accept from last chain value (usually, from `.get()` and `.getall()` methods if field is not raw text (`Text()`, `Parsel(raw=True)`, `Parsel().raw_text`)
 
+| method             | description                                                                         | example                                                                                       | output                                                       |
+|--------------------|-------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| fn                 | Universal function handler. Accept only one argument - markup from last chain chain | `Text().fn(lambda v: f'{v} count={len(v)} {v}').sc_parse('scrape')`                           | `'count=5, scrape'`                                          |
+| concat_l           | Add new string part to left                                                         | `Text().concat_l('schema ').sc_parse('scrape')`                                               | `'schema scrape'`                                            |
+| concat_r           | Add new string part to left right                                                   | `Text().concat_r(' schema').sc_parse('scrape')`                                               | `'scrape schema'`                                            |
+| replace            | Simular as build-in str.replace() method                                            | `Text().replace('a').sc_parse('scrape')`                                                      | `'scrpe'`                                                    |
+| -                  | With limit replace                                                                  | `Text().replace('s', 1).sc_parse('ssscrape')`                                                 | `'sscrape'`                                                  |
+| strip              | Simular as build-in str.strip() method                                              | `Text().strip().sc_parse('  scrape  ')`                                                       | `'scrape'`                                                   |
+| rstip              | Simular as build-in str.rstrip() method                                             | `Text().rstrip().sc_parse(' scrape  ')`                                                       | `' scrape'`                                                  |
+| lstrip             | Simular as build-in str.lstrip() method                                             | `Text().lstrip().sc_parse('   scrape ')`                                                      | `'scrape '`                                                  |
+| split              | Simular as str.split() method                                                       | `Text().split().sc_parse('scrape schema')`                                                    | `['scrape', 'schema']`                                       |
+| -                  | If last chain list - throw TypeError                                                | `Text().split().split().sc_parse('scrape schema')`                                            | `TypeError`                                                  |
+| join               | Simular as str.join() method. Last chain should be `list[str]`                      | `Text().split().join(', ').sc_parse('scrape schema')`                                         | `'scrape, schema'`                                           |
+| lower              | Simular as str.lower(). Works with `list[str]`                                      | `Text().lower().sc_parse('SCRAPE SCHEMA)`                                                     | `'scrape schema'`                                            |
+| upper              | Simular as str.upper(). Works with `list[str]`                                      | `Text().upper().sc_parse('scrape schema')`                                                    | `'SCRAPE SCHEMA'`                                            |
+| capitalize         | Simular as str.capitalize(). Works with `list[str]`                                 | `Text().capitalize().sc_parse('scrape schema')`                                               | `'Scrape Schema'`                                            |
+| count              | Calc count items. if last item is not list - return 1                               | `Text().split().count().sc_parse('scrape schema very cool')`                                  | `4`                                                          |
+| -                  |                                                                                     | `Text().count().sc_parse('scrape schema')`                                                    | `1`                                                          |
+| re_search          | Simular as re.search(...). **return pattern, don't remember get attribute!**        | `Text().re_search(r'(sc\w+)').sc_parse('scrape schema')[0]`                                   | `'scrape'`                                                   |
+| -                  | Allowed named groups                                                                | `Text().re_search(r'(?P<who>sc\w+)', groupdict=True).sc_parse('scrape schema')`               | `{'who': 'scrape'}`                                          |
+| -                  | Throw error if not set group                                                        | `Text().re_search(r'(sc\w+)', groupdict=True).sc_parse('scrape schema')`                      | `TypeError: groupdict required named groups`                 |
+| re_findall         | Simular as [p for p in re.finditer(...)]                                            | `Text().re_findall(r'(sc\w+)').sc_parse('scrape schema scrappy oooo')`                        | `['scrape', 'schema', 'scrappy']`                            |
+| -                  | Allowed named groups                                                                | `Text().re_findall(r'(?P<who>sc\w+)', groupdict=True).sc_parse('scrape schema scrappy oooo')` | `[{'who': 'scrape'}, {'who': 'schema'}, {'who': 'scrappy'}]` |
+| -                  | Throw error if not set group                                                        | `Text().re_findall(r'(sc\w+)').sc_parse('scrape schema scrappy oooo')`                        | `TypeError: groupdict required named groups`                 |
+| chomp_js_parse     | Simular as [chompjs](https://github.com/Nykakin/chompjs#features)                   | see examples                                                                                  | -                                                            |
+| chomp_js_parse_all | Simular as [chompjs](https://github.com/Nykakin/chompjs#features)                   | see examples                                                                                  | -                                                            |
+| `__getitem__`      | allow `__getitem__` protocol (index, slice, get key)                                | `Text().sc_parse('scrape')[0]`                                                                | `'s'`                                                        |
+| -                  | get by slice example                                                                | `Text().sc_parse('scrape')[:3]`                                                               | `'scr'`                                                      |
+| -                  | get by key example                                                                  | `Text().re_search(r'(?P<who>sc\w+)', groupdict=True).sc_parse('scrape schema')['who']`        | `'scrape'`                                                   |
 
-class Schema(BaseSchema):
-    # add https://example.com string to result
-    png_images: Sc[list[str], (
-        Parsel().xpath("//img/@src").getall()
-        .concat_l("https://example.com")
-    )]
-    url: Sc[str, (
-        Parsel().xpath("//a/@href").get()
-        .concat_l("https://example.com")
-    )]
-
-text = """<img src="/one.png">
-<img src="/two.gif">
-<img src="/three.jpg">
-<img src="/real_png.png">
-<a href="/login">"""
-print(Schema(text).dict())
-# {'png_images': ['https://example.com/one.png', 'https://example.com/two.gif',
-# 'https://example.com/three.jpg', 'https://example.com/real_png.png'],
-# 'url': 'https://example.com/login'}
-
-```
-### concat_r
-- right_string: str
-concat new string to right. **Last chain method result should be a string**
-
-```python
-from scrape_schema import BaseSchema, Sc, Parsel
-
-
-class Schema(BaseSchema):
-    item: Sc[str, Parsel().xpath("//div[@class='item']/text()").get()]
-    # add $ char to result
-    price_str: Sc[str, (
-        Parsel().xpath("//div[@class='price']/text()").get()
-        .concat_r(" $"))]
-    # convert str float directly to int raise ValueError:
-    # invalid literal for int() with base 10: '500.0'
-    price_int: Sc[int, (
-        Parsel().xpath("//div[@class='price']/text()").get()
-        .fn(float))]
-
-text = """<div class="item">low orbit ion cannon</p>
-<div class="price">500.0</div>"""
-print(Schema(text).dict())
-# {'item': 'low orbit ion cannon\n', 'price_str': '500.0 $', 'price_int': 500}
-```
-
-### sc_replace
-Replace string method. **Last chain method result should be a string**
-- old: str,
-- new: str,
-- count: int = -1
-
-```python
-from scrape_schema import BaseSchema, Sc, Parsel
-
-
-class Schema(BaseSchema):
-    item: Sc[str, Parsel().xpath("//div[@class='item']/text()").get()]
-    # remove $ char from result
-    price: Sc[int, (
-        Parsel().xpath("//div[@class='price']/text()").get()
-        .sc_replace("$", ""))]
-
-text = """<div class="item">low orbit ion cannon</p>
-<div class="price">500$</div>"""
-print(Schema(text).dict())
-# {'item': 'low orbit ion cannon\n', 'price': 500}
-```
-
-### re_search
-simular `re.search` function. Last chain method result should be return string.
-
-!!! note
-    This method is for use on string values.
-    If last method value returns `Selector` object - usage `re` method
-
-### re_findall
-Simular `[match for match in re.finditer()]` method. Last chain method result should be return string.
-
-!!! note
-    This method is for use on string values.
-    If last method value returns `Selector` object - usage `re` method
 
 ### chompjs_parse
 Simular [chompjs.parse_js_object()](https://github.com/Nykakin/chompjs) method.
