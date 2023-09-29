@@ -1,3 +1,4 @@
+import warnings
 from typing import Any
 
 import chompjs
@@ -13,12 +14,91 @@ __all__ = [
     "ReSearchMethod",
     "ReplaceMethod",
     "ReFindallMethod",
+    # 0.6.0
+    "StripMethod",
+    "LStripMethod",
+    "RStripMethod",
+    "LowerMethod",
+    "UpperMethod",
+    "CapitalizeMethod",
+    "CountMethod",
+    "JoinMethod",
+    "SplitMethod",
 ]
 
 
 class FnMethod(BaseSpecialMethodStrategy):
     def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
         return method.kwargs["function"](markup)
+
+
+class SplitMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            raise TypeError("markup chain value should be str, not list")
+        _sep, _max_split = method.args[0], method.args[1]
+        return markup.split(_sep, _max_split)
+
+
+class StripMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return [m.strip(method.args[0]) for m in markup]
+        return markup.strip(method.args[0])
+
+
+class RStripMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return [m.rstrip(method.args[0]) for m in markup]
+        return markup.rstrip(method.args[0])
+
+
+class LStripMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return [m.lstrip(method.args[0]) for m in markup]
+        return markup.lstrip(method.args[0])
+
+
+class LowerMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return [m.lower() for m in markup]
+        return markup.lower()
+
+
+class UpperMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return [m.upper() for m in markup]
+        return markup.upper()
+
+
+class CapitalizeMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return [m.capitalize() for m in markup]
+        return markup.capitalize()
+
+
+class CountMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return len(markup)
+        return 1
+
+
+class JoinMethod(BaseSpecialMethodStrategy):
+    def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
+        if isinstance(markup, list):
+            return method.args[0].join(markup)
+        warnings.warn(
+            f"Last chain method value={markup}, ignore join method",
+            stacklevel=3,
+            category=RuntimeWarning,
+        )
+        return markup
 
 
 class ConcatLeftMethod(BaseSpecialMethodStrategy):

@@ -26,6 +26,16 @@ class SpecialMethods(Enum):
     REGEX_FINDALL = 5
     CHOMP_JS_PARSE = 6
     CHOMP_JS_PARSE_ALL = 7
+    # 0.6.0
+    STRIP = 8
+    R_STRIP = 9
+    L_STRIP = 10
+    STR_JOIN = 11
+    LOWER = 12
+    UPPER = 13
+    CAPITALIZE = 14
+    COUNT = 15
+    SPLIT = 16
 
 
 class MarkupMethod(NamedTuple):
