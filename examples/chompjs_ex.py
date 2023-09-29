@@ -1,3 +1,4 @@
+# mypy: disable-error-code="assignment"
 import pprint
 from typing import Any, TypedDict
 
@@ -11,10 +12,9 @@ ResultDict = TypedDict(
 class ChompJSAddon(BaseSchema):
     # auto_type will work unpredictably with chompjs output, disable is recommended or type this field by TypedDict
     # or set dict[str, Any]
-    result: Sc[
-        ResultDict,
+    result: ResultDict = (
         Parsel(auto_type=False).xpath("//script/text()").get().chomp_js_parse(),
-    ]
+    )
 
     @sc_param
     def typed_result(self) -> ResultDict:

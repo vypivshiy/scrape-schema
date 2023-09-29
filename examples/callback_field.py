@@ -1,3 +1,4 @@
+# mypy: disable-error-code="assignment"
 """Your best friend for write Callback fields:
 - itertools
 - functools.partial
@@ -21,7 +22,7 @@ counter = count(1)
 my_counter = partial(lambda: next(counter))
 
 
-# also you can set alias
+# also you can create alias field
 FieldUUID4 = Callback(lambda: str(uuid4()))
 
 
