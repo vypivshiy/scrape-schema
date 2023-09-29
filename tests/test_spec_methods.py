@@ -124,3 +124,89 @@ def test_chompjs_all():
             "layer1": {"layer2": {"layer3": [None, None, True, False]}},
         }
     ]
+
+
+def test_split():
+    assert Parsel(raw=True).split().sc_parse("test 123") == ["test", "123"]
+
+
+def test_split_fail():
+    with pytest.raises(TypeError):
+        Parsel(raw=True).split().split().sc_parse("test 123 567")
+
+
+def test_upper():
+    assert Parsel(raw=True).upper().sc_parse("hello") == "HELLO"
+
+
+def test_upper_list():
+    assert Parsel(raw=True).split().upper().sc_parse("hello world") == [
+        "HELLO",
+        "WORLD",
+    ]
+
+
+def test_lower():
+    assert Parsel(raw=True).lower().sc_parse("HELLO") == "hello"
+
+
+def test_lower_list():
+    assert Parsel(raw=True).split().lower().sc_parse("HELLO WORLD") == [
+        "hello",
+        "world",
+    ]
+
+
+def test_capitalize():
+    assert Parsel(raw=True).capitalize().sc_parse("hello") == "Hello"
+
+
+def test_capitalize_list():
+    assert Parsel(raw=True).split().capitalize().sc_parse("hello world") == [
+        "Hello",
+        "World",
+    ]
+
+
+def test_count():
+    assert Parsel(raw=True).count().sc_parse("hello") == 1
+
+
+def test_count_list():
+    assert Parsel(raw=True).split().count().sc_parse("hello world 123") == 3
+
+
+def test_join():
+    assert Parsel(raw=True).split().join(", ").sc_parse("test 123") == "test, 123"
+
+
+def test_join_fail():
+    with pytest.warns(RuntimeWarning):
+        assert Parsel(raw=True).join(", ").sc_parse("test 123")
+
+
+def test_strip():
+    assert Parsel(raw=True).strip().sc_parse("  test 123  ") == "test 123"
+
+
+def test_rstrip():
+    assert Parsel(raw=True).rstrip().sc_parse("test 123  ") == "test 123"
+
+
+def test_lstrip():
+    assert Parsel(raw=True).lstrip().sc_parse("  \n\ttest 123") == "test 123"
+
+
+def test_replace():
+    assert Parsel(raw=True).replace("t", "").sc_parse("test123") == "es123"
+
+
+def test_replace_one():
+    assert Parsel(raw=True).replace("t", "", 1).sc_parse("test123") == "est123"
+
+
+def test_replace_list():
+    assert Parsel(raw=True).split().replace("t", "").sc_parse("test123 tta") == [
+        "es123",
+        "a",
+    ]
