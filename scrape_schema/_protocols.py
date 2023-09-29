@@ -2,7 +2,7 @@
 Fluent interface better
 """
 from re import RegexFlag
-from typing import Any, Callable, Hashable, Pattern, Protocol, Union
+from typing import Any, Callable, Hashable, Optional, Pattern, Protocol, Union
 
 from scrape_schema._typing import Self
 
@@ -23,6 +23,9 @@ class SpecialMethodsProtocol(Protocol):
         pass  # pragma: no cover
 
     def sc_replace(self, old: str, new: str, count: int = -1) -> Self:
+        pass  # pragma: no cover
+
+    def replace(self, old: str, new: str, count: int = -1) -> Self:
         pass  # pragma: no cover
 
     def re_search(
@@ -54,6 +57,33 @@ class SpecialMethodsProtocol(Protocol):
     ) -> Self:
         pass  # pragma: no cover
 
+    def strip(self, chars: Optional[str] = None) -> Self:
+        pass  # pragma: no cover
+
+    def rstrip(self, chars: Optional[str] = None) -> Self:
+        pass  # pragma: no cover
+
+    def lstrip(self, chars: Optional[str] = None) -> Self:
+        pass  # pragma: no cover
+
+    def lower(self) -> Self:
+        pass  # pragma: no cover
+
+    def upper(self) -> Self:
+        pass  # pragma: no cover
+
+    def capitalize(self) -> Self:
+        pass  # pragma: no cover
+
+    def split(self, sep: Optional[str] = None, max_split: int = -1) -> Self:
+        pass  # pragma: no cover
+
+    def join(self, join_sep: str) -> Self:
+        pass  # pragma: no cover
+
+    def count(self) -> Self:
+        pass  # pragma: no cover
+
     def __getitem__(self, item) -> Self:
         pass  # pragma: no cover
 
@@ -61,14 +91,14 @@ class SpecialMethodsProtocol(Protocol):
 class AttribProtocol(SpecialMethodsProtocol):
     """Parsel.Selector.attrib protocol"""
 
-    def get(self, *, key: Hashable) -> SpecialMethodsProtocol:  # type: ignore
+    def get(self, *, key: Hashable) -> Self:  # type: ignore
         pass  # pragma: no cover
 
-    def keys(self) -> SpecialMethodsProtocol:  # type: ignore
+    def keys(self) -> Self:  # type: ignore
         pass  # pragma: no cover
 
-    def values(self) -> SpecialMethodsProtocol:  # type: ignore
+    def values(self) -> Self:  # type: ignore
         pass  # pragma: no cover
 
-    def items(self) -> SpecialMethodsProtocol:  # type: ignore
+    def items(self) -> Self:  # type: ignore
         pass  # pragma: no cover

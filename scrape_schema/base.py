@@ -1,4 +1,5 @@
 import re
+import warnings
 from abc import abstractmethod
 from re import RegexFlag
 from typing import (
@@ -290,6 +291,14 @@ class Field(BaseField):
         return self.add_method(SpecialMethods.CONCAT_R, right_string)  # type: ignore
 
     def sc_replace(self, old: str, new: str, count: int = -1) -> SpecialMethodsProtocol:
+        warnings.warn(
+            "Method `sc_replace` "
+            "deprecated and will be removed in future releases. Usage `replace method instead`",
+            category=DeprecationWarning,
+        )
+        return self.replace(old, new, count)
+
+    def replace(self, old: str, new: str, count: int = -1) -> SpecialMethodsProtocol:
         """str.replace method. Last argument should be string. old string replaced by new
 
         Args:
@@ -388,9 +397,89 @@ class Field(BaseField):
             SpecialMethods.CHOMP_JS_PARSE_ALL, unicode_escape, omitempty, json_params
         )
 
+    # 6.0.0 special methods
+
+    def strip(self, chars: Optional[str] = None) -> SpecialMethodsProtocol:
+        """Same as `str.strip()` method.
+
+        If last chain list[str] argument - invoke this method to all arguments
+
+        Args:
+            chars: strip chars. Default strip all whitespaces (\t, \n included)
+        """
+        return self.add_method(SpecialMethods.STRIP, chars)
+
+    def rstrip(self, chars: Optional[str] = None) -> SpecialMethodsProtocol:
+        """Same as `str.rstrip()` method.
+
+        If last chain list[str] argument - invoke this method to all arguments
+
+        Args:
+            chars: strip chars. Default strip right whitespaces (\t, \n included)
+        """
+        return self.add_method(SpecialMethods.R_STRIP, chars)
+
+    def lstrip(self, chars: Optional[str] = None) -> SpecialMethodsProtocol:
+        """Same as `str.lstrip()` method.
+
+        If last chain list[str] argument - invoke this method to all arguments
+
+        Args:
+            chars: strip chars. Default strip left whitespaces (\t, \n included)
+        """
+        return self.add_method(SpecialMethods.L_STRIP, chars)
+
+    def lower(self) -> SpecialMethodsProtocol:
+        """Same as `str.lower()` method.
+
+        If last chain list[str] argument - invoke this method to all arguments
+        """
+        return self.add_method(SpecialMethods.LOWER)
+
+    def upper(self) -> SpecialMethodsProtocol:
+        """Same as `str.upper()` method.
+
+        If last chain list[str] argument - invoke this method to all arguments
+        """
+        return self.add_method(SpecialMethods.UPPER)
+
+    def capitalize(self) -> SpecialMethodsProtocol:
+        """Same as `str.capitalize()` method.
+
+        If last chain list[str] argument - invoke this method to all arguments
+        """
+        return self.add_method(SpecialMethods.CAPITALIZE)
+
+    def split(
+        self, sep: Optional[str] = None, max_split: int = -1
+    ) -> SpecialMethodsProtocol:
+        """Same as `str.split()` method.
+
+        If last chain list[str] argument - raise TypeError
+        """
+        return self.add_method(SpecialMethods.SPLIT, sep, max_split)
+
+    def join(self, join_sep: str) -> SpecialMethodsProtocol:
+        """Same as `str.join()` method.
+
+        If last chain list[str] argument - raise TypeError
+
+        Args:
+            join_sep: separate char for result
+        """
+        return self.add_method(SpecialMethods.STR_JOIN, join_sep)
+
+    def count(self) -> SpecialMethodsProtocol:
+        """Return items count.
+
+        if last chain value is list - return len value else 1
+
+        """
+        return self.add_method(SpecialMethods.COUNT)
+
     def add_method(
         self, method_name: Union[str, SpecialMethods], *args, **kwargs
-    ) -> Self:
+    ) -> Union[Self, SpecialMethodsProtocol]:
         """low-level interface adding methods to call stack"""
         self._stack_methods.append(MarkupMethod(method_name, args=args, kwargs=kwargs))
         return self
