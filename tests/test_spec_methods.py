@@ -189,12 +189,34 @@ def test_strip():
     assert Parsel(raw=True).strip().sc_parse("  test 123  ") == "test 123"
 
 
+def test_strip_list():
+    assert Parsel(raw=True).split(",").strip().sc_parse("  test 123  ,  456  ") == [
+        "test 123",
+        "456",
+    ]
+
+
 def test_rstrip():
     assert Parsel(raw=True).rstrip().sc_parse("test 123  ") == "test 123"
 
 
+def test_rstrip_list():
+    assert Parsel(raw=True).split(",").rstrip().sc_parse("  test 123  ,  456  ") == [
+        "test 123",
+        "  456",
+    ]
+
+
 def test_lstrip():
     assert Parsel(raw=True).lstrip().sc_parse("  \n\ttest 123") == "test 123"
+
+
+def test_lstrip_list():
+    assert Parsel(raw=True).split(",").lstrip().sc_parse(",  test 123  ,  456  ") == [
+        "",
+        "test 123  ",
+        "456",
+    ]
 
 
 def test_replace():
@@ -210,3 +232,47 @@ def test_replace_list():
         "es123",
         "a",
     ]
+
+
+def test_re_search():
+    assert Parsel(raw=True).re_search(r"\d+")[0].sc_parse("test 123") == "123"
+
+
+def test_re_search_groupdict():
+    assert Parsel(raw=True).re_search(r"(?P<digit>\d+)", groupdict=True).sc_parse(
+        "test 123"
+    ) == {"digit": "123"}
+
+
+def test_re_search_groupdict_fail():
+    with pytest.raises(TypeError):
+        Parsel(raw=True).re_search(r"\d+", groupdict=True)[0].sc_parse("test 123")
+
+
+def test_re_search_list_fail():
+    # expected string or bytes-like object
+    with pytest.raises(TypeError):
+        Parsel(raw=True).split(",").re_search(r"\d+")[0].sc_parse("test 123, some 44")
+
+
+def test_re_findall():
+    assert Parsel(raw=True).re_findall(r"\d+").sc_parse("test 100 120") == [
+        "100",
+        "120",
+    ]
+
+
+def test_re_findall_group():
+    assert Parsel(raw=True).re_findall(r"(?P<digit>\d+)", groupdict=True).sc_parse(
+        "test 100 120"
+    ) == [{"digit": "100"}, {"digit": "120"}]
+
+
+def test_re_findall_group_fail():
+    with pytest.raises(TypeError):
+        Parsel(raw=True).re_findall(r"\d+", groupdict=True).sc_parse("test 100 120")
+
+
+def test_re_findall_value_fail():
+    with pytest.raises(TypeError):
+        Parsel(raw=True).split().re_findall(r"\d+").sc_parse("test 100 120")
