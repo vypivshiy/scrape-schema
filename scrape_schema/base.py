@@ -217,7 +217,12 @@ class Field(BaseField):
                 )
             except Exception as e:
                 self._is_success = False  # mark failed parse field
-                _logger.warning("Oops, %s throw exception %s", str(method).lower(), e)
+                _logger.warning(
+                    "Oops, %s throw exception `%s: %s`",
+                    str(method).lower(),
+                    e.__class__.__name__,
+                    e,
+                )
                 self._last_failed_method = method
                 return self._stack_method_error_handler(method, e, markup)
         _logger.info("Call methods done. result=%s", result)
@@ -234,7 +239,12 @@ class Field(BaseField):
             markup.get() if isinstance(markup, (Selector, SelectorList)) else markup,
         )
         if self.default is Ellipsis:
-            _logger.error("Method `%r` return traceback: %s", method, e)
+            _logger.error(
+                "Method `%r` return traceback: `%s: %s`",
+                method,
+                e.__class__.__name__,
+                e,
+            )
             raise e
         _logger.info(
             "Skip type casting and set default value: %s",
