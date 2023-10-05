@@ -325,7 +325,7 @@ class DLRawField(Field):
         *,
         str_join: Optional[str] = None,
         strip: bool = False,
-        re_sub_pattern: Optional[str | Pattern] = None,
+        re_sub_pattern: Optional[Union[str, Pattern]] = None,
         re_sub_count: int = 100,
     ) -> SpecialMethodsProtocol:
         """
@@ -356,7 +356,7 @@ class DLRawField(Field):
                     values = [re.sub(re_sub_pattern, "", v) for v in values]
 
                 if isinstance(str_join, str):
-                    values = str_join.join(values)
+                    values = str_join.join(values)  # type: ignore
                 table[key] = values
             return table
 
