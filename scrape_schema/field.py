@@ -1,10 +1,24 @@
 """build-in fields"""
-from typing import Any, Callable, Hashable, Mapping, Optional, Pattern, Union
+import re
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Hashable,
+    Mapping,
+    Optional,
+    Pattern,
+    Union,
+)
 
 from scrape_schema._logger import _logger
 from scrape_schema._protocols import AttribProtocol, SpecialMethodsProtocol
 from scrape_schema._typing import Self
 from scrape_schema.base import Field
+from scrape_schema.special_methods import SpecialMethods
+
+if TYPE_CHECKING:
+    from parsel import Selector, SelectorList
 
 
 class Parsel(Field):
@@ -283,3 +297,67 @@ class Callback(Field):
 
     def sc_parse(self, _) -> Any:
         return self._call_stack_methods(self.callback())
+
+
+class DLRawField(Field):
+    """Field for parse next HTML construction:
+
+    <dl>
+        <dt></dt>
+        <dd</dd>
+        ...
+    </dl>
+
+    See Also:
+        https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dl
+    """
+
+    def __init__(
+        self, auto_type=False, default: Any = None, alias: Optional[str] = None
+    ):
+        super().__init__(auto_type=auto_type, default=default or {}, alias=alias)
+
+    def css_dl(
+        self,
+        dl_css: str = "dl",
+        dt_css: str = "dt",
+        dd_css: str = "dd",
+        *,
+        str_join: Optional[str] = None,
+        strip: bool = False,
+        re_sub_pattern: Optional[str | Pattern] = None,
+        re_sub_count: int = 100,
+    ) -> SpecialMethodsProtocol:
+        """
+
+        Args:
+            dl_css: dl css selector
+            dt_css: dt css selector
+            dd_css: dd css selector
+            str_join: join text result from dd elements? default set value as list
+            strip: strip text? default False
+            re_sub_pattern: re.sub regular expr. If argument None - skip
+            re_sub_count: re.sub subs count
+        Returns:
+            dict[<dt ::text key> : <dd ::text value>, ...]
+        """
+
+        def __parse_dl_raw(markup: Union["Selector", "SelectorList"]):
+            table = {}
+            dl = markup.css(dl_css)
+            for dt, dd in zip(dl.css(dt_css), dl.css(dd_css)):
+                key = dt.css("::text").get().strip()
+                if re_sub_pattern:
+                    key = re.sub(re_sub_pattern, "", key, count=re_sub_count)
+                key = key.strip() if strip else key
+                values = [v.strip() if strip else v for v in dd.css("::text").getall()]
+
+                if re_sub_pattern:
+                    values = [re.sub(re_sub_pattern, "", v) for v in values]
+
+                if isinstance(str_join, str):
+                    values = str_join.join(values)
+                table[key] = values
+            return table
+
+        return self.add_method(SpecialMethods.FN, function=__parse_dl_raw)  # type: ignore
