@@ -1,20 +1,20 @@
 from typing import Any
 
 from scrape_schema import BaseSchema
-from scrape_schema.field import DLRawField
+from scrape_schema.field import RawDLField
 
 
 class DatalinesSchema1(BaseSchema):
-    data: dict[str, Any] = DLRawField().css_dl()
+    data: dict[str, Any] = RawDLField().css_dl()
 
 
 class DatalinesSchema2(BaseSchema):
     # customize css queries. exclude .col-12 elements
-    data: dict[str, Any] = DLRawField().css_dl(
+    data: dict[str, Any] = RawDLField().css_dl(
         dl_css="div.info > dl.row", dt_css="dt.col-6", dd_css="dd.col-6"
     )
     # custom enchants
-    data2: dict[str, str] = DLRawField().css_dl(
+    data2: dict[str, str] = RawDLField().css_dl(
         dl_css="div.info > dl.row",
         dt_css="dt.col-6",
         dd_css="dd.col-6",

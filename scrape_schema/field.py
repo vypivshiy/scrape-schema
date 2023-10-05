@@ -4,10 +4,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     Hashable,
+    List,
     Mapping,
     Optional,
     Pattern,
+    TypedDict,
     Union,
 )
 
@@ -19,6 +22,16 @@ from scrape_schema.special_methods import SpecialMethods
 
 if TYPE_CHECKING:
     from parsel import Selector, SelectorList
+
+
+TableDictView = TypedDict(
+    "TableDictView",
+    {
+        "columns": List[str],
+        "cells": List[List[str]],
+        "table": Dict[str, List[Optional[str]]],
+    },
+)
 
 
 class Parsel(Field):
@@ -299,23 +312,17 @@ class Callback(Field):
         return self._call_stack_methods(self.callback())
 
 
-class DLRawField(Field):
-    """Field for parse next HTML construction:
-
-    <dl>
-        <dt></dt>
-        <dd</dd>
-        ...
-    </dl>
+class RawDLField(Field):
+    """Field for parse Description List element <dl>, <dt> <dd>:
 
     See Also:
         https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dl
     """
 
     def __init__(
-        self, auto_type=False, default: Any = None, alias: Optional[str] = None
+        self, auto_type=False, default: Any = ..., alias: Optional[str] = None
     ):
-        super().__init__(auto_type=auto_type, default=default or {}, alias=alias)
+        super().__init__(auto_type=auto_type, default=default, alias=alias)
 
     def css_dl(
         self,
@@ -345,6 +352,10 @@ class DLRawField(Field):
         def __parse_dl_raw(markup: Union["Selector", "SelectorList"]):
             table = {}
             dl = markup.css(dl_css)
+            if not bool(dl):
+                msg = f"This markup not contains dataline element from `{dt_css}` selector"
+                raise TypeError(msg)
+
             for dt, dd in zip(dl.css(dt_css), dl.css(dd_css)):
                 key = dt.css("::text").get().strip()
                 if re_sub_pattern:
@@ -361,3 +372,66 @@ class DLRawField(Field):
             return table
 
         return self.add_method(SpecialMethods.FN, function=__parse_dl_raw)  # type: ignore
+
+
+class RawTableField(Field):
+    """Field for parse <table> <tbody> HTML constructions:
+
+    See Also:
+        https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
+        https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
+    """
+
+    def __init__(
+        self,
+        auto_type=False,
+        default: Any = ...,
+        alias: Optional[str] = None,
+    ):
+        super().__init__(auto_type=auto_type, alias=alias, default=default)
+
+    def table(self, table_css: str = "table"):
+        """Parse table element.
+
+        return python dict in {"columns": List[str], # list all <th> values elements,
+        "cells": List[list[str]],  # 2-dimensional list with all <td> values (len calculate by "columns" len and fill
+            missing attributes by None
+        "table": dict{str: List[str],  # try to represent in dict(<th>: list[<td>], ...) format
+        }
+
+        Args:
+            table_css: table or tbody css target element
+
+        Returns:
+            TableDictView dict with all columns, cells and try to represent as dict
+
+        """
+
+        def __parse_table(markup) -> TableDictView:
+            table = markup.css(table_css)
+            if not bool(table):
+                msg = f"This markup not contains table element from `{table_css}` selector"
+                raise TypeError(msg)
+
+            all_columns: List[str] = []
+            all_cells: List[List[str]] = []
+            data: Dict[str, List[Optional[str]]] = {}
+
+            for tr in table.css("tr"):
+                for col in tr.css("th"):
+                    if column_item := col.css("::text").getall():
+                        column_item = " ".join([cell.strip() for cell in column_item])
+                        all_columns.append(column_item)
+                rows = []
+                for row in tr.css("td"):
+                    if cell_item := row.css("::text").getall():
+                        cell_item = " ".join([cell.strip() for cell in cell_item])
+                        rows.append(cell_item)
+                if rows:
+                    all_cells.append(rows)
+            for i, column in enumerate(all_columns):
+                data[column] = [row[i] if i < len(row) else None for row in all_cells]
+
+            return TableDictView(columns=all_columns, cells=all_cells, table=data)
+
+        return self.add_method(SpecialMethods.FN, function=__parse_table)
