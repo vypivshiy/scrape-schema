@@ -455,7 +455,6 @@ This field provide [Description List element tags (`<dl>`)](https://developer.mo
     this experimental field and in last updates maybe changed
 
 - disabled auto_typing by default
-- default value - empty dict
 - raise TypeError if `<dl>` element not founded
 
 Example:
@@ -542,11 +541,10 @@ This field provide [`<table>`](https://developer.mozilla.org/en-US/docs/Web/HTML
 
 
 - auto_typing disabled
-- if parse failed - return python dict `{"columns": [], "cells": [], "table": {}}` with empty values
+- raise `TypeError` if element will be not founded
     - `cells` Two-dimensional lists: for one row - one list with cells values (`<td>`)
     - `columns` - list with `<th>` values
     - `table` - try to accumulate `<th>` and `<td>` values to dict
-- raise `TypeError` if element will be not founded.
 - for better support typing - annotate by `scrape_schema.field.TableDictView` type
 
 Examples:
