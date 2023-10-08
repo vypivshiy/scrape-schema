@@ -29,7 +29,10 @@ __all__ = [
 
 class FnMethod(BaseSpecialMethodStrategy):
     def __call__(self, markup: Any, method: MarkupMethod, **kwargs):
-        return method.kwargs["function"](markup)
+        if not (func := method.kwargs.get("function")):
+            func = method.args[0]
+            return func(markup)
+        return func(markup)
 
 
 class SplitMethod(BaseSpecialMethodStrategy):
