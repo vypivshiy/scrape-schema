@@ -1,13 +1,15 @@
+from typing import Dict
+
 from scrape_schema import BaseSchema, Parsel
 from scrape_schema.field import DictField
 
 
 class DictSchema(BaseSchema):
-    urls: dict[str, str] = DictField().dict(
+    urls: Dict[str, str] = DictField().dict(
         Parsel().css("a ::text").getall(),  # key
         Parsel().css("a ::attr(href)").getall(),  # value
     )
-    url: dict[str, str] = DictField().dict_one(
+    url: Dict[str, str] = DictField().dict_one(
         Parsel().css("a ::text").get(), Parsel().css("a ::attr(href)").get()
     )
 
