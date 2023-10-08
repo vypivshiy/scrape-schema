@@ -23,7 +23,6 @@ from scrape_schema.special_methods import SpecialMethods
 if TYPE_CHECKING:
     from parsel import Selector, SelectorList
 
-
 TableDictView = TypedDict(
     "TableDictView",
     {
@@ -435,3 +434,44 @@ class RawTableField(Field):
             return TableDictView(columns=all_columns, cells=all_cells, table=data)
 
         return self.add_method(SpecialMethods.FN, function=__parse_table)
+
+
+class DictField(Field):
+    def __init__(
+        self, auto_type=False, default: Any = ..., alias: Optional[str] = None, **kwargs
+    ):
+        super().__init__(auto_type=auto_type, default=default, alias=alias, **kwargs)
+
+    def dict(
+        self,
+        keys_field: Union["Field", "SpecialMethodsProtocol"],
+        keys_values: Union["Field", "SpecialMethodsProtocol"],
+    ) -> Self:
+        """Alias of `dict(zip(keys_fields: keys_values))` construction. All fields should be return iterator object.
+
+        Create dict by two Parsel fields arguments.
+        """
+
+        def __create_dict(markup):
+            return dict(zip(keys_field.sc_parse(markup), keys_values.sc_parse(markup)))  # type: ignore
+
+        return self.add_method(SpecialMethods.FN, __create_dict)
+
+    def dict_one(
+        self,
+        key_field: Union["Parsel", "SpecialMethodsProtocol"],
+        key_value: Union["Parsel", "SpecialMethodsProtocol"],
+    ):
+        """Alias of `dict(keys_field: key_value))` construction. key_field should be return `Hashable` object.
+
+        Create dict by two Parsel fields arguments.
+        """
+
+        def __create_dict(markup):
+            key = key_field.sc_parse(markup)
+            if not isinstance(key, Hashable):
+                msg = f"key_field is not hashable, got `{key}`"
+                raise TypeError(msg)
+            return {key: key_value.sc_parse(markup)}  # type: ignore
+
+        return self.add_method(SpecialMethods.FN, __create_dict)
