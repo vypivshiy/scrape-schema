@@ -6,6 +6,8 @@
 ![Python-versions](https://img.shields.io/pypi/pyversions/scrape_schema)
 [![codecov](https://codecov.io/gh/vypivshiy/scrape-schema/branch/master/graph/badge.svg?token=jqSNuE7g5l)](https://codecov.io/gh/vypivshiy/scrape-schema)
 
+**UNMAINTAINED, currently contunue experiments in [selector_schema_codegen](https://github.com/vypivshiy/selector_schema_codegen)**
+
 # Scrape-schema
 This library is designed to write structured, readable and
 reusable parsers for html, raw text and is inspired by dataclasses and ORM libraries
